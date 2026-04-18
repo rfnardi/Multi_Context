@@ -1,6 +1,7 @@
 -- lua/multi_context/tool_runner.lua
 local M = {}
 local tools = require('multi_context.tools')
+local react_loop = require('multi_context.react_loop')
 
 local valid_tools = {
     list_files = true, read_file = true, search_code = true,
@@ -25,6 +26,28 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         return out, false, false, nil, nil
     end
 
+    -- ==========================================
+    -- GATEKEEPER DE SKILLS (Autorização)
+    -- ==========================================
+    local agents = require('multi_context.agents').load_agents()
+    local active_agent = react_loop.state.active_agent
+    local is_authorized = false
+
+    if active_agent and agents[active_agent] and agents[active_agent].skills then
+        for _, skill in ipairs(agents[active_agent].skills) do
+            if skill == name then is_authorized = true; break end
+        end
+    else
+        is_authorized = true -- Sem agente ativo (Modo Root/Manual), permite tudo
+    end
+
+    if not is_authorized then
+        local err_msg = string.format("Operação negada. O agente @%s não possui a Skill '%s'.", tostring(active_agent), tostring(name))
+        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
+        return out, false, false, nil, nil -- Não aborta o loop inteiro, mas devolve o erro
+    end
+    -- ==========================================
+
     local choice = 1
     if not approve_all_ref.value then
         if is_autonomous then
@@ -35,7 +58,7 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
                 choice = vim.fn.confirm("Agente solicitou DESTRUIR E COMPRIMIR o chat. Permitir?", "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
             else choice = 3; approve_all_ref.value = true end
         else
-            choice = vim.fn.confirm(string.format("Agente requisitou[%s]. Permitir?", tostring(name)), "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
+            choice = vim.fn.confirm(string.format("Agente requisitou [%s]. Permitir?", tostring(name)), "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
         end
     end
 
@@ -70,19 +93,14 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         should_continue_loop = true; result = tools.search_code(tool_data.query)
     elseif name == "edit_file" then 
         result = tools.edit_file(tool_data.path, clean_inner)
-        if is_autonomous and result:match("SUCESSO") then
-            result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path)
-        end
+        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
     elseif name == "run_shell" then 
         result = tools.run_shell(clean_inner)
     elseif name == "replace_lines" then 
         result = tools.replace_lines(tool_data.path, tool_data.start_line, tool_data.end_line, clean_inner)
-        if is_autonomous and result:match("SUCESSO") then
-            result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path)
-        end
+        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
     elseif name == "get_diagnostics" then 
-        should_continue_loop = true
-        result = tools.get_diagnostics(tool_data.path)
+        should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
     end
     
     local output = ""

@@ -1,7 +1,7 @@
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin para Neovim que integra assistentes de IA com capacidades autônomas nativas (estilo Claude Code/Devin). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto.
 
 ## Arquitetura Técnica
 
@@ -11,27 +11,29 @@ MultiContext AI é um plugin para Neovim que integra assistentes de IA com capac
 - **Operações Assíncronas**: `vim.fn.jobstart` e `vim.fn.jobstop` (HTTP não-bloqueante e controle de stream)
 - **Processamento de XML**: Parser funcional tolerante a falhas.
 
-### Estrutura de Diretórios Atualizada
+### Estrutura de Diretórios
 ```text
 lua/multi_context/
 ├── init.lua              # Orquestrador principal, monitoramento live de stream e hooks
-├── config.lua            # Configurações e gestão de I/O (stdpath)
-├── agents.lua            # Gerenciamento de agentes e manual de ferramentas dinâmico
-├── api_client.lua        # Cliente HTTP, fila de APIs, fallback e injeção de job_id
+├── config.lua            # Configurações, Bootstrapping de Usuário e Auto-Setup
+├── agents.lua            # Inicializador do mctx_agents.json do usuário
+├── api_client.lua        # Cliente HTTP, fila de APIs e injeção de job_id
 ├── api_handlers.lua      # Manipuladores de requisição nativos
-├── prompt_parser.lua     # Parser de intenções do usuário (@agentes e flags)
+├── prompt_parser.lua     # Parser de intenções e Montador Dinâmico de Prompts (Lego)
 ├── tool_parser.lua       # Extrator funcional e sanitizador de tags XML/JSON
-├── tool_runner.lua       # Roteador de segurança, executor de ferramentas e injetor de LSP
-├── react_loop.lua        # Gerenciador de estado de sessão, Circuit Breaker e Abort de Jobs
+├── tool_runner.lua       # Gatekeeper de Permissões, executor e injetor de LSP
+├── react_loop.lua        # Gerenciador de estado de sessão e Abort de Jobs
 ├── api_selector.lua      # UI de seleção de API
 ├── commands.lua          # Rotas de comandos do Neovim
 ├── conversation.lua      # Motor de reconstrução de histórico
-├── context_builders.lua  # Extratores de contexto com proteção contra OOM (>100kb/Binários)
-├── queue_editor.lua      # Editor visual de fila de tarefas
-├── tools.lua             # Ferramentas do sistema (leitura, edição, bash, git grep, LSP)
+├── context_builders.lua  # Extratores de contexto com proteção OOM (>100kb/Binários)
+├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP)
 ├── utils.lua             # Utilitários e exportação isolada de Workspace (.mctx_chats)
+├── skills/
+│   ├── registry.lua      # Dicionário de habilidades e montador de manual
+│   └── docs/             # Instruções modulares em Markdown (.md) para cada ferramenta
 ├── ui/
-│   ├── scroller.lua      # Smart Auto-Scroll silencioso para leitura concorrente
+│   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
 │   ├── popup.lua         # Lógica da janela flutuante e atalhos de emergência (<C-x>)
 │   └── highlights.lua    # Highlights sintáticos customizados
 └── tests/                # Suíte de testes automatizados (TDD/Plenary)
@@ -39,48 +41,48 @@ lua/multi_context/
 
 ## Funcionalidades e Capacidades Implementadas
 
-### 1. Sistema de Agentes e Identidade Persistente
-- Identidade mantida durante todo o ciclo de raciocínio das ferramentas até o comando `@reset`.
+### 1. Sistema de Agentes e Arquitetura de Skills 🆕
+- **Princípio do Menor Privilégio**: O sistema abandonou o modelo de "Ferramentas Globais". Agora os agentes possuem arrays de `skills` (`"list_files"`, `"run_shell"`, etc).
+- **Gatekeeper de Segurança**: Se um agente tentar alucinar ou usar uma ferramenta fora do seu escopo, o `tool_runner.lua` intercepta o comando, bloqueia a execução e alerta a IA (`Operação negada`).
+- **Token Saver Dinâmico**: O manual de ferramentas não é mais uma string monolítica. O sistema lê os arquivos `.md` modulares apenas das skills autorizadas e constrói um "Mini-Manual" JIT (Just-in-Time), economizando centenas de tokens no System Prompt.
 
-### 2. Loop Autônomo, ReAct e Job Control 🆕
-- **Controle Total de Stream**: Mapeamento do atalho `<C-x>` para o usuário assassinar instantaneamente requisições alucinadas (`vim.fn.jobstop`).
-- **Auto-Halt Inteligente**: Se a IA executa uma ferramenta de mutação (`edit_file`, `replace_lines`, `run_shell`), o plugin corta a geração de texto HTTP pela raiz no exato milissegundo do fechamento da tag `</tool_call>`, economizando tokens e prevenindo a execução de múltiplos scripts quebrados em lote.
-- Limite de segurança de 15 iterações (Circuit Breaker isolado).
+### 2. Experiência do Usuário (Onboarding) 🆕
+- **Auto-Setup e Bootstrapping**: O código-fonte do plugin foi totalmente isolado das configurações de usuário. Ao instalar o plugin, o `config.lua` gera automaticamente arquivos de fallback (`api_keys.json`, `context_apis.json` e `mctx_agents.json`) na pasta local do usuário (`~/.config/nvim/`), garantindo atualizações seguras sem perder customizações pessoais.
+- **Backward Compatibility**: Script interno garante a migração silenciosa de agentes antigos (booleano `use_tools`) para o novo paradigma de `skills` estruturadas.
 
-### 3. Integração LSP — Smart Push (Fase 2 Completa) ⚡
-- Graças ao *Auto-Halt*, assim que a IA altera o código, a execução dela é congelada.
-- O plugin captura o diagnóstico do LSP de forma transparente (truncado para 3KB de segurança) e injeta diretamente no resultado de `SUCESSO` da ferramenta.
-- A IA acorda no loop seguinte já consciente dos erros de sintaxe (Auto-LSP), permitindo refatorações orgânicas sem a IA precisar chamar ativamente a ferramenta `get_diagnostics`.
+### 3. Loop Autônomo, ReAct e Job Control
+- **Controle de Stream (`<C-x>`)**: Atalho de emergência para assassinar requisições alucinadas (`vim.fn.jobstop`).
+- **Auto-Halt Inteligente**: Se a IA executa uma ferramenta de mutação (`edit_file`, `run_shell`), a geração HTTP é cortada na raiz no exato fechamento da tag, prevenindo encadeamento de código quebrado.
 
-### 4. Smart Auto-Scroll Silencioso (Leitura Concorrente) 🆕
-- O usuário pode rolar a tela para ler o histórico enquanto a IA digita código novo.
-- **Sem Sequestro de Cursor**: A rolagem pausa ao identificar uma intenção explícita de subida (`cursor < última linha`) e retoma apenas se o cursor voltar estritamente para a última linha do buffer (`G`).
-- Otimização extrema: o Autocmd do cursor existe única e exclusivamente durante o tempo de vida do request.
+### 4. Integração LSP — Smart Push (Fase 2)
+- Captura transparente de diagnóstico LSP no modo `--auto`, injetado como [Auto-LSP] nas respostas de sucesso, forçando a IA a consertar o que acabou de quebrar sem consumir turnos extras requisitando o leitor.
 
-### 5. Gestão de Contexto, Memória e Prompt Caching
-- Leitura silenciosa do `CONTEXT.md` cacheada nos servidores via Prompt Caching (DeepSeek/Anthropic/OpenAI), gerando economia brutal de tokens de input.
-- Compressão do buffer e salvamento em arquivo de fallback (`:ContextUndo`).
-- Exportação organizada em `.mctx_chats/`.
+### 5. Smart Auto-Scroll Silencioso
+- A rolagem acompanha a IA digitando, mas **pausa** direcionalmente ao identificar que o usuário moveu o cursor para cima, e **retoma** se ele voltar para a última linha (`G`).
+
+### 6. Memória de Longo Prazo e Prompt Caching ⚡
+- Leitura do `CONTEXT.md` cacheada em servidores (DeepSeek/Anthropic/OpenAI), com economia notificada via UI.
 
 ## Decisões Técnicas Críticas (Registro para Agentes)
-1. **Desacoplamento e SRP (Fase 13)**: `init.lua` foi esvaziado de lógicas de parsing. Funções puras (`tool_parser`, `prompt_parser`) permitem validação por testes unitários sem abrir a UI.
-2. **Matemática do Cursor (Fase 14)**: Para evitar condições de corrida (Race Conditions) com os próprios eventos gerados pelo Neovim, o `scroller.lua` usa rastreamento estrito direcional: pausa se o cursor sobe (`<`), retoma se está na base exata (`==`).
-3. **Monitoramento Live de Regex (Fase 15)**: A leitura do texto recebido em blocos (chunk) não tenta processar a tela inteira; o Auto-Halt captura eficientemente apenas tags fechadas no bloco final do acumulador de stream.
+1. **Desacoplamento e SRP**: `init.lua` esvaziado. Uso de módulos puros (`tool_parser`, `prompt_parser`).
+2. **Separação de Lógica e Engenharia de Prompt**: O core Lua não possui strings massivas de documentação. O treinamento da IA fica em arquivos `.md` soltos na pasta `/skills/docs/`. Para criar uma nova skill, basta criar o script Lua, o arquivo Markdown, e autorizar a IA no JSON.
+3. **Bootstrapping Isolado**: A persistência de estado do usuário (APIs e Agentes) está externalizada para `stdpath("config")`. O plugin em si pode ser apagado e clonado via GitHub sem perda de dados (Design profissional de OSS).
 
 ---
 
 ## Estado Atual do Desenvolvimento
 
-### ✅ Concluído (Fases 1 a 15)
-- Arquitetura nativa, assíncrona, não-bloqueante e protegida contra falhas (Circuit breaker, OOM protection, tmp-files GC).
-- Suíte de testes TDD garantindo a estabilidade de rotinas puras.
-- **Desacoplamento de UI e Lógica** (Fase 13).
+### ✅ Concluído (Fases 1 a 16)
+- Loop ReAct, Arquitetura de UI e OOM protection.
+- Suíte de testes TDD/PlenaryBusted.
+- Integração LSP e Otimização via Prompt Caching.
 - **Smart Auto-Scroll sem travamentos** (Fase 14).
-- **LSP Smart Push e Job Control/Abort Stream `<C-x>`** (Fase 15).
+- **LSP Smart Push e Job Control/Abort `<C-x>`** (Fase 15).
+- **Arquitetura de Skills, Gatekeeper de Segurança e Onboarding OSS** (Fase 16).
 
-### 🔄 Planejado / Próximos Passos
-1. **Padronização DRY no `api_handlers.lua`**: Abstrair a rotina repetitiva de requests curl e arquivos temporários em um construtor HTTP genérico.
-2. **Sistema de Plugins Externos**: Download de agentes predefinidos via repositórios do Github.
+### 🔄 Próximos Passos
+1. **Padronização DRY no `api_handlers.lua`**: Abstrair a rotina de requests `curl` em um construtor genérico.
+2. **Sistema de Plugins Externos**: Repositório comunitário para download de novas Skills (`.md` + `.lua`) para injeção via config.
 
 ---
-*Última atualização: 2026-04-17 - Fases 13, 14 e 15 concluídas (Refatoração de Módulos, Auto-Scroll e Smart Push/Job Control).*
+*Última atualização: 2026-04-18 - Fase 16 concluída (Arquitetura de Skills e Onboarding/Isolamento de Repo).*

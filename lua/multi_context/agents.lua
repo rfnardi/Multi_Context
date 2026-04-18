@@ -2,11 +2,9 @@
 local api = vim.api
 local M = {}
 
--- Agora os agentes vivem livremente na pasta de configurações do usuário
 M.agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
 
 M.load_agents = function()
-    -- BOOTSTRAP DE AGENTES: Copia do plugin para o usuário no primeiro uso
     if vim.fn.filereadable(M.agents_file) == 0 then
         local curr_file = debug.getinfo(1, "S").source:sub(2)
         local default_agents_file = vim.fn.fnamemodify(curr_file, ":h") .. "/agents/agents.json"
@@ -16,7 +14,6 @@ M.load_agents = function()
             vim.fn.writefile(lines, M.agents_file)
             vim.notify("[MultiContext] Arquivo base de Agentes instalado em: " .. M.agents_file, vim.log.levels.INFO)
         else
-            -- Fallback em branco caso algo de muito errado
             vim.fn.writefile({"{}"}, M.agents_file)
         end
     end
@@ -35,65 +32,6 @@ M.get_agent_names = function()
     for name, _ in pairs(agents) do table.insert(names, name) end
     table.sort(names)
     return names
-end
-
-M.get_tools_manual = function()
-    return [[
-=== FERRAMENTAS DO SISTEMA (SYSTEM TOOLS) ===
-Você é um Agente Autônomo rodando nativamente dentro do editor Neovim do usuário. Você tem a capacidade de interagir com o sistema de arquivos local e com o terminal (bash) do projeto atual.
-
-REGRA ABSOLUTA DE FORMATO:
-Para invocar uma ferramenta, você DEVE usar ESTRITAMENTE o formato de tags XML exemplificado abaixo. É ESTRITAMENTE PROIBIDO usar formato JSON.\nNÃO ENVOLVA os argumentos da ferramenta com tags extras (como <arg_value>, <content> ou <command>). Escreva o conteúdo ou script DIRETAMENTE dentro da tag <tool_call> principal.
-
-=== SMART PUSH (AUTO-LSP) ===
-Sempre que você usar ferramentas de edição no modo autônomo, sua geração de texto será pausada e o sistema injetará automaticamente os erros sintáticos (LSP). NÃO CHAME get_diagnostics logo após editar um arquivo, apenas leia a resposta do sistema.
-
-=== MEMÓRIA DO PROJETO (CONTEXT.md) ===
-Na raiz do projeto pode existir um arquivo chamado CONTEXT.md. Este arquivo é a SUA memória de longo prazo e atua como o cérebro da equipe.
-Ele contém o resumo do projeto, escolhas de tecnologias, o que já foi feito e o que falta fazer.
-- SEMPRE que você concluir uma funcionalidade importante ou tomar uma decisão relevante, ATUALIZE o CONTEXT.md usando as ferramentas edit_file ou replace_lines para que a sua memória não se perca no futuro.
-- Se o arquivo não existir e for o início de um projeto, CRIE-O com um resumo inicial.
-
-Ferramentas Disponíveis:
-1. Listar Arquivos (list_files)
-Formato: <tool_call name="list_files"></tool_call>
-
-2. Buscar Código no Repositório (search_code)
-Formato: <tool_call name="search_code" query="palavra_ou_funcao"></tool_call>
-
-3. Ler Arquivo (read_file)
-Formato: <tool_call name="read_file" path="caminho/do/arquivo.ext"></tool_call>
-
-4. Substituir Bloco de Código (replace_lines) - RECOMENDADA
-Formato:
-<tool_call name="replace_lines" path="arquivo.cpp" start="10" end="15">
-CÓDIGO NOVO AQUI
-</tool_call>
-
-5. Sobrescrever Arquivo Completo (edit_file)
-Formato:
-<tool_call name="edit_file" path="caminho.ext">
-CÓDIGO INTEIRO AQUI
-</tool_call>
-
-6. Executar Terminal (run_shell)
-Formato:
-<tool_call name="run_shell">
-comando bash aqui
-</tool_call>
-
-7. Reescrever e Comprimir o Chat (rewrite_chat_buffer) - EXCLUSIVO DO ENGENHEIRO DE PROMPT
-Apaga TODO o histórico do chat atual e substitui apenas pelo conteúdo que você enviar dentro desta tag. Use para salvar tokens em chats massivos. VOCÊ DEVE manter a estrutura (## Nome_Do_Usuario >> e ## IA >>) no novo texto.
-Formato:
-<tool_call name="rewrite_chat_buffer">
-## Nome_Do_Usuario >> [Resumo do que foi pedido]
-## IA >>[Resumo do estado atual do projeto]
-</tool_call>
-
-8. Obter Diagnósticos LSP (get_diagnostics)
-Lê erros e avisos sintáticos e semânticos apontados pelo LSP em um arquivo específico.
-Formato: <tool_call name="get_diagnostics" path="caminho/do/arquivo.lua"></tool_call>
-]]
 end
 
 M.selector_buf = nil; M.selector_win = nil; M.current_selection = 1; M.api_list = {}; M.parent_win = nil
