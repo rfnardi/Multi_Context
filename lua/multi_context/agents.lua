@@ -2,9 +2,25 @@
 local api = vim.api
 local M = {}
 
-M.agents_file = vim.fn.stdpath("config") .. "/lua/multi_context/agents/agents.json"
+-- Agora os agentes vivem livremente na pasta de configurações do usuário
+M.agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
 
 M.load_agents = function()
+    -- BOOTSTRAP DE AGENTES: Copia do plugin para o usuário no primeiro uso
+    if vim.fn.filereadable(M.agents_file) == 0 then
+        local curr_file = debug.getinfo(1, "S").source:sub(2)
+        local default_agents_file = vim.fn.fnamemodify(curr_file, ":h") .. "/agents/agents.json"
+        
+        if vim.fn.filereadable(default_agents_file) == 1 then
+            local lines = vim.fn.readfile(default_agents_file)
+            vim.fn.writefile(lines, M.agents_file)
+            vim.notify("[MultiContext] Arquivo base de Agentes instalado em: " .. M.agents_file, vim.log.levels.INFO)
+        else
+            -- Fallback em branco caso algo de muito errado
+            vim.fn.writefile({"{}"}, M.agents_file)
+        end
+    end
+
     local file = io.open(M.agents_file, 'r')
     if not file then return {} end
     local content = file:read('*a')
@@ -67,17 +83,16 @@ comando bash aqui
 </tool_call>
 
 7. Reescrever e Comprimir o Chat (rewrite_chat_buffer) - EXCLUSIVO DO ENGENHEIRO DE PROMPT
-Apaga TODO o histórico do chat atual e substitui apenas pelo conteúdo que você enviar dentro desta tag. Use para salvar tokens em chats massivos. VOCÊ DEVE manter a estrutura (## Usuario >> e ## IA >>) no novo texto.
+Apaga TODO o histórico do chat atual e substitui apenas pelo conteúdo que você enviar dentro desta tag. Use para salvar tokens em chats massivos. VOCÊ DEVE manter a estrutura (## Nome_Do_Usuario >> e ## IA >>) no novo texto.
 Formato:
 <tool_call name="rewrite_chat_buffer">
 ## Nome_Do_Usuario >> [Resumo do que foi pedido]
-## IA >> [Resumo do estado atual do projeto]
+## IA >>[Resumo do estado atual do projeto]
 </tool_call>
 
 8. Obter Diagnósticos LSP (get_diagnostics)
 Lê erros e avisos sintáticos e semânticos apontados pelo LSP em um arquivo específico.
 Formato: <tool_call name="get_diagnostics" path="caminho/do/arquivo.lua"></tool_call>
-</tool_call>
 ]]
 end
 

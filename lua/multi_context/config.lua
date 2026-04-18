@@ -2,7 +2,7 @@
 local M = {}
 
 M.defaults = {
-    user_name     = "Nardi",
+    user_name     = "User",
     config_path   = vim.fn.stdpath("config") .. "/context_apis.json",
     api_keys_path = vim.fn.stdpath("config") .. "/api_keys.json",
     default_api   = nil,
@@ -16,22 +16,67 @@ M.defaults = {
 
 M.options = vim.deepcopy(M.defaults)
 
+M.bootstrap = function()
+    -- 1. Cria chaves padrão se não existir
+    if vim.fn.filereadable(M.options.api_keys_path) == 0 then
+        local default_keys = {
+            openai = "sk-...",
+            anthropic = "sk-ant-...",
+            gemini = "AIzaSy..."
+        }
+        local f = io.open(M.options.api_keys_path, "w")
+        if f then
+            f:write(vim.fn.json_encode(default_keys))
+            f:close()
+            vim.notify("\n[MultiContext] Bem-vindo! Criamos o arquivo api_keys.json. Por favor, insira suas chaves.", vim.log.levels.INFO)
+        end
+    end
+
+    -- 2. Cria config de provedores padrão se não existir
+    if vim.fn.filereadable(M.options.config_path) == 0 then
+        local default_apis = {
+            default_api = "openai",
+            fallback_mode = true,
+            apis = {
+                {
+                    name = "openai",
+                    model = "gpt-4o",
+                    api_type = "openai",
+                    url = "https://api.openai.com/v1/chat/completions",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        Authorization = "Bearer {API_KEY}"
+                    },
+                    num_tries = 3,["include_in_fall-back_mode"] = true
+                }
+            }
+        }
+        local f = io.open(M.options.config_path, "w")
+        if f then
+            local raw = vim.fn.json_encode(default_apis)
+            f:write(raw)
+            f:close()
+            pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw), M.options.config_path)) end)
+            vim.notify("[MultiContext] Arquivo context_apis.json criado com configurações padrão.", vim.log.levels.INFO)
+        end
+    end
+end
+
 function M.setup(user_opts)
     M.options = vim.tbl_deep_extend("force", M.defaults, user_opts or {})
     if M.options.config_path then M.options.config_path = vim.fn.expand(M.options.config_path) end
     if M.options.api_keys_path then M.options.api_keys_path = vim.fn.expand(M.options.api_keys_path) end
+    
+    -- Chama a auto-configuração no start do plugin
+    M.bootstrap()
 end
 
 M.load_api_config = function()
     local f = io.open(M.options.config_path, 'r')
-    if not f then 
-        vim.notify("MultiContext: Não foi possível abrir o arquivo:\n" .. tostring(M.options.config_path), vim.log.levels.ERROR)
-        return nil 
-    end
+    if not f then return nil end
     local content = f:read('*a'); f:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
-    if not ok then return nil end
-    return parsed
+    return ok and parsed or nil
 end
 
 M.load_api_keys = function()
