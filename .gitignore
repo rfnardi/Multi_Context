@@ -1,0 +1,7 @@
+# Ignora arquivos temporários e chaves vazadas
+*.json
+!agents/agents.json
+.DS_Store
+.luarc.json
+mctx_backup_*.mctx
+.mctx_chats/
