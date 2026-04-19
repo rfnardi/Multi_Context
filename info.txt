@@ -1,0 +1,3324 @@
+======= CONTEXT.md =========
+# MultiContext AI - Plugin Neovim
+
+## Visão Geral
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto.
+
+## Arquitetura Técnica
+
+### Tecnologias Principais
+- **Linguagem**: Lua (integração nativa com Neovim)
+- **Framework de Testes**: `plenary.nvim` (busted)
+- **Operações Assíncronas**: `vim.fn.jobstart` e `vim.fn.jobstop` (HTTP não-bloqueante e controle de stream)
+- **Processamento de XML**: Parser funcional tolerante a falhas.
+
+### Estrutura de Diretórios
+```text
+lua/multi_context/
+├── init.lua              # Orquestrador principal, monitoramento live de stream e hooks
+├── config.lua            # Configurações, Bootstrapping de Usuário e Auto-Setup
+├── agents.lua            # Inicializador do mctx_agents.json do usuário
+├── api_client.lua        # Cliente HTTP, fila de APIs e injeção de job_id
+├── api_handlers.lua      # Manipuladores de requisição nativos
+├── prompt_parser.lua     # Parser de intenções e Montador Dinâmico de Prompts (Lego)
+├── tool_parser.lua       # Extrator funcional e sanitizador de tags XML/JSON
+├── tool_runner.lua       # Gatekeeper de Permissões, executor e injetor de LSP
+├── react_loop.lua        # Gerenciador de estado de sessão e Abort de Jobs
+├── api_selector.lua      # UI de seleção de API
+├── commands.lua          # Rotas de comandos do Neovim
+├── conversation.lua      # Motor de reconstrução de histórico
+├── context_builders.lua  # Extratores de contexto com proteção OOM (>100kb/Binários)
+├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP)
+├── utils.lua             # Utilitários e exportação isolada de Workspace (.mctx_chats)
+├── skills/
+│   ├── registry.lua      # Dicionário de habilidades e montador de manual
+│   └── docs/             # Instruções modulares em Markdown (.md) para cada ferramenta
+├── ui/
+│   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
+│   ├── popup.lua         # Lógica da janela flutuante e atalhos de emergência (<C-x>)
+│   └── highlights.lua    # Highlights sintáticos customizados
+└── tests/                # Suíte de testes automatizados (TDD/Plenary)
+```
+
+## Funcionalidades e Capacidades Implementadas
+
+### 1. Sistema de Agentes e Arquitetura de Skills 🆕
+- **Princípio do Menor Privilégio**: O sistema abandonou o modelo de "Ferramentas Globais". Agora os agentes possuem arrays de `skills` (`"list_files"`, `"run_shell"`, etc).
+- **Gatekeeper de Segurança**: Se um agente tentar alucinar ou usar uma ferramenta fora do seu escopo, o `tool_runner.lua` intercepta o comando, bloqueia a execução e alerta a IA (`Operação negada`).
+- **Token Saver Dinâmico**: O manual de ferramentas não é mais uma string monolítica. O sistema lê os arquivos `.md` modulares apenas das skills autorizadas e constrói um "Mini-Manual" JIT (Just-in-Time), economizando centenas de tokens no System Prompt.
+
+### 2. Experiência do Usuário (Onboarding) 🆕
+- **Auto-Setup e Bootstrapping**: O código-fonte do plugin foi totalmente isolado das configurações de usuário. Ao instalar o plugin, o `config.lua` gera automaticamente arquivos de fallback (`api_keys.json`, `context_apis.json` e `mctx_agents.json`) na pasta local do usuário (`~/.config/nvim/`), garantindo atualizações seguras sem perder customizações pessoais.
+- **Backward Compatibility**: Script interno garante a migração silenciosa de agentes antigos (booleano `use_tools`) para o novo paradigma de `skills` estruturadas.
+
+### 3. Loop Autônomo, ReAct e Job Control
+- **Controle de Stream (`<C-x>`)**: Atalho de emergência para assassinar requisições alucinadas (`vim.fn.jobstop`).
+- **Auto-Halt Inteligente**: Se a IA executa uma ferramenta de mutação (`edit_file`, `run_shell`), a geração HTTP é cortada na raiz no exato fechamento da tag, prevenindo encadeamento de código quebrado.
+
+### 4. Integração LSP — Smart Push (Fase 2)
+- Captura transparente de diagnóstico LSP no modo `--auto`, injetado como [Auto-LSP] nas respostas de sucesso, forçando a IA a consertar o que acabou de quebrar sem consumir turnos extras requisitando o leitor.
+
+### 5. Smart Auto-Scroll Silencioso
+- A rolagem acompanha a IA digitando, mas **pausa** direcionalmente ao identificar que o usuário moveu o cursor para cima, e **retoma** se ele voltar para a última linha (`G`).
+
+### 6. Memória de Longo Prazo e Prompt Caching ⚡
+- Leitura do `CONTEXT.md` cacheada em servidores (DeepSeek/Anthropic/OpenAI), com economia notificada via UI.
+
+## Decisões Técnicas Críticas (Registro para Agentes)
+1. **Desacoplamento e SRP**: `init.lua` esvaziado. Uso de módulos puros (`tool_parser`, `prompt_parser`).
+2. **Separação de Lógica e Engenharia de Prompt**: O core Lua não possui strings massivas de documentação. O treinamento da IA fica em arquivos `.md` soltos na pasta `/skills/docs/`. Para criar uma nova skill, basta criar o script Lua, o arquivo Markdown, e autorizar a IA no JSON.
+3. **Bootstrapping Isolado**: A persistência de estado do usuário (APIs e Agentes) está externalizada para `stdpath("config")`. O plugin em si pode ser apagado e clonado via GitHub sem perda de dados (Design profissional de OSS).
+
+---
+
+## Estado Atual do Desenvolvimento
+
+### ✅ Concluído (Fases 1 a 16)
+- Loop ReAct, Arquitetura de UI e OOM protection.
+- Suíte de testes TDD/PlenaryBusted.
+- Integração LSP e Otimização via Prompt Caching.
+- **Smart Auto-Scroll sem travamentos** (Fase 14).
+- **LSP Smart Push e Job Control/Abort `<C-x>`** (Fase 15).
+- **Arquitetura de Skills, Gatekeeper de Segurança e Onboarding OSS** (Fase 16).
+
+### 🔄 Próximos Passos
+1. **Padronização DRY no `api_handlers.lua`**: Abstrair a rotina de requests `curl` em um construtor genérico.
+2. **Sistema de Plugins Externos**: Repositório comunitário para download de novas Skills (`.md` + `.lua`) para injeção via config.
+
+---
+*Última atualização: 2026-04-18 - Fase 16 concluída (Arquitetura de Skills e Onboarding/Isolamento de Repo).*
+======= Makefile =========
+test:
+	nvim --headless -c "PlenaryBustedDirectory lua/multi_context/tests/ { minimal_init = 'lua/multi_context/tests/minimal_init.lua' }"
+======= README.md =========
+# 🤖 MultiContext AI - Neovim Plugin
+
+![Neovim](https://img.shields.io/badge/Neovim-0.8+-green.svg?style=for-the-badge&logo=neovim)
+![Lua](https://img.shields.io/badge/Lua-100%25-blue.svg?style=for-the-badge&logo=lua)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
+
+## 📖 Visão Geral
+
+**MultiContext AI** é um plugin nativo, assíncrono e de alto desempenho para Neovim que integra assistentes de Inteligência Artificial **autônomos** diretamente no editor (inspirado no paradigma do *Claude Code* e *Devin*). 
+
+Diferente de plugins convencionais de autocompletar, o MultiContext atua como um engenheiro de software: ele navega no sistema, edita arquivos em background, roda testes no terminal e se auto-corrige usando um motor de raciocínio ReAct (Reasoning and Acting).
+
+> **Objetivo:** Acelerar o fluxo de trabalho permitindo que a IA construa, teste e valide código de ponta a ponta, com consumo extremamente otimizado de tokens de contexto.
+
+---
+
+## 🚀 Funcionalidades Principais
+
+| ✅ | Funcionalidade | Descrição |
+|:---:|---|---|
+| 🥷 | **Arquitetura de Skills** | Agentes seguem o Princípio do Menor Privilégio. O `@arquiteto` não consegue acidentalmente rodar o bash, bloqueado pelo Gatekeeper nativo. |
+| 🧩 | **Mini-Manuais Dinâmicos** | O prompt de sistema concatena a documentação `.md` apenas das habilidades autorizadas do agente, economizando centenas de tokens. |
+| 🔄 | **Motor Autônomo (ReAct)** | A IA encadeia ferramentas sozinha (flag `--auto`) com um *Circuit Breaker* de segurança de 15 iterações. |
+| ⚡ | **Prompt Caching Nativo** | Cache de contexto em servidores (Anthropic, DeepSeek, OpenAI) reduzindo custos draconianamente. |
+| 🔍 | **LSP Smart Push (Auto-LSP)** | Se a IA quebrar a sintaxe de um código, o plugin corta a execução na raiz, lê o erro do Neovim e força a IA a consertar imediatamente. |
+| 📜 | **Smart Auto-Scroll** | O texto desce automaticamente, mas **pausa silenciosamente** se você mover o cursor para cima para ler o histórico, retomando no final do buffer. |
+| 🛑 | **Job Control (Pânico)** | Pressione `<C-x>` a qualquer momento para assassinar a conexão com a API via `jobstop`. |
+| 🧠 | **Memória de Longo Prazo** | O arquivo `CONTEXT.md` atualiza e persiste decisões, atuando como "cérebro" do projeto. |
+| 🗑️ | **Garbage Collection Ativa** | Comprime buffers gigantes jogando fora logs inúteis para salvar memória (`:ContextUndo` suportado). |
+
+---
+
+## 📦 Instalação e Bootstrapping
+
+O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará todos os arquivos base de configuração na sua pasta `~/.config/nvim/` sem tocar no código-fonte original, garantindo atualizações seguras via GitHub.
+
+### Requisitos do Sistema
+- **Neovim 0.8+** (Para a API `vim.diagnostic` e float windows).
+- `curl` (Para requisições HTTP não-bloqueantes).
+- `git` e `tree` (Ferramentas base de extração de contexto).
+
+### Instalando com `vim-plug` (Recomendado)
+
+Adicione no seu `init.vim` ou gerenciador de plugins:
+```vim
+Plug 'seu-usuario/multi_context_plugin'
+```
+
+*Dica para Desenvolvimento:* Se o plugin estiver local, aponte a pasta:
+```vim
+Plug '~/repos/multi_context_plugin' 
+```
+
+Rode `:PlugInstall` e adicione o *setup*:
+
+```lua
+require('multi_context').setup({
+  user_name = "Nardi", -- Seu nome no chat
+})
+```
+
+---
+
+## ⚙️ Configuração (Onboarding Automático)
+
+No primeiro uso, o plugin gerará 3 arquivos na pasta `stdpath("config")` (geralmente `~/.config/nvim/`):
+
+1. **`api_keys.json`**: Insira suas chaves (OpenAI, Anthropic, Gemini, DeepSeek).
+2. **`context_apis.json`**: Cadastre os endpoints e parâmetros dos seus modelos favoritos. Alterne entre eles via comando `:ContextApis`.
+3. **`mctx_agents.json`**: Crie e customize seus próprios agentes e distribua permissões no array `"skills"`.
+
+---
+
+## 🎮 Comandos (Modo Normal e Visual)
+
+| Comando | Descrição |
+|---|---|
+| `:ContextChatFull` | Abre o chat vazio ou retoma o workspace ativo. |
+| `:'<,'>Context` | *(Visual)* Envia as linhas selecionadas para o chat. |
+| `:ContextFolder` | Inicia a sessão enviando os arquivos do diretório atual. |
+| `:ContextRepo` | Inicia a sessão mapeando todo o projeto do Git. |
+| `:ContextGit` | Envia as alterações não commitadas (`git diff`). |
+| `:ContextBuffers`| Envia todos os buffers de código carregados no Neovim. |
+| `:ContextTree` | Desenha a árvore do projeto no prompt. |
+| `:ContextUndo` | Restaura o buffer de chat após uma compressão destrutiva. |
+| `:ContextToggle` | Abre ou esconde a janela flutuante sem perder o histórico. |
+
+---
+
+## ⌨️ UX e Atalhos do Chat
+
+| Atalho | Modo | Ação |
+|---|---|---|
+| **`<CR>` / `<C-CR>`** | Insert/Normal | Envia a mensagem e invoca a IA. |
+| **`@`** | Insert | Abre o menu flutuante para invocar um Agente (`@coder`, `@qa`). |
+| **`<C-x>`** | Insert/Normal | 🛑 **Botão de Pânico:** Corta a conexão HTTP e interrompe o stream. |
+| **`<A-b>`** | Insert/Normal | Copia o último bloco de código para a área de transferência. |
+| **`k` / `<C-u>`** | Normal | Pausa o Auto-Scroll direcionalmente para ler histórico. |
+| **`G`** | Normal | Retoma a leitura da última linha engatando o Auto-Scroll. |
+
+> **Modo Manual vs `--auto`:** Se a IA sugerir edição/shell sem a flag `--auto`, o Neovim exigirá sua confirmação em uma janela limpa `[Sim/Não/Todos]`. Com `--auto`, o loop funciona 100% invisível em background.
+
+---
+
+## 🏗️ Estrutura de Módulos (OSS Design)
+
+Totalmente reescrito na Fase 13 para respeitar *Single Responsibility Principle (SRP)*:
+
+```text
+lua/multi_context/
+├── init.lua              # Monitoramento live e hooks de UI
+├── api_client.lua        # HTTP Assíncrono com injeção de Job_ID
+├── prompt_parser.lua     # Extrator de intenções e Montador JIT de Habilidades
+├── tool_runner.lua       # Gatekeeper de Segurança e Injetor de LSP
+├── react_loop.lua        # Gerente de Sessão (Circuit Breaker e Job Abort)
+├── skills/               # Cartões modulares (.md) e Registry de permissões
+└── ui/                   # Smart Auto-Scroll e Popups
+```
+
+---
+
+## 🧪 Testes Automatizados (TDD)
+
+O plugin é coberto por testes robustos usando `plenary.nvim`. As lógicas textuais e matemáticas (Race Conditions de cursor) rodam de forma independente do editor visual.
+```bash
+make test
+```
+
+---
+
+## 📜 Licença
+
+Desenvolvido para hackers e entusiastas do Neovim. Licenciado sob a **MIT License** – veja o arquivo `LICENSE` para detalhes.
+======= ./lua/multi_context/ =========
+======= ./lua/multi_context/commands.lua =========
+-- commands.lua
+-- Handlers dos comandos expostos pelo plugin.
+-- Conecta :Context*, :ContextGit, etc. aos context_builders e ao popup.
+local M = {}
+
+-- Abre o popup com um conteúdo inicial e entra em modo de inserção.
+local function open_with(content)
+    local buf, win = require('multi_context.ui.popup').create_popup(content)
+    if buf and win then vim.cmd("startinsert!") end
+end
+
+M.ContextChatHandler = function(line1, line2)
+    local ctx = require('multi_context.context_builders')
+    -- Chamado com range explícito (comando -range ou vnoremap)
+    if line1 and line2 and tonumber(line1) ~= tonumber(line2) then
+        open_with(ctx.get_visual_selection(line1, line2))
+        return
+    end
+    -- Chamado sem range: detecta modo visual ou usa buffer inteiro
+    local mode = vim.api.nvim_get_mode().mode
+    if mode == 'v' or mode == 'V' then
+        open_with(ctx.get_visual_selection())
+    else
+        open_with(ctx.get_current_buffer())
+    end
+end
+
+M.ContextChatFull = function() open_with("") end
+
+-- :ContextFolder -> APENAS a pasta onde o nvim foi aberto
+M.ContextChatFolder = function()
+    open_with(require('multi_context.context_builders').get_folder_context())
+end
+
+-- :ContextTree -> Árvore (tree) + Conteúdo (maxdepth 2)
+M.ContextTree = function()
+    open_with(require('multi_context.context_builders').get_tree_context())
+end
+
+-- :ContextRepo -> Todos os arquivos do repositório Git
+M.ContextChatRepo = function()
+    open_with(require('multi_context.context_builders').get_repo_context())
+end
+
+-- :ContextGit -> Diff de alterações não commitadas (git diff)
+M.ContextChatGit = function()
+    open_with(require('multi_context.context_builders').get_git_diff())
+end
+
+M.ContextApis = function()
+    require('multi_context.api_selector').open_api_selector()
+end
+
+M.ContextBuffers  = function()
+    open_with(require('multi_context.context_builders').get_all_buffers_content())
+end
+
+M.TogglePopup = function()
+    local popup = require('multi_context.ui.popup')
+
+    -- Se a janela já está aberta na tela, nós a escondemos e saímos
+    if popup.popup_win and vim.api.nvim_win_is_valid(popup.popup_win) then
+        vim.api.nvim_win_hide(popup.popup_win)
+        vim.cmd("stopinsert")
+        return
+    end
+
+    -- Se a janela está escondida, mas o buffer da conversa ainda existe na memória, reabre ele
+    if popup.popup_buf and vim.api.nvim_buf_is_valid(popup.popup_buf) then
+        open_with(popup.popup_buf)
+    else
+        -- Se for a primeira vez abrindo na sessão, inicia vazio
+        open_with("")
+    end
+end
+
+return M
+======= ./lua/multi_context/skills =========
+======= ./lua/multi_context/skills/docs =========
+======= ./lua/multi_context/skills/docs/get_diagnostics.md =========
+8. Obter Diagnósticos LSP (get_diagnostics)
+Lê erros e avisos sintáticos apontados pelo LSP em um arquivo específico.
+Formato: <tool_call name="get_diagnostics" path="caminho/do/arquivo.lua"></tool_call>
+======= ./lua/multi_context/skills/docs/edit_file.md =========
+5. Sobrescrever Arquivo Completo (edit_file)
+Sobrescreve um arquivo inteiro ou cria um novo caso não exista.
+Formato:
+<tool_call name="edit_file" path="caminho.ext">
+CÓDIGO INTEIRO AQUI
+</tool_call>
+======= ./lua/multi_context/skills/docs/run_shell.md =========
+6. Executar Terminal (run_shell)
+Executa scripts bash/git na raiz do projeto.
+Formato:
+<tool_call name="run_shell">
+comando bash aqui
+</tool_call>
+======= ./lua/multi_context/skills/docs/list_files.md =========
+1. Listar Arquivos (list_files)
+Permite ao agente ver a estrutura do projeto.
+Formato: <tool_call name="list_files"></tool_call>
+======= ./lua/multi_context/skills/docs/rewrite_chat_buffer.md =========
+7. Reescrever e Comprimir o Chat (rewrite_chat_buffer)
+Apaga o histórico inteiro do chat atual e substitui apenas pelo conteúdo enviado. 
+VOCÊ DEVE manter a estrutura (## Nome_Do_Usuario >> e ## IA >>) no novo texto.
+Formato:
+<tool_call name="rewrite_chat_buffer">
+## Nome_Do_Usuario >>[Resumo do que foi pedido]
+## IA >> [Resumo do estado atual]
+</tool_call>
+======= ./lua/multi_context/skills/docs/search_code.md =========
+2. Buscar Código no Repositório (search_code)
+Busca a ocorrência de uma string/regex nos arquivos rastreados.
+Formato: <tool_call name="search_code" query="palavra_ou_funcao"></tool_call>
+======= ./lua/multi_context/skills/docs/read_file.md =========
+3. Ler Arquivo (read_file)
+Permite ler o conteúdo completo de um arquivo local.
+Formato: <tool_call name="read_file" path="caminho/do/arquivo.ext"></tool_call>
+======= ./lua/multi_context/skills/docs/replace_lines.md =========
+4. Substituir Bloco de Código (replace_lines) - RECOMENDADA
+Edita um arquivo substituindo estritamente as linhas alvo.
+Formato:
+<tool_call name="replace_lines" path="arquivo.cpp" start="10" end="15">
+CÓDIGO NOVO AQUI
+</tool_call>
+======= ./lua/multi_context/skills/registry.lua =========
+ -- lua/multi_context/skills/registry.lua local M = {} -- Calcula o caminho base da pasta do plugin de forma robusta local function get_plugin_base_path() -- Tenta obter o caminho do arquivo deste próprio script (registry.lua) local source = debug.getinfo(1, "S").source:sub(2) if not source then return nil end -- O caminho deve terminar em .../lua/multi_context/skills/registry.lua -- Queremos extrair .../lua/multi_context/ local base = vim.fn.fnamemodify(source, ":p:h:h:h") -- :p (absoluto), :h (sobe 1: skills), :h (sobe 1: multi_context), :h (sobe 1: lua) -- Verifica se realmente estamos em uma estrutura lua/multi_context para evitar caminhos loucos if vim.fn.fnamemodify(base, ":t") == "lua" then return vim.fn.fnamemodify(base, ":h") -- Retorna a raiz do plugin (pai de lua) end return base end M.get_skill_doc = function(skill_name) local base_path = get_plugin_base_path() if not base_path then return nil end -- Caminho absoluto: {raiz}/lua/multi_context/skills/docs/{skill}.md local skill_file = vim.fn.join({ base_path, "lua", "multi_context", "skills", "docs", skill_name .. ".md" }, "/") -- Fallback para caminho relativo caso a lógica absoluta falhe em alguns setups muito específicos if vim.fn.filereadable(skill_file) == 0 then local curr_file = debug.getinfo(1, "S").source:sub(2) local fallback_dir = vim.fn.fnamemodify(curr_file, ":h") .. "/docs/" skill_file = fallback_dir .. skill_name .. ".md" end if vim.fn.filereadable(skill_file) == 1 then return table.concat(vim.fn.readfile(skill_file), "\n") end return nil end M.build_manual_for_skills = function(skills_array) if not skills_array or #skills_array == 0 then return "" end local manual = [[ === FERRAMENTAS DO SISTEMA (SYSTEM TOOLS) === Você é um Agente Autônomo rodando nativamente dentro do editor Neovim do usuário. REGRA ABSOLUTA DE FORMATO: Para invocar uma ferramenta, você DEVE usar ESTRITAMENTE o formato de tags XML exemplificado abaixo. É ESTRITAMENTE PROIBIDO usar formato JSON. NÃO ENVOLVA os argumentos com tags extras. === SMART PUSH (AUTO-LSP) === Sempre que usar ferramentas de edição, a geração de texto será pausada e o sistema injetará automaticamente os erros sintáticos (LSP). NÃO CHAME get_diagnostics logo após editar, leia a resposta do sistema. === HABILIDADES ATIVAS (SKILLS) === Você tem permissão exclusiva para usar apenas as ferramentas abaixo: ]] for _, skill in ipairs(skills_array) do local doc = M.get_skill_doc(skill) if doc then manual = manual .. "\n" .. doc .. "\n" end end return manual end return M 
+======= ./lua/multi_context/react_loop.lua =========
+-- lua/multi_context/react_loop.lua
+local M = {}
+
+M.state = {
+    is_autonomous = false,
+    auto_loop_count = 0,
+    active_agent = nil,
+    queued_tasks = nil,
+    last_backup = nil,
+    active_job_id = nil,
+    user_aborted = false,
+}
+
+M.reset_turn = function()
+    M.state.is_autonomous = false
+    M.state.auto_loop_count = 0
+    M.state.active_job_id = nil
+    M.state.user_aborted = false
+end
+
+M.check_circuit_breaker = function()
+    M.state.auto_loop_count = M.state.auto_loop_count + 1
+    if M.state.auto_loop_count >= 15 then
+        vim.notify("Limite de 15 loops atingido. Pausando por segurança.", vim.log.levels.WARN)
+        return true
+    end
+    return false
+end
+
+M.abort_stream = function(is_user)
+    if M.state.active_job_id then
+        M.state.user_aborted = is_user or false
+        pcall(vim.fn.jobstop, M.state.active_job_id)
+        M.state.active_job_id = nil
+    end
+end
+
+return M
+======= ./lua/multi_context/prompt_parser.lua =========
+-- lua/multi_context/prompt_parser.lua
+local M = {}
+local registry = require('multi_context.skills.registry')
+
+M.parse_user_input = function(raw_text, agents_table)
+    local parsed = {
+        text_to_send = raw_text,
+        agent_name = nil,
+        is_autonomous = false
+    }
+
+    local agent_match = parsed.text_to_send:match("@([%w_]+)")
+    if agent_match then
+        if agent_match == "reset" then
+            parsed.agent_name = "reset"
+            parsed.text_to_send = parsed.text_to_send:gsub("@reset%s*", "")
+        elseif agents_table[agent_match] then
+            parsed.agent_name = agent_match
+            parsed.text_to_send = parsed.text_to_send:gsub("@" .. agent_match .. "%s*", "")
+        end
+    end
+
+    if parsed.text_to_send:match("%-%-auto") then
+        parsed.is_autonomous = true
+        parsed.text_to_send = parsed.text_to_send:gsub("%-%-auto%s*", "")
+    end
+
+    parsed.text_to_send = parsed.text_to_send:gsub("^%s*", ""):gsub("%s*$", "")
+    return parsed
+end
+
+M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table)
+    local system_prompt = base_prompt
+
+    if memory_context then
+        system_prompt = system_prompt .. "\n\n=== ESTADO ATUAL DO PROJETO (MEMÓRIA) ===\n" .. memory_context .. "\n- Atualize o CONTEXT.md sempre que finalizar uma tarefa para não perder a memória."
+    end
+
+    if active_agent_name and active_agent_name ~= "reset" and agents_table[active_agent_name] then
+        local agent_data = agents_table[active_agent_name]
+        local active_agent_prompt = "\n\n=== INSTRUÇÕES DO AGENTE: " .. string.upper(active_agent_name) .. " ===\n" .. agent_data.system_prompt
+        
+        -- Montador Dinâmico de Skills
+        if agent_data.skills and #agent_data.skills > 0 then
+            active_agent_prompt = active_agent_prompt .. "\n\n" .. registry.build_manual_for_skills(agent_data.skills)
+        end
+        
+        system_prompt = system_prompt .. active_agent_prompt
+    end
+
+    return system_prompt
+end
+
+return M
+======= ./lua/multi_context/tests =========
+======= ./lua/multi_context/tests/utils_spec.lua =========
+local utils = require('multi_context.utils')
+
+describe("Utils Module:", function()
+    it("Deve dividir strings por quebra de linha corretamente", function()
+        local str = "linha1\nlinha2\nlinha3"
+        local res = utils.split_lines(str)
+        assert.are.same({"linha1", "linha2", "linha3"}, res)
+    end)
+
+    it("Deve estimar tokens corretamente (4 chars = 1 token)", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        -- Injeta 2 linhas. A lógica soma: (#linha + 1). Total: (5+1) + (5+1) = 12 chars
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"12345", "12345"})
+        
+        local tokens = utils.estimate_tokens(buf)
+        -- 12 / 4 = 3 tokens
+        assert.are.same(3, tokens)
+    end)
+end)
+======= ./lua/multi_context/tests/api_handlers_spec.lua =========
+-- lua/multi_context/tests/api_handlers_spec.lua
+-- transport.lua carrega normalmente em headless nvim.
+-- O único mock necessário é vim.fn.jobstart, chamado em runtime.
+local handlers = require('multi_context.api_handlers')
+
+describe("API Handlers Module (Prompt Caching)", function()
+    local original_jobstart
+    local intercepted_cmd
+    local intercepted_opts
+    local payload_content
+
+    before_each(function()
+        intercepted_cmd  = nil
+        intercepted_opts = nil
+        payload_content  = nil
+
+        original_jobstart = vim.fn.jobstart
+        vim.fn.jobstart = function(cmd, opts)
+            intercepted_cmd  = cmd
+            intercepted_opts = opts
+            for _, arg in ipairs(cmd) do
+                if type(arg) == "string" and arg:match("^@") then
+                    local f = io.open(arg:sub(2), "r")
+                    if f then payload_content = f:read("*a"); f:close() end
+                end
+            end
+            return 1
+        end
+    end)
+
+    after_each(function()
+        vim.fn.jobstart = original_jobstart
+    end)
+
+    it("Deve incluir stream_options e extrair metricas de cache (OpenAI / DeepSeek)", function()
+        local callback_metrics
+        local callback_done = false
+
+        handlers.openai.make_request(
+            { name = "ds", url = "http://ds", model = "deepseek-coder",
+              headers = { ["Content-Type"] = "application/json" } },
+            { { role = "user", content = "hello" } },
+            { ds = "key123" },
+            nil,
+            function(chunk, err, done, metrics)
+                if done then callback_done = true; callback_metrics = metrics end
+            end
+        )
+
+        local parsed_payload = vim.fn.json_decode(payload_content)
+        assert.is_not_nil(parsed_payload.stream_options)
+        assert.is_true(parsed_payload.stream_options.include_usage)
+
+        intercepted_opts.on_stdout(1, {
+            'data: {"choices":[{"delta":{"content":""}}],"usage":{"prompt_cache_hit_tokens":1280}}'
+        })
+        intercepted_opts.on_exit(1, 0)
+
+        assert.is_true(callback_done)
+        assert.is_not_nil(callback_metrics)
+        assert.are.same(1280, callback_metrics.cache_read_input_tokens)
+    end)
+
+    it("Deve estruturar o payload Anthropic com cache_control e capturar os metadados", function()
+        local callback_metrics
+
+        handlers.anthropic.make_request(
+            { name = "claude", url = "http://claude", model = "claude-3.5",
+              headers = { ["Content-Type"] = "application/json" } },
+            {
+                { role = "system", content = "Você é um assistente dev." },
+                { role = "user",   content = "hello" },
+            },
+            { claude = "key123" },
+            nil,
+            function(chunk, err, done, metrics)
+                if done then callback_metrics = metrics end
+            end
+        )
+
+        local has_beta_header = false
+        for _, v in ipairs(intercepted_cmd) do
+            if type(v) == "string" and v:match("anthropic%-beta: prompt%-caching") then
+                has_beta_header = true
+            end
+        end
+        assert.is_true(has_beta_header)
+
+        local parsed_payload = vim.fn.json_decode(payload_content)
+        assert.is_not_nil(parsed_payload.system)
+        assert.are.same("Você é um assistente dev.", parsed_payload.system[1].text)
+        assert.are.same("ephemeral", parsed_payload.system[1].cache_control.type)
+
+        intercepted_opts.on_stdout(1, {
+            'data: {"type":"message_start","message":{"usage":{"cache_read_input_tokens":4048}}}'
+        })
+        intercepted_opts.on_exit(1, 0)
+
+        assert.is_not_nil(callback_metrics)
+        assert.are.same(4048, callback_metrics.cache_read_input_tokens)
+    end)
+end)
+======= ./lua/multi_context/tests/tool_parser_spec.lua =========
+-- lua/multi_context/tests/tool_parser_spec.lua
+local tool_parser = require('multi_context.tool_parser')
+
+describe("Tool Parser Module:", function()
+    it("Deve sanitizar tags de fechamento corrompidas", function()
+        local xml_sujo = "<tool_call name='run_shell'>echo 1</arg_value>tool_call>"
+        local xml_limpo = tool_parser.sanitize_payload(xml_sujo)
+        assert.truthy(xml_limpo:match("</tool_call>"))
+        assert.falsy(xml_limpo:match("</arg_value>tool_call>"))
+    end)
+
+    it("Deve converter alucinações de tag direta em tool_call padrão", function()
+        local xml_sujo = "<run_shell>ls -la</run_shell>"
+        local xml_limpo = tool_parser.sanitize_payload(xml_sujo)
+        assert.truthy(xml_limpo:match('<tool_call name="run_shell">'))
+    end)
+
+    it("Deve remover lixo interno (crases markdown e tags órfãs)", function()
+        local inner_sujo = "```bash\n<content>echo 'oi'</content>\n```"
+        local inner_limpo = tool_parser.clean_inner_content(inner_sujo, "run_shell")
+        assert.are.same("echo 'oi'", inner_limpo)
+    end)
+
+    it("Deve extrair a próxima ferramenta corretamente", function()
+        local payload = 'Texto antes <tool_call name="read_file" path="main.lua">local x = 1</tool_call> Texto depois'
+        local parsed = tool_parser.parse_next_tool(payload, 1)
+        
+        assert.is_false(parsed.is_invalid)
+        assert.are.same("Texto antes ", parsed.text_before)
+        assert.are.same("read_file", parsed.name)
+        assert.are.same("main.lua", parsed.path)
+        assert.are.same("local x = 1", parsed.inner)
+    end)
+end)
+======= ./lua/multi_context/tests/diagnostics_spec.lua =========
+local tools = require('multi_context.tools')
+local api = vim.api
+
+describe("Tools Module (get_diagnostics):", function()
+    local test_buf
+    -- Usamos um arquivo temporário real para satisfazer a checagem 'filereadable'
+    local test_path = vim.fn.tempname() .. ".lua"
+    local ns = api.nvim_create_namespace("mctx_test_diag")
+
+    before_each(function()
+        -- Cria o arquivo em disco
+        vim.fn.writefile({"local x = 1", "local y = 2"}, test_path)
+        -- Adiciona ao Neovim
+        test_buf = vim.fn.bufadd(test_path)
+        vim.fn.bufload(test_buf)
+    end)
+
+    after_each(function()
+        -- Limpa ambiente
+        pcall(vim.diagnostic.reset, ns, test_buf)
+        pcall(api.nvim_buf_delete, test_buf, { force = true })
+        vim.fn.delete(test_path)
+    end)
+
+    it("Deve retornar diagnósticos para arquivo existente", function()
+        -- Mock de diagnósticos via API nativa (Agora passando o namespace correto!)
+        vim.diagnostic.set(ns, test_buf, {
+            { lnum = 0, col = 6, severity = 1, message = "Unused variable 'x'", source = "lua_ls" },
+            { lnum = 1, col = 6, severity = 2, message = "Unused variable 'y'", source = "lua_ls" },
+        })
+
+        local res = tools.get_diagnostics(test_path)
+        assert.truthy(res:match("Unused variable 'x'"))
+        assert.truthy(res:match("ERROR"))
+        assert.truthy(res:match("WARN"))
+        assert.truthy(res:match("lua_ls"))
+    end)
+
+    it("Deve retornar mensagem informativa para arquivo sem problemas ou sem LSP", function()
+        local res = tools.get_diagnostics(test_path)
+        -- Retorna sucesso se achar a mensagem de que não há erros ou não há LSP
+        assert.truthy(res:match("Nenhum") or res:match("AVISO"))
+    end)
+
+    it("Deve truncar saída quando há muitos diagnósticos", function()
+        -- Injeta 60 diagnósticos para testar limite de tokens
+        local many = {}
+        for i = 1, 60 do
+            table.insert(many, { lnum = i, col = 0, severity = 1, message = "Error number " .. i, source = "test_lsp" })
+        end
+        vim.diagnostic.set(ns, test_buf, many)
+
+        local res = tools.get_diagnostics(test_path)
+        assert.truthy(res:match("TRUNCADO") or res:match("exibindo os primeiros"))
+        -- Verifica se não ultrapassou o limite absurdo
+        assert.truthy(#res <= 4500)
+    end)
+
+    it("Deve retornar erro para path inexistente", function()
+        local res = tools.get_diagnostics("/tmp/caminho_inexistente_absurdo_12345.lua")
+        assert.truthy(res:match("ERRO"))
+    end)
+
+    it("Deve retornar erro quando o path não é fornecido (regra estrita)", function()
+        -- Testa se o plugin bloqueia tentativa de adivinhar arquivo
+        local res_nil = tools.get_diagnostics(nil)
+        assert.truthy(res_nil:match("OBRIGATÓRIO"))
+        
+        local res_empty = tools.get_diagnostics("")
+        assert.truthy(res_empty:match("OBRIGATÓRIO"))
+    end)
+end)
+======= ./lua/multi_context/tests/scroller_spec.lua =========
+-- lua/multi_context/tests/scroller_spec.lua
+local scroller = require('multi_context.ui.scroller')
+
+describe("Scroller Module (Smart Auto-Scroll):", function()
+    it("Deve ativar streaming e seguir por padrao", function()
+        scroller.start_streaming(1, nil)
+        assert.is_true(scroller.state.is_streaming)
+        assert.is_true(scroller.state.is_following)
+    end)
+
+    it("Deve desligar streaming ao solicitar", function()
+        scroller.stop_streaming(1)
+        assert.is_false(scroller.state.is_streaming)
+    end)
+end)
+======= ./lua/multi_context/tests/conversation_spec.lua =========
+local conv = require('multi_context.conversation')
+local config = require('multi_context.config')
+
+describe("Conversation Module:", function()
+    before_each(function()
+        config.options.user_name = "Nardi"
+    end)
+
+    it("Deve encontrar a última linha de comando do usuário", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+            "## Nardi >> primeirao",
+            "## IA >> resposta",
+            "## Nardi >> ultimo comando"
+        })
+        
+        local idx, line = conv.find_last_user_line(buf)
+        assert.are.same(2, idx) -- Neovim usa indexação 0-based via API
+        assert.are.same("## Nardi >> ultimo comando", line)
+    end)
+
+    it("Deve ignorar mensagens de [Sistema] na hora de ler o último comando", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+            "## Nardi >> faça algo",
+            "## IA >> <tool_call...",
+            "## Nardi >> [Sistema]: Ferramentas executadas"
+        })
+        -- O parser precisa enxergar a linha do sistema também, pois ela é a retroalimentação.
+        local idx, line = conv.find_last_user_line(buf)
+        assert.are.same(2, idx)
+        assert.truthy(line:match("%[Sistema%]"))
+    end)
+end)
+
+    it("Deve construir o array de mensagens (build_history) perfeitamente", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        
+        -- Simulando um chat complexo com várias quebras de linha e rodapés
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+            "## Nardi >> Primeiro comando",
+            "Detalhes do comando",
+            "",
+            "## IA (gpt-4) >>",
+            "Resposta da IA",
+            "Mais texto da IA",
+            "",
+            "## API atual: groq", -- Isso DEVE ser ignorado pelo parser
+            "## Nardi >> Segundo comando"
+        })
+        
+        local msgs = conv.build_history(buf)
+        
+        -- Verifica se gerou exatamente 3 blocos lógicos
+        assert.are.same(3, #msgs)
+        
+        -- Bloco 1 (User)
+        assert.are.same("user", msgs[1].role)
+        assert.are.same("Primeiro comando\nDetalhes do comando", msgs[1].content)
+        
+        -- Bloco 2 (Assistant)
+        assert.are.same("assistant", msgs[2].role)
+        assert.are.same("Resposta da IA\nMais texto da IA", msgs[2].content)
+        
+        -- Bloco 3 (User)
+        assert.are.same("user", msgs[3].role)
+        assert.are.same("Segundo comando", msgs[3].content)
+    end)
+======= ./lua/multi_context/tests/prompt_parser_spec.lua =========
+-- lua/multi_context/tests/prompt_parser_spec.lua
+
+-- O registry acessa arquivos de skill em disco, indisponível no ambiente mínimo.
+-- Stub injetado antes do require para isolar o módulo testado.
+package.loaded['multi_context.skills.registry'] = {
+    build_manual_for_skills = function(skills)
+        return "=== FERRAMENTAS DO SISTEMA ===\n" .. table.concat(skills, ", ")
+    end
+}
+
+-- Força reload limpo do prompt_parser para ele pegar o stub acima
+package.loaded['multi_context.prompt_parser'] = nil
+local prompt_parser = require('multi_context.prompt_parser')
+
+describe("Prompt Parser Module:", function()
+    local mock_agents = {
+        coder = {
+            system_prompt = "Você programa.",
+            skills = { "read_file", "edit_file", "run_shell" }
+        }
+    }
+
+    it("Deve extrair a flag --auto e o agente corretamente", function()
+        local raw = "Me faça um script @coder --auto"
+        local parsed = prompt_parser.parse_user_input(raw, mock_agents)
+
+        assert.are.same("Me faça um script", parsed.text_to_send)
+        assert.are.same("coder", parsed.agent_name)
+        assert.is_true(parsed.is_autonomous)
+    end)
+
+    it("Deve tratar @reset corretamente limpando o agente ativo", function()
+        local raw = "Esqueça sua persona @reset"
+        local parsed = prompt_parser.parse_user_input(raw, mock_agents)
+
+        assert.are.same("reset", parsed.agent_name)
+        assert.are.same("Esqueça sua persona", parsed.text_to_send)
+    end)
+
+    it("Deve compor o system prompt com memória e instruções do agente", function()
+        local base   = "Você é uma IA."
+        local memory = "Projeto usa Lua."
+
+        local final_prompt = prompt_parser.build_system_prompt(base, memory, "coder", mock_agents)
+
+        assert.truthy(final_prompt:match("Você é uma IA%."))
+        assert.truthy(final_prompt:match("ESTADO ATUAL DO PROJETO"))
+        assert.truthy(final_prompt:match("Projeto usa Lua%."))
+        assert.truthy(final_prompt:match("INSTRUÇÕES DO AGENTE: CODER"))
+        assert.truthy(final_prompt:match("Você programa%."))
+        assert.truthy(final_prompt:match("FERRAMENTAS DO SISTEMA"))
+    end)
+end)
+======= ./lua/multi_context/tests/config_spec.lua =========
+ -- lua/multi_context/tests/config_spec.lua -- Nota: O require foi movido para dentro dos blocos para respeitar a ordem de inicialização do minimal_init.lua
+
+describe("Config Module:", function()
+  local config
+
+  before_each(function()
+    -- Limpa o cache para garantir que o setup() do minimal_init seja respeitado
+    package.loaded['multi_context.config'] = nil
+    config = require('multi_context.config')
+  end)
+
+  it("Deve carregar as opções default corretamente", function()
+    -- O minimal_init.lua já chamou setup({ user_name = "Nardi" })
+    -- Mas como limpamos o cache, vamos garantir que o setup rode com o valor esperado
+    config.setup({ user_name = "Nardi" })
+    assert.are.same("Nardi", config.options.user_name)
+  end)
+
+  it("Deve mesclar opções do usuário usando setup() sem perder os defaults", function()
+    config.options = vim.deepcopy(config.defaults)
+    config.setup({ user_name = "NovoUsuario", appearance = { width = 0.9 } })
+
+    -- Alterou o que foi pedido
+    assert.are.same("NovoUsuario", config.options.user_name)
+    assert.are.same(0.9, config.options.appearance.width)
+    -- Manteve o que NÃO foi pedido (Deep Merge)
+    assert.are.same("rounded", config.options.appearance.border)
+  end)
+end)
+
+describe("Config Module (Manipulacao de Arquivo JSON):", function()
+  local config
+
+  it("Deve ler e alterar APIs usando um JSON em disco", function()
+    -- Garante reload limpo
+    package.loaded['multi_context.config'] = nil
+    config = require('multi_context.config')
+
+    local tmp_json = os.tmpname()
+    -- Simulando o arquivo JSON criado pelo usuario
+    local mock_cfg = { default_api = "api_A", apis = { { name = "api_A" }, { name = "api_B" } } }
+    local f = io.open(tmp_json, "w")
+    f:write(vim.fn.json_encode(mock_cfg))
+    f:close()
+
+    -- Força o plugin a olhar para o nosso arquivo falso
+    config.options.config_path = tmp_json
+
+    -- Testa extração de nomes
+    local names = config.get_api_names()
+    assert.are.same({"api_A", "api_B"}, names)
+
+    -- Testa buscar a default atual
+    assert.are.same("api_A", config.get_current_api())
+
+    -- Testa trocar a API via código
+    config.set_selected_api("api_B")
+    assert.are.same("api_B", config.get_current_api())
+
+    os.remove(tmp_json)
+  end)
+end) 
+======= ./lua/multi_context/tests/react_loop_spec.lua =========
+-- lua/multi_context/tests/react_loop_spec.lua
+local react_loop = require('multi_context.react_loop')
+
+describe("ReAct Loop Module:", function()
+    before_each(function()
+        react_loop.reset_turn()
+    end)
+
+    it("Deve resetar o estado corretamente", function()
+        react_loop.state.is_autonomous = true
+        react_loop.state.auto_loop_count = 5
+        
+        react_loop.reset_turn()
+        
+        assert.is_false(react_loop.state.is_autonomous)
+        assert.are.same(0, react_loop.state.auto_loop_count)
+    end)
+
+    it("Deve interromper a execução quando atingir 15 loops (Circuit Breaker)", function()
+        -- Simulando 14 iterações aprovadas
+        for i = 1, 14 do
+            local abort = react_loop.check_circuit_breaker()
+            assert.is_false(abort)
+        end
+        
+        -- A iteração 15 deve abortar
+        local final_abort = react_loop.check_circuit_breaker()
+        assert.is_true(final_abort)
+        assert.are.same(15, react_loop.state.auto_loop_count)
+    end)
+end)
+======= ./lua/multi_context/tests/tools_spec.lua =========
+local tools = require('multi_context.tools')
+
+describe("Tools Module (Agentes Autônomos):", function()
+    local tmp_file = os.tmpname()
+
+    after_each(function()
+        os.remove(tmp_file) -- Limpa lixo após os testes
+    end)
+
+    it("Deve criar e sobrescrever um arquivo (edit_file)", function()
+        local res = tools.edit_file(tmp_file, "ola mundo\nteste")
+        assert.truthy(res:match("SUCESSO"))
+        
+        local lines = vim.fn.readfile(tmp_file)
+        assert.are.same({"ola mundo", "teste"}, lines)
+    end)
+
+    it("Deve editar cirurgicamente um arquivo mantendo as pontas (replace_lines)", function()
+        -- Preparando arquivo inicial
+        tools.edit_file(tmp_file, "Linha 1\nLinha 2\nLinha 3\nLinha 4")
+        
+        -- Substituindo as linhas 2 e 3
+        local res = tools.replace_lines(tmp_file, 2, 3, "NOVA 2\nNOVA 3")
+        assert.truthy(res:match("SUCESSO"))
+        
+        local lines = vim.fn.readfile(tmp_file)
+        assert.are.same({"Linha 1", "NOVA 2", "NOVA 3", "Linha 4"}, lines)
+    end)
+
+    it("Deve limpar Markdown intruso do código fonte ao salvar arquivos", function()
+        -- Simula a IA enviando ```lua\n...\n```
+        local payload_sujo = "```lua\nlocal a = 1\n```"
+        tools.edit_file(tmp_file, payload_sujo)
+        
+        local lines = vim.fn.readfile(tmp_file)
+        -- O parser da ferramenta deve ter removido as crases
+        assert.are.same({"local a = 1"}, lines)
+    end)
+end)
+
+    it("Deve retornar erro amigavel ao ler arquivo que nao existe (read_file)", function()
+        local res = tools.read_file("caminho_inexistente_alucinacao.txt")
+        assert.truthy(res:match("ERRO: Arquivo não encontrado"))
+    end)
+
+    it("Deve retornar erro se a IA nao enviar o path", function()
+        local res = tools.read_file(nil)
+        assert.truthy(res:match("ERRO"))
+        
+        local res2 = tools.read_file("")
+        assert.truthy(res2:match("ERRO"))
+    end)
+
+    it("Deve proteger replace_lines contra parametros invalidos", function()
+        local res = tools.replace_lines("arquivo.txt", "nao_sou_numero", 15, "conteudo")
+        assert.truthy(res:match("ERRO: 'start' e 'end' devem ser números"))
+    end)
+
+describe("Tools Module (Execucao de Shell):", function()
+    local tools = require('multi_context.tools')
+
+    it("Deve executar run_shell e retornar SUCESSO com a saida do terminal", function()
+        local res = tools.run_shell("echo 'Testando_Terminal_123'")
+        assert.truthy(res:match("SUCESSO"))
+        assert.truthy(res:match("Testando_Terminal_123"))
+    end)
+
+    it("Deve retornar status de FALHA se o comando shell nao existir", function()
+        local res = tools.run_shell("comando_bizarro_que_nao_existe_123")
+        assert.truthy(res:match("FALHA"))
+        -- O erro exato do bash varia entre sistemas, mas a tag FALHA deve estar lá.
+    end)
+end)
+======= ./lua/multi_context/tests/context_builders_spec.lua =========
+local ctx = require('multi_context.context_builders')
+
+describe("Context Builders Module:", function()
+    it("Deve extrair o contexto do buffer atual corretamente", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"linhaA", "linhaB"})
+        vim.api.nvim_set_current_buf(buf)
+        
+        local res = ctx.get_current_buffer()
+        assert.truthy(res:match("=== BUFFER ATUAL ==="))
+        assert.truthy(res:match("linhaA"))
+        assert.truthy(res:match("linhaB"))
+    end)
+
+    it("Deve extrair apenas as linhas da selecao visual (com range)", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"L1", "L2", "L3", "L4"})
+        vim.api.nvim_set_current_buf(buf)
+        
+        local res = ctx.get_visual_selection(2, 3)
+        assert.truthy(res:match("SELEÇÃO %(linhas 2%-3%)"))
+        assert.truthy(res:match("L2"))
+        assert.truthy(res:match("L3"))
+        assert.falsy(res:match("L1"))
+        assert.falsy(res:match("L4"))
+    end)
+    
+    it("Deve corrigir a ordem se o range for passado invertido (baixo pra cima)", function()
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"A", "B", "C"})
+        vim.api.nvim_set_current_buf(buf)
+        
+        -- Selecionou da linha 3 até a 1
+        local res = ctx.get_visual_selection(3, 1)
+        assert.truthy(res:match("SELEÇÃO %(linhas 1%-3%)"))
+    end)
+end)
+======= ./lua/multi_context/tests/minimal_init.lua =========
+vim.cmd([[set runtimepath+=. ]])
+
+-- Tenta adicionar Plenary via vim-plug silenciosamente, se existir
+local plenary_dir = vim.fn.expand("~/.local/share/nvim/plugged/plenary.nvim")
+if vim.fn.isdirectory(plenary_dir) == 1 then
+    vim.cmd("set runtimepath+=" .. plenary_dir)
+end
+
+require('multi_context.config').setup({ user_name = "Nardi" })
+======= ./lua/multi_context/queue_editor.lua =========
+-- queue_editor.lua
+-- Buffer interativo para reordenar a fila de APIs (dd/p para mover, :w para salvar).
+local api = vim.api
+local M   = {}
+
+M.open_editor = function()
+    local config = require('multi_context.config')
+    local cfg    = config.load_api_config()
+    if not cfg then
+        vim.notify("Configuração não encontrada.", vim.log.levels.ERROR)
+        return
+    end
+
+    local names = {}
+    for _, a in ipairs(cfg.apis) do table.insert(names, a.name) end
+
+    local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_lines(buf, 0, -1, false, names)
+
+    -- buftype 'acwrite' permite :w sem arquivo físico (evita E32)
+    vim.bo[buf].buftype = 'acwrite'
+    api.nvim_buf_set_name(buf, "MultiContext_Queue_Editor")
+
+    local height = math.min(#names + 2, 20)
+    local win    = api.nvim_open_win(buf, true, {
+        relative  = 'editor',
+        width     = 52,
+        height    = height,
+        row       = 5,
+        col       = 10,
+        border    = 'rounded',
+        title     = ' Ordenar Fila  (dd/p mover · :w salvar) ',
+        title_pos = 'center',
+    })
+
+    api.nvim_create_autocmd("BufWriteCmd", {
+        buffer   = buf,
+        callback = function()
+            local lines     = api.nvim_buf_get_lines(buf, 0, -1, false)
+            local reordered = {}
+            for _, name in ipairs(lines) do
+                for _, a in ipairs(cfg.apis) do
+                    if a.name == name then table.insert(reordered, a); break end
+                end
+            end
+            cfg.apis = reordered
+            if config.save_api_config(cfg) then
+                vim.notify("Fila salva!", vim.log.levels.INFO)
+                vim.bo[buf].modified = false
+                api.nvim_win_close(win, true)
+            else
+                vim.notify("Erro ao salvar.", vim.log.levels.ERROR)
+            end
+        end,
+    })
+
+    api.nvim_buf_set_keymap(buf, "n", "q", ":q!<CR>", { noremap = true, silent = true })
+end
+
+return M
+======= ./lua/multi_context/tool_parser.lua =========
+-- lua/multi_context/tool_parser.lua
+local M = {}
+
+local valid_tools_list = {
+    "list_files", "read_file", "search_code", "edit_file", 
+    "run_shell", "replace_lines", "rewrite_chat_buffer", "get_diagnostics"
+}
+
+-- 1. SANITIZADOR ANTI-ALUCINAÇÃO DE SINTAXE
+M.sanitize_payload = function(content)
+    local c = content
+    -- Corrigido para [^<]* para que ele engula o ">" do </arg_value>tool_call>
+    c = c:gsub("</[^<]*tool_call%s*>", "</tool_call>")
+    c = c:gsub("<tool_call>%s*([a-zA-Z_]+)%s*>", '<tool_call name="%1">')
+    for _, tool in ipairs(valid_tools_list) do
+        c = c:gsub("<" .. tool .. "%s*>", '<tool_call name="' .. tool .. '">')
+        c = c:gsub("<" .. tool .. "%s+([^>]+)>", '<tool_call name="' .. tool .. '" %1>')
+        c = c:gsub("</" .. tool .. "%s*>", "</tool_call>")
+    end
+    return c
+end
+local function get_attr(attrs, n) 
+    if not attrs then return nil end
+    return attrs:match(n .. '%s*=%s*["\']([^"\']+)["\']') 
+end
+
+-- 2. LIMPEZA PROFUNDA DE LIXO INTERNO (Crases e tags aninhadas)
+M.clean_inner_content = function(inner, name)
+    local clean = inner
+    if not name or name == "" or name == "nil" then return clean end
+
+    local h_tags = {"content", "code", "command", "arg_value", "argument", "parameters", "text", "source", "tool_call"}
+    local changed = true
+    while changed do
+        changed = false
+        local before_md = clean
+        clean = clean:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
+        if before_md ~= clean then changed = true end
+        
+        for _, tag in ipairs(h_tags) do
+            local pat_full = "^%s*<" .. tag .. ">%s*(.-)%s*</" .. tag .. ">%s*$"
+            local val = clean:match(pat_full)
+            if val then clean = val; changed = true end
+            
+            local pat_end = "%s*</" .. tag .. ">%s*$"
+            if clean:match(pat_end) then clean = clean:gsub(pat_end, ""); changed = true end
+            
+            local pat_start = "^%s*<" .. tag .. ">%s*"
+            if clean:match(pat_start) then clean = clean:gsub(pat_start, ""); changed = true end
+        end
+    end
+    return clean
+end
+
+-- 3. EXTRATOR ITERATIVO (Acha a próxima tag a partir do cursor)
+M.parse_next_tool = function(content_to_process, cursor)
+    local tag_start, tag_end = content_to_process:find("<tool_call[^>]*>", cursor)
+    if not tag_start then return nil end
+
+    local text_before = content_to_process:sub(cursor, tag_start - 1)
+    local _, tick_count = text_before:gsub("```", "")
+    
+    local tag_str = content_to_process:sub(tag_start, tag_end)
+    local is_self_closing = tag_str:match("/%s*>$")
+    local close_start, close_end, inner
+
+    if is_self_closing then
+        inner = ""
+        close_start = tag_end + 1
+        close_end = tag_end
+    else
+        close_start, close_end = content_to_process:find("</tool_call%s*>", tag_end + 1)
+        local next_open = content_to_process:find("<tool_call", tag_end + 1)
+        
+        if next_open and (not close_start or next_open < close_start) then
+            close_start = next_open
+            close_end = next_open - 1
+            inner = content_to_process:sub(tag_end + 1, close_start - 1)
+        elseif not close_start then 
+            inner = content_to_process:sub(tag_end + 1)
+            close_end = #content_to_process
+        else 
+            inner = content_to_process:sub(tag_end + 1, close_start - 1) 
+        end
+    end
+
+    -- Se for impar, é block de código markdown falando SOBRE a tag, ignoramos
+    if tick_count % 2 ~= 0 then
+        return { is_invalid = true, text_before = text_before, raw_tag = tag_str, inner = inner, close_end = close_end, close_start = close_start }
+    end
+
+    local name = get_attr(tag_str, "name")
+    local path = get_attr(tag_str, "path")
+    local query = get_attr(tag_str, "query")
+    local start_line = get_attr(tag_str, "start")
+    local end_line = get_attr(tag_str, "end")
+
+    -- Fallback se a IA mandou como JSON dentro do XML
+    if not name or name == "" then
+        local ok, json = pcall(vim.fn.json_decode, vim.trim(inner))
+        if ok and type(json) == "table" then
+            name = json.name
+            if type(json.arguments) == "table" then
+                path = json.arguments.path; query = json.arguments.query
+                start_line = json.arguments.start or json.arguments.start_line
+                end_line = json.arguments["end"] or json.arguments.end_line
+                inner = json.arguments.command or json.arguments.content or json.arguments.code or inner
+            end
+        end
+    end
+
+    local clean_inner = M.clean_inner_content(inner, name)
+
+    return {
+        is_invalid = false,
+        text_before = text_before,
+        raw_tag = tag_str,
+        name = name,
+        path = path,
+        query = query,
+        start_line = start_line,
+        end_line = end_line,
+        inner = clean_inner,
+        close_start = close_start,
+        close_end = close_end
+    }
+end
+
+return M
+======= ./lua/multi_context/config.lua =========
+-- lua/multi_context/config.lua
+local M = {}
+
+M.defaults = {
+    user_name     = "User",
+    config_path   = vim.fn.stdpath("config") .. "/context_apis.json",
+    api_keys_path = vim.fn.stdpath("config") .. "/api_keys.json",
+    default_api   = nil,
+    appearance    = {
+        border = "rounded",
+        width  = 0.7,
+        height = 0.7,
+        title  = " 🤖 MultiContext AI ",
+    },
+}
+
+M.options = vim.deepcopy(M.defaults)
+
+M.bootstrap = function()
+    -- 1. Cria chaves padrão se não existir
+    if vim.fn.filereadable(M.options.api_keys_path) == 0 then
+        local default_keys = {
+            openai = "sk-...",
+            anthropic = "sk-ant-...",
+            gemini = "AIzaSy..."
+        }
+        local f = io.open(M.options.api_keys_path, "w")
+        if f then
+            f:write(vim.fn.json_encode(default_keys))
+            f:close()
+            vim.notify("\n[MultiContext] Bem-vindo! Criamos o arquivo api_keys.json. Por favor, insira suas chaves.", vim.log.levels.INFO)
+        end
+    end
+
+    -- 2. Cria config de provedores padrão se não existir
+    if vim.fn.filereadable(M.options.config_path) == 0 then
+        local default_apis = {
+            default_api = "openai",
+            fallback_mode = true,
+            apis = {
+                {
+                    name = "openai",
+                    model = "gpt-4o",
+                    api_type = "openai",
+                    url = "https://api.openai.com/v1/chat/completions",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        Authorization = "Bearer {API_KEY}"
+                    },
+                    num_tries = 3,["include_in_fall-back_mode"] = true
+                }
+            }
+        }
+        local f = io.open(M.options.config_path, "w")
+        if f then
+            local raw = vim.fn.json_encode(default_apis)
+            f:write(raw)
+            f:close()
+            pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw), M.options.config_path)) end)
+            vim.notify("[MultiContext] Arquivo context_apis.json criado com configurações padrão.", vim.log.levels.INFO)
+        end
+    end
+end
+
+function M.setup(user_opts)
+    M.options = vim.tbl_deep_extend("force", M.defaults, user_opts or {})
+    if M.options.config_path then M.options.config_path = vim.fn.expand(M.options.config_path) end
+    if M.options.api_keys_path then M.options.api_keys_path = vim.fn.expand(M.options.api_keys_path) end
+    
+    -- 3. MIGRAÇÃO DE AGENTES (Personas -> Skills)
+    local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
+    if vim.fn.filereadable(agents_file) == 1 then
+        local lines = vim.fn.readfile(agents_file)
+        local ok, parsed = pcall(vim.fn.json_decode, table.concat(lines, "\n"))
+        if ok and type(parsed) == "table" then
+            local changed = false
+            for _, v in pairs(parsed) do
+                if v.use_tools ~= nil then
+                    if v.use_tools == true then
+                        v.skills = {"list_files", "search_code", "read_file", "replace_lines", "edit_file", "run_shell", "rewrite_chat_buffer", "get_diagnostics"}
+                    else
+                        v.skills = {}
+                    end
+                    v.use_tools = nil
+                    changed = true
+                end
+            end
+            if changed then vim.fn.writefile({vim.fn.json_encode(parsed)}, agents_file); vim.notify("[MultiContext] Agentes migrados para o novo formato de Skills!", vim.log.levels.INFO) end
+        end
+    end
+
+    -- Chama a auto-configuração no start do plugin
+    M.bootstrap()
+end
+
+M.load_api_config = function()
+    local f = io.open(M.options.config_path, 'r')
+    if not f then return nil end
+    local content = f:read('*a'); f:close()
+    local ok, parsed = pcall(vim.fn.json_decode, content)
+    return ok and parsed or nil
+end
+
+M.load_api_keys = function()
+    local f = io.open(M.options.api_keys_path, 'r')
+    if not f then return {} end
+    local content = f:read('*a'); f:close()
+    local ok, parsed = pcall(vim.fn.json_decode, content)
+    return ok and parsed or {}
+end
+
+M.save_api_config = function(cfg)
+    local raw = vim.fn.json_encode(cfg)
+    local formatted = vim.fn.system(string.format("echo %s | jq .", vim.fn.shellescape(raw)))
+    if vim.v.shell_error ~= 0 then formatted = raw end
+    local f = io.open(M.options.config_path, 'w')
+    if not f then return false end
+    f:write(formatted); f:close()
+    return true
+end
+
+M.set_selected_api = function(api_name)
+    local cfg = M.load_api_config()
+    if not cfg then return false end
+    cfg.default_api = api_name
+    return M.save_api_config(cfg)
+end
+
+M.get_api_names = function()
+    local cfg = M.load_api_config()
+    if not cfg then return {} end
+    local names = {}
+    for _, a in ipairs(cfg.apis) do table.insert(names, a.name) end
+    return names
+end
+
+M.get_current_api = function()
+    local cfg = M.load_api_config()
+    if not cfg then return "" end
+    return cfg.default_api or ""
+end
+
+return M
+======= ./lua/multi_context/api_handlers.lua =========
+-- lua/multi_context/api_handlers.lua
+local M = {}
+local transport = require('multi_context.transport')
+
+M.gemini = {
+    make_request = function(api_config, messages, api_keys, _, callback)
+        local api_key = api_keys[api_config.name] or ""
+        if api_key == "" then
+            callback("\n[ERRO]: Chave não encontrada.", nil, false)
+            callback(nil, nil, true)
+            return
+        end
+        local contents = {}; local system_instruction = nil
+        for _, msg in ipairs(messages) do
+            if msg.role == "system" then
+                system_instruction = { parts = { { text = msg.content } } }
+            else
+                table.insert(contents, {
+                    role = (msg.role == "user") and "user" or "model",
+                    parts = { { text = msg.content } }
+                })
+            end
+        end
+        local payload = { contents = contents }
+        if system_instruction then payload.systemInstruction = system_instruction end
+        local tmp_file = transport.write_payload_to_tmp(payload)
+        local cmd = transport.build_curl_cmd(api_config, api_key, tmp_file, true)
+        transport.run_http_stream(cmd, tmp_file,
+            function(data, ctx, cb)
+                ctx.buffer = ctx.buffer .. table.concat(data, "\n")
+                local chunks, rest = transport.extract_text_chunks(ctx.buffer)
+                for _, txt in ipairs(chunks) do cb(txt, nil, false) end
+                ctx.buffer = rest
+            end,
+            function(full_res)
+                if full_res:match('"error"') then
+                    local ok, dec = pcall(vim.fn.json_decode, full_res)
+                    if ok and dec.error and dec.error.message then
+                        return "**[ERRO GEMINI]:** " .. dec.error.message
+                    end
+                end
+            end,
+            callback)
+    end
+}
+
+M.openai = {
+    make_request = function(api_config, messages, api_keys, _, callback)
+        local api_key = api_keys[api_config.name] or ""
+        local payload = {
+            model = api_config.model,
+            messages = messages,
+            stream = true,
+            stream_options = { include_usage = true }
+        }
+        local tmp_file = transport.write_payload_to_tmp(payload)
+        local cmd = transport.build_curl_cmd(api_config, api_key, tmp_file, true)
+        transport.run_http_stream(cmd, tmp_file,
+            function(data, ctx, cb)
+                for _, line in ipairs(data) do
+                    if line:match("^data: ") and not line:match("%[DONE%]") then
+                        local ok, dec = pcall(vim.fn.json_decode, line:sub(7))
+                        if ok then
+                            if dec.choices and dec.choices[1] and dec.choices[1].delta
+                                and type(dec.choices[1].delta.content) == "string" then
+                                cb(dec.choices[1].delta.content, nil, false)
+                            end
+                            if type(dec.usage) == "table" then
+                                ctx.metrics = ctx.metrics or {}
+                                ctx.metrics.cache_read_input_tokens =
+                                    (type(dec.usage.prompt_tokens_details) == "table"
+                                        and dec.usage.prompt_tokens_details.cached_tokens)
+                                    or dec.usage.prompt_cache_hit_tokens or 0
+                            end
+                        end
+                    end
+                end
+            end,
+            function(full_res)
+                if full_res:match('"error"') and not full_res:match('"content"') then
+                    local ok, dec = pcall(vim.fn.json_decode, full_res)
+                    if ok and dec.error and dec.error.message then
+                        return "**[ERRO OPENAI]:** " .. dec.error.message
+                    end
+                end
+            end,
+            callback)
+    end
+}
+
+M.anthropic = {
+    make_request = function(api_config, messages, api_keys, _, callback)
+        local api_key = api_keys[api_config.name] or ""
+        local system_text = ""; local anthropic_msgs = {}
+        for _, msg in ipairs(messages) do
+            if msg.role == "system" then
+                system_text = system_text .. msg.content .. "\n"
+            else
+                table.insert(anthropic_msgs, { role = msg.role, content = msg.content })
+            end
+        end
+        local payload = {
+            model = api_config.model,
+            messages = anthropic_msgs,
+            system = { {
+                type = "text",
+                text = vim.trim(system_text),
+                cache_control = { type = "ephemeral" }
+            } },
+            stream = true,
+            max_tokens = 4096
+        }
+        local tmp_file = transport.write_payload_to_tmp(payload)
+        local cmd = transport.build_curl_cmd(api_config, api_key, tmp_file, true)
+        table.insert(cmd, "-H"); table.insert(cmd, "anthropic-version: 2023-06-01")
+        table.insert(cmd, "-H"); table.insert(cmd, "anthropic-beta: prompt-caching-2024-07-31")
+        transport.run_http_stream(cmd, tmp_file,
+            function(data, ctx, cb)
+                for _, line in ipairs(data) do
+                    if line:match("^data: ") then
+                        local ok, dec = pcall(vim.fn.json_decode, line:sub(7))
+                        if ok then
+                            if dec.type == "content_block_delta" and dec.delta and dec.delta.text then
+                                cb(dec.delta.text, nil, false)
+                            elseif dec.type == "message_start"
+                                and type(dec.message) == "table"
+                                and type(dec.message.usage) == "table" then
+                                ctx.metrics = ctx.metrics or {}
+                                ctx.metrics.cache_read_input_tokens =
+                                    dec.message.usage.cache_read_input_tokens or 0
+                            end
+                        end
+                    end
+                end
+            end,
+            function(full_res)
+                if full_res:match('"error"') and not full_res:match('"type": "message_start"') then
+                    local ok, dec = pcall(vim.fn.json_decode, full_res)
+                    if ok and dec.error and dec.error.message then
+                        return "**[ERRO ANTHROPIC]:** " .. dec.error.message
+                    end
+                end
+            end,
+            callback)
+    end
+}
+
+M.cloudflare = {
+    make_request = function(api_config, messages, api_keys, _, callback)
+        local api_key = api_keys[api_config.name] or ""
+        local tmp_file = transport.write_payload_to_tmp({ messages = messages })
+        if not api_config.headers then api_config.headers = {} end
+        if not api_config.headers["Authorization"] then
+            api_config.headers["Authorization"] = "Bearer {API_KEY}"
+        end
+        local cmd = transport.build_curl_cmd(api_config, api_key, tmp_file, false)
+        transport.run_http_stream(cmd, tmp_file,
+            function(data, ctx)
+                ctx.buffer = ctx.buffer .. table.concat(data, "\n")
+            end,
+            function(full_res, ctx, cb)
+                local ok, dec = pcall(vim.fn.json_decode, ctx.buffer)
+                if ok and dec and dec.result and dec.result.response then
+                    cb(dec.result.response, nil, false)
+                elseif ctx.buffer:match('"errors"') then
+                    return "**[ERRO CLOUDFLARE]:** Falha na API"
+                end
+            end,
+            callback)
+    end
+}
+
+return M
+======= ./lua/multi_context/agents =========
+======= ./lua/multi_context/agents/agents.json =========
+{
+  "coder": {
+    "description": "Desenvolvedor especialista. Pode ler, buscar e editar código com maestria.",
+    "system_prompt": "Você é um Desenvolvedor Especialista. Sua função é escrever scripts e refatorar o código seguindo as instruções dadas.",
+    "skills":["list_files", "search_code", "read_file", "replace_lines", "edit_file", "get_diagnostics"]
+  },
+  "arquiteto": {
+    "description": "Analisa o ambiente e a estrutura, mas não altera arquivos.",
+    "system_prompt": "Você é um Arquiteto de Software sênior. Para entender o projeto, use as ferramentas de listar e ler arquivos. Não gere código final. Apenas analise e proponha roteiros arquiteturais passo a passo.",
+    "skills": ["list_files", "search_code", "read_file"]
+  },
+  "engenheiro_de_prompt": {
+    "description": "Especialista em compressão de contexto e gestão de tokens. Limpa e resume o chat.",
+    "system_prompt": "Você é um Especialista em Otimização de Janela de Contexto (Context Window Management). Sua única função é analisar chats gigantes e usar a ferramenta rewrite_chat_buffer para substituir o histórico inteiro por uma versão otimizada.",
+    "skills": ["rewrite_chat_buffer"]
+  },
+  "inspetor_cli": {
+    "description": "Especialista em terminal. Roda comandos de bash/git para auditar problemas.",
+    "system_prompt": "Você é um Especialista em DevOps. Para diagnosticar problemas ou compilar, você deve usar a ferramenta run_shell e rodar os comandos apropriados.",
+    "skills": ["list_files", "read_file", "run_shell"]
+  }
+}
+======= ./lua/multi_context/transport.lua =========
+-- lua/multi_context/transport.lua
+local M = {}
+
+_G.MultiContextTempFiles = _G.MultiContextTempFiles or {}
+
+local function decode_json_string(s)
+    s = s:gsub("\\n", "\n"):gsub("\\t", "\t"):gsub("\\r", "\r"):gsub('\\"', '"')
+    s = s:gsub("\\u(%x%x%x%x)", function(hex) return vim.fn.nr2char(tonumber(hex, 16)) end)
+    return s:gsub("\\\\", "\\")
+end
+
+local function extract_text_chunks(buffer)
+    local results = {}; local remaining = buffer
+    while true do
+        local pos_start, pos_end = remaining:find('"text"%s*:%s*"')
+        if not pos_start then break end
+        local str_start = pos_end + 1
+        local str_end = nil; local i = str_start
+        while i <= #remaining do
+            local ch = remaining:sub(i, i)
+            if ch == '\\' then i = i + 2
+            elseif ch == '"' then str_end = i; break
+            else i = i + 1 end
+        end
+        if not str_end then break end
+        local inner_str = remaining:sub(str_start, str_end - 1)
+        local ok, decoded = pcall(vim.fn.json_decode, '"' .. inner_str .. '"')
+        if ok and type(decoded) == "string" then table.insert(results, decoded)
+        else table.insert(results, decode_json_string(inner_str)) end
+        remaining = remaining:sub(str_end + 1)
+    end
+    return results, remaining
+end
+
+local function build_curl_cmd(api_config, api_key, tmp_file, stream)
+    local cmd = { "curl", "-s", "-L", "-X", "POST" }
+    if stream then table.insert(cmd, "-N") end
+    local url = api_config.url
+    if api_config.api_type == "gemini" and stream then
+        url = url:gsub(":generateContent", ":streamGenerateContent") .. "?key=" .. api_key
+    end
+    table.insert(cmd, url)
+    for k, v in pairs(api_config.headers or {}) do
+        table.insert(cmd, "-H")
+        table.insert(cmd, k .. ": " .. v:gsub("{API_KEY}", api_key))
+    end
+    table.insert(cmd, "-d")
+    table.insert(cmd, "@" .. tmp_file)
+    return cmd
+end
+
+local function write_payload_to_tmp(payload)
+    local tmp_file = os.tmpname()
+    table.insert(_G.MultiContextTempFiles, tmp_file)
+    local f = io.open(tmp_file, "w")
+    if f then f:write(vim.fn.json_encode(payload)); f:close() end
+    return tmp_file
+end
+
+M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callback)
+    local full_response = ""
+    local context = { buffer = "", metrics = nil }
+    local job_id = vim.fn.jobstart(cmd, {
+        on_stdout = function(_, data)
+            if not data then return end
+            for _, line in ipairs(data) do full_response = full_response .. line .. "\n" end
+            if process_stdout then process_stdout(data, context, callback) end
+        end,
+        on_exit = function()
+            pcall(os.remove, tmp_file)
+            local err_msg = extract_error(full_response, context, callback)
+            if err_msg then callback("\n\n" .. err_msg .. "\n", nil, false) end
+            callback(nil, nil, true, context.metrics)
+        end
+    })
+    callback(nil, nil, false, nil, job_id)
+end
+
+M.extract_text_chunks = extract_text_chunks
+M.write_payload_to_tmp = write_payload_to_tmp
+M.build_curl_cmd = build_curl_cmd
+
+return M
+======= ./lua/multi_context/api_selector.lua =========
+-- api_selector.lua
+-- Popup flutuante para selecionar a API padrão.
+-- Usa config para leitura/escrita e ui/highlights para visuais.
+local api = vim.api
+local M   = {}
+
+M.selector_buf      = nil
+M.selector_win      = nil
+M.api_list          = {}
+M.current_selection = 1
+
+M.open_api_selector = function()
+    local config = require('multi_context.config')
+    M.api_list   = config.get_api_names()
+    if #M.api_list == 0 then
+        vim.notify("Nenhuma API configurada.", vim.log.levels.WARN)
+        return
+    end
+
+    local current = config.get_current_api()
+    M.current_selection = 1
+    for i, name in ipairs(M.api_list) do
+        if name == current then M.current_selection = i; break end
+    end
+
+    M.selector_buf = api.nvim_create_buf(false, true)
+
+    local width  = 60
+    local height = math.min(#M.api_list + 5, 22)
+    local row    = math.floor((vim.o.lines   - height) / 2)
+    local col    = math.floor((vim.o.columns - width)  / 2)
+
+    M.selector_win = api.nvim_open_win(M.selector_buf, true, {
+        relative  = "editor",
+        width     = width,
+        height    = height,
+        row       = row,
+        col       = col,
+        style     = "minimal",
+        border    = "rounded",
+        title     = " Selecionar API ",
+        title_pos = "center",
+    })
+
+    vim.bo[M.selector_buf].buftype    = "nofile"
+    vim.bo[M.selector_buf].modifiable = true
+
+    M._render()
+    M._keymaps()
+end
+
+M._render = function()
+    if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
+
+    local config  = require('multi_context.config')
+    local hl      = require('multi_context.ui.highlights')
+    local current = config.get_current_api()
+
+    local lines = {
+        "Selecione a API para usar nas requisições:",
+        "  j/k navegar   Enter selecionar   q sair",
+        "",
+    }
+    for i, name in ipairs(M.api_list) do
+        local cursor = (i == M.current_selection) and "❯ " or "  "
+        local tag    = (name == current)           and " (selecionada)" or ""
+        table.insert(lines, cursor .. name .. tag)
+    end
+    table.insert(lines, "")
+    table.insert(lines, "  API atual: " .. current)
+
+    vim.bo[M.selector_buf].modifiable = true
+    api.nvim_buf_set_lines(M.selector_buf, 0, -1, false, lines)
+    hl.apply_selector(M.selector_buf, M.api_list)
+end
+
+M._keymaps = function()
+    if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
+    local function mk(k, fn)
+        api.nvim_buf_set_keymap(M.selector_buf, "n", k, "",
+            { callback = fn, noremap = true, silent = true })
+    end
+    mk("j",     function() M._move(1)  end)
+    mk("k",     function() M._move(-1) end)
+    mk("<CR>",  M._select)
+    mk("q",     M._close)
+    mk("<Esc>", M._close)
+end
+
+M._move = function(dir)
+    local n = M.current_selection + dir
+    if n >= 1 and n <= #M.api_list then
+        M.current_selection = n
+        M._render()
+    end
+end
+
+M._select = function()
+    local config = require('multi_context.config')
+    local name   = M.api_list[M.current_selection]
+    if config.set_selected_api(name) then
+        vim.notify("API selecionada: " .. name, vim.log.levels.INFO)
+        require('multi_context.ui.popup').update_title()
+        M._close()
+    else
+        vim.notify("Erro ao selecionar: " .. name, vim.log.levels.ERROR)
+    end
+end
+
+M._close = function()
+    if M.selector_win and api.nvim_win_is_valid(M.selector_win) then
+        api.nvim_win_close(M.selector_win, true)
+    end
+    M.selector_buf      = nil
+    M.selector_win      = nil
+    M.api_list          = {}
+    M.current_selection = 1
+end
+
+return M
+======= ./lua/multi_context/utils.lua =========
+-- lua/multi_context/utils.lua
+local M   = {}
+local api = vim.api
+
+M.estimate_tokens = function(buf)
+    if not buf or not api.nvim_buf_is_valid(buf) then return 0 end
+    local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+    local char_count = 0
+    for _, line in ipairs(lines) do
+        char_count = char_count + #line + 1
+    end
+    return math.floor(char_count / 4)
+end
+
+M.export_to_workspace = function(content, existing_filename)
+    local filename = existing_filename
+    if not filename then
+        local timestamp = os.date("%Y%m%d_%H%M%S")
+        
+        -- MÁGICA: Busca a raiz do projeto atual
+        local root = vim.fn.system("git rev-parse --show-toplevel")
+        if vim.v.shell_error == 0 then
+            root = root:gsub("\n", "")
+        else
+            root = vim.fn.getcwd() -- Fallback caso não seja repositório git
+        end
+        
+        local chat_dir = root .. "/.mctx_chats"
+        
+        if vim.fn.isdirectory(chat_dir) == 0 then
+            vim.fn.mkdir(chat_dir, "p")
+        end
+        filename = chat_dir .. "/chat_" .. timestamp .. ".mctx"
+    end
+    
+    vim.cmd("edit " .. filename)
+    
+    local new_buf = vim.api.nvim_get_current_buf()
+    vim.bo[new_buf].filetype = "multicontext_chat"
+    
+    local lines = M.split_lines(content)
+    vim.api.nvim_buf_set_lines(new_buf, 0, -1, false, lines)
+    vim.bo[new_buf].modified = true
+    
+    local last_line = vim.api.nvim_buf_line_count(new_buf)
+    vim.api.nvim_win_set_cursor(0, { last_line, 0 })
+    vim.cmd("stopinsert")
+    
+    require('multi_context.ui.highlights').apply_chat(new_buf)
+    require('multi_context.ui.popup').create_folds(new_buf)
+    
+    local km = { noremap = true, silent = true }
+    vim.api.nvim_buf_set_keymap(new_buf, "i", "@", "@<Esc><Cmd>lua require('multi_context.agents').open_agent_selector()<CR>", km)
+    vim.api.nvim_buf_set_keymap(new_buf, "n", "<A-x>", "<Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
+    vim.api.nvim_buf_set_keymap(new_buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
+
+    return filename
+end
+
+M.split_lines = function(s)
+    if not s or s == "" then return {} end
+    -- Usa a API nativa e otimizada do Neovim (não gera arrays com posições vazias fantasmas)
+    return vim.split(s, "\n", { plain = true })
+end
+
+M.insert_after = function(buf, line_idx, lines)
+    local target = (line_idx == -1) and api.nvim_buf_line_count(buf) or line_idx
+    api.nvim_buf_set_lines(buf, target, target, false, lines)
+end
+
+M.copy_code_block = function()
+    local buf    = api.nvim_get_current_buf()
+    local cursor = api.nvim_win_get_cursor(0)[1]
+    local lines  = api.nvim_buf_get_lines(buf, 0, -1, false)
+    local s, e   = nil, nil
+    for i = cursor, 1, -1 do
+        if lines[i] and lines[i]:match("^```") then s = i; break end
+    end
+    for i = cursor, #lines do
+        if lines[i] and lines[i]:match("^```") and i ~= s then e = i; break end
+    end
+    if s and e then
+        vim.fn.setreg('+', table.concat(api.nvim_buf_get_lines(buf, s, e - 1, false), "\n"))
+        vim.notify("Código copiado!")
+    else
+        vim.notify("Nenhum bloco de código encontrado.", vim.log.levels.WARN)
+    end
+end
+
+M.apply_highlights        = function(b) require('multi_context.ui.highlights').apply_chat(b) end
+M.get_git_diff            = function()  return require('multi_context.context_builders').get_git_diff() end
+M.get_tree_context        = function()  return require('multi_context.context_builders').get_tree_context() end
+M.get_all_buffers_content = function()  return require('multi_context.context_builders').get_all_buffers_content() end
+M.find_last_user_line     = function(b) return require('multi_context.conversation').find_last_user_line(b) end
+M.load_api_config         = function()  return require('multi_context.config').load_api_config() end
+M.load_api_keys           = function()  return require('multi_context.config').load_api_keys() end
+M.set_selected_api        = function(n) return require('multi_context.config').set_selected_api(n) end
+M.get_api_names           = function()  return require('multi_context.config').get_api_names() end
+M.get_current_api         = function()  return require('multi_context.config').get_current_api() end
+
+return M
+======= ./lua/multi_context/context_builders.lua =========
+local M = {}
+local api = vim.api
+
+local function strip_ansi(s) return s:gsub("\27%[[%d;]*m", ""):gsub("\27%[[%d;]*[A-Za-z]", "") end
+
+-- FASE 1: Validação Rigorosa de Arquivo (Tamanho e Binário)
+local function read_file_safe(filepath)
+    local stat = vim.loop.fs_stat(filepath)
+    if not stat then return nil end
+    
+    -- Ignora > 100KB
+    if stat.size > 100 * 1024 then
+        return { "=== AVISO: ARQUIVO IGNORADO (Maior que 100KB) ===" }
+    end
+    
+    -- Heurística simples para detectar binários: checa NULL bytes no começo
+    local fd = vim.loop.fs_open(filepath, "r", 438)
+    if fd then
+        local chunk = vim.loop.fs_read(fd, 1024, 0)
+        vim.loop.fs_close(fd)
+        if chunk and chunk:find("\0") then
+            return { "=== AVISO: ARQUIVO BINÁRIO IGNORADO ===" }
+        end
+    end
+    return vim.fn.readfile(filepath)
+end
+
+M.get_git_diff = function()
+    vim.fn.system("git rev-parse --show-toplevel")
+    if vim.v.shell_error ~= 0 then return "=== Não é um repositório Git ===" end
+    local diff = vim.fn.system("git -c color.ui=never -c color.diff=never diff HEAD")
+    return "=== GIT DIFF ===\n" .. strip_ansi(diff)
+end
+
+M.get_tree_context = function()
+    local dir   = vim.fn.expand('%:p:h')
+    local tree  = strip_ansi(vim.fn.system("tree -f --noreport " .. vim.fn.shellescape(dir)))
+    local ctx   = { "=== TREE E CONTEÚDO ===", tree }
+    local found = vim.fn.split(vim.fn.system("find " .. vim.fn.shellescape(dir) .. " -maxdepth 2 -type f"), "\n")
+    for _, f in ipairs(found) do
+        if not f:match("/%.git/") and f ~= "" then
+            table.insert(ctx, ""); table.insert(ctx, "== Arquivo: " .. f .. " ==")
+            local lines = read_file_safe(f)
+            if lines then for _, l in ipairs(lines) do table.insert(ctx, l) end end
+        end
+    end
+    return table.concat(ctx, "\n")
+end
+
+M.get_all_buffers_content = function()
+    local result = {}
+    for _, bufnr in ipairs(api.nvim_list_bufs()) do
+        if api.nvim_buf_is_loaded(bufnr) then
+            local name = api.nvim_buf_get_name(bufnr)
+            local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+            if #lines > 0 and name ~= "" then
+                table.insert(result, "=== Buffer: " .. name .. " ===")
+                vim.list_extend(result, lines)
+                table.insert(result, "")
+            end
+        end
+    end
+    return table.concat(result, "\n")
+end
+
+M.get_current_buffer = function()
+    local buf = api.nvim_get_current_buf()
+    return "=== BUFFER ATUAL ===\n" .. table.concat(api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
+end
+
+M.get_visual_selection = function(line1, line2)
+    local buf = api.nvim_get_current_buf()
+    local s = tonumber(line1) or vim.fn.getpos("'<")[2]
+    local e = tonumber(line2) or vim.fn.getpos("'>")[2]
+    if s > e then s, e = e, s end
+    return "=== SELEÇÃO (linhas " .. s .. "-" .. e .. ") ===\n" .. table.concat(api.nvim_buf_get_lines(buf, s - 1, e, false), "\n")
+end
+
+M.get_folder_context = function()
+    local dir = vim.fn.getcwd()
+    local found = vim.fn.split(vim.fn.system("find " .. vim.fn.shellescape(dir) .. " -maxdepth 1 -type f"), "\n")
+    local ctx = { "=== CONTEÚDO DA PASTA ATUAL (" .. dir .. ") ===" }
+    for _, f in ipairs(found) do
+        if not f:match("/%.git/") and f ~= "" then
+            table.insert(ctx, ""); table.insert(ctx, "== Arquivo: " .. f .. " ==")
+            local lines = read_file_safe(f)
+            if lines then for _, l in ipairs(lines) do table.insert(ctx, l) end end
+        end
+    end
+    return table.concat(ctx, "\n")
+end
+
+M.get_repo_context = function()
+    vim.fn.system("git rev-parse --show-toplevel")
+    if vim.v.shell_error ~= 0 then return "=== Não é um repositório Git ===" end
+    local root = vim.fn.system("git rev-parse --show-toplevel"):gsub("\n", "")
+    local tracked_files = vim.fn.split(vim.fn.system("git -C " .. vim.fn.shellescape(root) .. " ls-files"), "\n")
+    local ctx = { "=== CONTEÚDO DE TODO O REPOSITÓRIO GIT ===" }
+    for _, f in ipairs(tracked_files) do
+        if f ~= "" then
+            local full_path = root .. "/" .. f
+            table.insert(ctx, ""); table.insert(ctx, "== Arquivo: " .. f .. " ==")
+            local lines = read_file_safe(full_path)
+            if lines then for _, l in ipairs(lines) do table.insert(ctx, l) end end
+        end
+    end
+    return table.concat(ctx, "\n")
+end
+
+return M
+======= ./lua/multi_context/ui =========
+======= ./lua/multi_context/ui/highlights.lua =========
+local api = vim.api
+local M = {}
+
+M.define_groups = function()
+    vim.cmd("highlight default ContextSelectorTitle    gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextSelectorCurrent  gui=bold guifg=#B22222 guibg=NONE")
+    vim.cmd("highlight default ContextSelectorSelected gui=bold guifg=#FFFF00 guibg=NONE")
+    vim.cmd("highlight default ContextHeader gui=bold guifg=#FF4500 guibg=NONE")
+    vim.cmd("highlight default ContextUserAI gui=bold guifg=#0000CD guibg=NONE")
+    vim.cmd("highlight default ContextUser gui=bold guifg=#B22222 guibg=NONE")
+    vim.cmd("highlight default ContextCurrentBuffer gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextUpdateMessages gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextBoldText gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextApiInfo gui=bold guifg=#FFA500 guibg=NONE")
+end
+
+M.apply_chat = function(buf)
+    if not api.nvim_buf_is_valid(buf) then return end
+    
+    vim.api.nvim_buf_call(buf, function()
+        M.define_groups()
+        
+        vim.cmd("syntax match ContextHeader '^===.*'")
+        vim.cmd("syntax match ContextHeader '^== Arquivo:.*'")
+        vim.cmd("syntax match ContextCurrentBuffer '^## buffer atual ##'")
+        vim.cmd("syntax match ContextUpdateMessages '\\[mensagem enviada\\]'")
+        vim.cmd("syntax match ContextUpdateMessages '\\[Enviando requisição.*\\]'")
+        
+        -- CORREÇÃO: Usando o Regex nativo do Vim (.*)
+        -- 1. Pinta QUALQUER cabecalho "## QualquerNome >>" de Vermelho
+        vim.cmd("syntax match ContextUser '^## .* >>.*'")
+        
+        -- 2. Sobrescreve com Azul especificamente se for "## IA"
+        vim.cmd("syntax match ContextUserAI '^## IA.*'")
+        
+        vim.cmd("syntax match ContextApiInfo '^## API atual:.*'")
+        
+        vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
+        vim.cmd("syntax region ContextCodeBlock start='^```' end='^```'")
+        vim.cmd("highlight default link ContextCodeBlock String")
+        vim.cmd("highlight default link ContextBold ContextBoldText")
+    end)
+end
+
+M.apply_selector = function(buf, api_list)
+    if not api.nvim_buf_is_valid(buf) then return end
+    M.define_groups()
+    api.nvim_buf_add_highlight(buf, -1, "ContextSelectorTitle", 0, 0, -1)
+    api.nvim_buf_add_highlight(buf, -1, "ContextSelectorTitle", 1, 0, -1)
+
+    for i = 3, 3 + #api_list - 1 do
+        local line = api.nvim_buf_get_lines(buf, i, i + 1, false)[1]
+        if line then
+            if line:match("^❯") then api.nvim_buf_add_highlight(buf, -1, "ContextSelectorCurrent", i, 0, -1) end
+            if line:match("%(selecionada%)$") then api.nvim_buf_add_highlight(buf, -1, "ContextSelectorSelected", i, 0, -1) end
+        end
+    end
+
+    local total = api.nvim_buf_line_count(buf)
+    if total >= 2 then api.nvim_buf_add_highlight(buf, -1, "ContextSelectorTitle", total - 2, 0, -1) end
+end
+
+return M
+======= ./lua/multi_context/ui/scroller.lua =========
+-- lua/multi_context/ui/scroller.lua
+local api = vim.api
+local M = {}
+
+M.state = {
+    is_streaming = false,
+    is_following = true,
+    last_row = 0,
+    augroup = api.nvim_create_augroup("MultiContextScroller", { clear = true })
+}
+
+M.start_streaming = function(buf, win)
+    M.state.is_streaming = true
+    M.state.is_following = true
+    M.state.last_row = 0
+
+    if win and api.nvim_win_is_valid(win) and buf and api.nvim_buf_is_valid(buf) then
+        local lines = api.nvim_buf_line_count(buf)
+        pcall(api.nvim_win_set_cursor, win, {lines, 0})
+        M.state.last_row = lines
+    end
+
+    api.nvim_clear_autocmds({ group = M.state.augroup, buffer = buf })
+    api.nvim_create_autocmd("CursorMoved", {
+        group = M.state.augroup,
+        buffer = buf,
+        callback = function()
+            if not M.state.is_streaming then return end
+            if not api.nvim_win_is_valid(win) then return end
+            
+            local cursor_row = api.nvim_win_get_cursor(win)[1]
+            local total_lines = api.nvim_buf_line_count(buf)
+            
+            -- A SUA LÓGICA: Tem que estar estritamente na última linha para seguir!
+            if cursor_row == total_lines then
+                M.state.is_following = true
+            -- Qualquer subida real (mesmo que apenas 1 k) vai ser menor que a last_row
+            elseif cursor_row < M.state.last_row then
+                M.state.is_following = false
+            end
+            
+            M.state.last_row = cursor_row
+        end
+    })
+end
+
+M.on_chunk_received = function(buf, win)
+    if not M.state.is_streaming then return end
+    
+    if M.state.is_following then
+        if win and api.nvim_win_is_valid(win) and buf and api.nvim_buf_is_valid(buf) then
+            local lines = api.nvim_buf_line_count(buf)
+            pcall(api.nvim_win_set_cursor, win, {lines, 0})
+            vim.api.nvim_win_call(win, function()
+                vim.cmd("normal! G")
+            end)
+        end
+    end
+end
+
+M.stop_streaming = function(buf)
+    M.state.is_streaming = false
+    M.state.is_following = true
+    M.state.last_row = 0
+    pcall(api.nvim_clear_autocmds, { group = M.state.augroup, buffer = buf })
+end
+
+return M
+======= ./lua/multi_context/ui/popup.lua =========
+local api = vim.api
+local M   = {}
+
+M.popup_buf = nil
+M.popup_win = nil
+M.code_buf_before_popup = nil
+
+function M.create_popup(initial_content_or_bufnr)
+    -- RASTREAMENTO: Salva o buffer de código ativo antes do popup roubar o foco
+    if not (M.popup_win and api.nvim_win_is_valid(M.popup_win)) then
+        local cur = api.nvim_get_current_buf()
+        if vim.bo[cur].buftype == "" then
+            M.code_buf_before_popup = cur
+        end
+    end
+
+    if M.popup_win and api.nvim_win_is_valid(M.popup_win) then
+    end
+
+    local config = require('multi_context.config')
+    local hl     = require('multi_context.ui.highlights')
+    
+    local buf
+    
+    if type(initial_content_or_bufnr) == "number" and api.nvim_buf_is_valid(initial_content_or_bufnr) then
+        buf = initial_content_or_bufnr
+    else
+        buf = api.nvim_create_buf(false, true)
+        
+        vim.bo[buf].buftype   = 'nofile'
+        vim.bo[buf].bufhidden = 'hide'
+        vim.bo[buf].swapfile  = false
+        
+        local user_prefix = "## " .. config.options.user_name .. " >> "
+        if type(initial_content_or_bufnr) == "string" and initial_content_or_bufnr ~= "" then
+            local init_lines = vim.split(initial_content_or_bufnr, "\n", { plain = true })
+            api.nvim_buf_set_lines(buf, 0, -1, false, init_lines)
+            
+            local has_prompt = false
+            for i = #init_lines, 1, -1 do
+                if init_lines[i] ~= "" then
+                    if init_lines[i]:match("^## " .. config.options.user_name .. " >>") then
+                        has_prompt = true
+                    end
+                    break
+                end
+            end
+            
+            if not has_prompt then
+                api.nvim_buf_set_lines(buf, -1, -1, false, { "", user_prefix })
+            end
+        else
+            api.nvim_buf_set_lines(buf, 0, -1, false, { user_prefix })
+        end
+    end
+
+    M.popup_buf = buf
+    vim.bo[buf].filetype  = 'multicontext_chat'
+
+    local km = { noremap = true, silent = true }
+    api.nvim_buf_set_keymap(buf, "n", "<CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<C-CR>", "<Esc><Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<C-CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<S-CR>", "<Esc><Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<S-CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<A-b>", "<Cmd>lua require('multi_context.utils').copy_code_block()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<A-b>", "<Esc><Cmd>lua require('multi_context.utils').copy_code_block()<CR>a", km)
+    api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
+
+    api.nvim_buf_set_keymap(buf, "i", "@", "@<Esc><Cmd>lua require('multi_context.agents').open_agent_selector()<CR>", km)
+
+    api.nvim_buf_set_keymap(buf, "n", "<A-x>", "<Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
+
+    local width  = math.ceil(vim.o.columns * 0.8)
+    local height = math.ceil(vim.o.lines   * 0.8)
+    local row    = math.ceil((vim.o.lines   - height) / 2)
+    local col    = math.ceil((vim.o.columns - width)  / 2)
+
+    local win = api.nvim_open_win(buf, true, {
+        relative  = 'editor',
+        width     = width,
+        height    = height,
+        row       = row,
+        col       = col,
+        style     = 'minimal',
+        border    = 'rounded',
+        title     = " Multi_Context_Chat | ~0 tokens ",
+        title_pos = 'center',
+    })
+    M.popup_win = win
+
+    -- =======================================================
+    -- ATUALIZADOR AO VIVO: Modificado pelo usuário
+    -- =======================================================
+    api.nvim_create_autocmd({"TextChanged", "TextChangedI", "TextChangedP"}, {
+        buffer = buf,
+        callback = function()
+            require('multi_context.ui.popup').update_title()
+        end
+    })
+
+    api.nvim_create_autocmd("WinClosed", {
+        pattern  = tostring(win),
+        once     = true,
+        callback = function() M.popup_win = nil end,
+    })
+
+    local last_ln  = api.nvim_buf_line_count(buf)
+    local last_txt = api.nvim_buf_get_lines(buf, last_ln - 1, last_ln, false)[1] or ""
+    api.nvim_win_set_cursor(win, { last_ln, #last_txt })
+
+    hl.apply_chat(buf)
+    M.create_folds(buf)
+    
+    M.update_title()
+
+    return buf, win
+end
+
+function M.fold_text()
+    local lines_count = vim.v.foldend - vim.v.foldstart + 1
+    local preview = ""
+    for i = vim.v.foldstart, vim.v.foldend do
+        local l = vim.fn.getline(i)
+        if l:match("%S") then
+            preview = vim.trim(l)
+            break
+        end
+    end
+    return "    ↳ ⋯ [" .. lines_count .. " linhas ocultas] ⋯  " .. preview
+end
+
+function M.create_folds(buf)
+    if not buf or not api.nvim_buf_is_valid(buf) then return end
+
+    local config = require('multi_context.config')
+    local user_name = config.options.user_name or "User"
+
+    vim.schedule(function()
+        if not api.nvim_buf_is_valid(buf) then return end
+
+        local windows = vim.fn.win_findbuf(buf)
+        for _, win in ipairs(windows) do
+            if api.nvim_win_is_valid(win) then
+                vim.api.nvim_win_call(win, function()
+                    vim.cmd("setlocal foldmethod=manual")
+                    vim.cmd("setlocal foldexpr=")
+                    vim.cmd("setlocal foldtext=v:lua.require('multi_context.ui.popup').fold_text()")
+                    pcall(vim.cmd, 'normal! zE')
+
+                    local total_lines = vim.api.nvim_buf_line_count(buf)
+                    local headers = {}
+
+                    for lnum = 1, total_lines do
+                        local line = vim.api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1]
+                        if line and (line:match("^===") or line:match("^== Arquivo:") or 
+                            line:match("^## " .. user_name .. " >>") or line:match("^## IA")) then
+                            table.insert(headers, lnum)
+                        end
+                    end
+
+                    for idx, h_lnum in ipairs(headers) do
+                        local header_text = vim.api.nvim_buf_get_lines(buf, h_lnum - 1, h_lnum, false)[1]
+
+                        if not header_text:match("^## " .. user_name) then
+                            local start_fold = h_lnum + 1
+                            local end_fold = total_lines
+
+                            if idx < #headers then
+                                end_fold = headers[idx + 1] - 1
+                            end
+
+                            if end_fold >= start_fold then
+                                pcall(vim.cmd, string.format("%d,%dfold", start_fold, end_fold))
+                                pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                            end
+                        end
+                    end
+
+                    for i = #headers, 1, -1 do
+                        local h_lnum = headers[i]
+                        local l = vim.api.nvim_buf_get_lines(buf, h_lnum - 1, h_lnum, false)[1]
+                        if l and l:match("^## IA") then
+                            pcall(vim.cmd, string.format("silent! %dfoldopen!", h_lnum + 1))
+                            break
+                        end
+                    end
+
+                    local win_height = vim.api.nvim_win_get_height(win)
+                    local target_scrolloff = math.floor(win_height / 3)
+                    local current_so = vim.wo.scrolloff
+
+                    vim.wo.scrolloff = target_scrolloff
+                    pcall(vim.cmd, "normal! zb")
+                    vim.wo.scrolloff = current_so
+                end)
+            end
+        end
+    end)
+end
+
+-- =======================================================
+-- MÁGICA VISUAL: Altera o Título da Janela Dinamicamente
+-- =======================================================
+function M.update_title()
+    if not M.popup_buf or not api.nvim_buf_is_valid(M.popup_buf) then return end
+    if not M.popup_win or not api.nvim_win_is_valid(M.popup_win) then return end
+    
+    local ok, conf = pcall(api.nvim_win_get_config, M.popup_win)
+    if ok and conf.relative and conf.relative ~= "" then
+        local utils = require('multi_context.utils')
+        local tokens = utils.estimate_tokens(M.popup_buf)
+        
+        local new_title = string.format(" Multi_Context_Chat | ~%d tokens ", tokens)
+        pcall(api.nvim_win_set_config, M.popup_win, { title = new_title, title_pos = 'center' })
+    end
+end
+
+return M
+======= ./lua/multi_context/agents.lua =========
+-- lua/multi_context/agents.lua
+local api = vim.api
+local M = {}
+
+M.agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
+
+M.load_agents = function()
+    if vim.fn.filereadable(M.agents_file) == 0 then
+        local curr_file = debug.getinfo(1, "S").source:sub(2)
+        local default_agents_file = vim.fn.fnamemodify(curr_file, ":h") .. "/agents/agents.json"
+        
+        if vim.fn.filereadable(default_agents_file) == 1 then
+            local lines = vim.fn.readfile(default_agents_file)
+            vim.fn.writefile(lines, M.agents_file)
+            vim.notify("[MultiContext] Arquivo base de Agentes instalado em: " .. M.agents_file, vim.log.levels.INFO)
+        else
+            vim.fn.writefile({"{}"}, M.agents_file)
+        end
+    end
+
+    local file = io.open(M.agents_file, 'r')
+    if not file then return {} end
+    local content = file:read('*a')
+    file:close()
+    local ok, parsed = pcall(vim.fn.json_decode, content)
+    return ok and parsed or {}
+end
+
+M.get_agent_names = function()
+    local agents = M.load_agents()
+    local names = {}
+    for name, _ in pairs(agents) do table.insert(names, name) end
+    table.sort(names)
+    return names
+end
+
+M.selector_buf = nil; M.selector_win = nil; M.current_selection = 1; M.api_list = {}; M.parent_win = nil
+
+M.open_agent_selector = function()
+    M.api_list = M.get_agent_names()
+    if #M.api_list == 0 then return end
+    M.parent_win = api.nvim_get_current_win()
+    M.current_selection = 1
+    M.selector_buf = api.nvim_create_buf(false, true)
+    M.selector_win = api.nvim_open_win(M.selector_buf, true, {
+        relative = "cursor", row = 1, col = 0, width = 30, height = #M.api_list,
+        style = "minimal", border = "rounded",
+    })
+    vim.bo[M.selector_buf].buftype = "nofile"
+    M._render(); M._keymaps()
+end
+
+M._render = function()
+    if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
+    local lines = {}
+    for i, name in ipairs(M.api_list) do
+        local cursor = (i == M.current_selection) and "❯ " or "  "
+        table.insert(lines, cursor .. name)
+    end
+    vim.bo[M.selector_buf].modifiable = true
+    api.nvim_buf_set_lines(M.selector_buf, 0, -1, false, lines)
+    local ns = api.nvim_create_namespace("mc_agents")
+    api.nvim_buf_clear_namespace(M.selector_buf, ns, 0, -1)
+    api.nvim_buf_add_highlight(M.selector_buf, ns, "ContextSelectorCurrent", M.current_selection - 1, 0, -1)
+end
+
+M._keymaps = function()
+    if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
+    local mk = function(k, fn) api.nvim_buf_set_keymap(M.selector_buf, "n", k, "", { callback = fn, noremap = true, silent = true }) end
+    mk("j", function() M._move(1) end); mk("k", function() M._move(-1) end)
+    mk("<CR>", M._select); mk("<Esc>", M._close); mk("q", M._close)
+end
+
+M._move = function(dir)
+    local n = M.current_selection + dir
+    if n >= 1 and n <= #M.api_list then M.current_selection = n; M._render() end
+end
+
+M._select = function()
+    local name = M.api_list[M.current_selection]
+    M._close_win_only()
+    if M.parent_win and api.nvim_win_is_valid(M.parent_win) then
+        api.nvim_set_current_win(M.parent_win)
+        local row, col = unpack(api.nvim_win_get_cursor(0))
+        local line = api.nvim_get_current_line()
+        local new_line = string.sub(line, 1, col + 1) .. name .. string.sub(line, col + 2)
+        api.nvim_set_current_line(new_line)
+        api.nvim_win_set_cursor(0, {row, col + 1 + #name})
+        api.nvim_feedkeys("a", "n", true)
+    end
+end
+
+M._close_win_only = function()
+    if M.selector_win and api.nvim_win_is_valid(M.selector_win) then api.nvim_win_close(M.selector_win, true) end
+    M.selector_buf = nil; M.selector_win = nil
+end
+M._close = function()
+    M._close_win_only()
+    if M.parent_win and api.nvim_win_is_valid(M.parent_win) then api.nvim_set_current_win(M.parent_win); api.nvim_feedkeys("a", "n", true) end
+end
+
+return M
+======= ./lua/multi_context/tool_runner.lua =========
+-- lua/multi_context/tool_runner.lua
+local M = {}
+local tools = require('multi_context.tools')
+local react_loop = require('multi_context.react_loop')
+
+local valid_tools = {
+    list_files = true, read_file = true, search_code = true,
+    edit_file = true, run_shell = true, replace_lines = true,
+    rewrite_chat_buffer = true, get_diagnostics = true
+}
+
+local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
+local function is_dangerous(cmd)
+    if not cmd then return false end
+    for _, pat in ipairs(dangerous_commands) do if cmd:match(pat) then return true end end
+    return false
+end
+
+M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
+    local name = tool_data.name
+    local clean_inner = tool_data.inner
+
+    if not valid_tools[name] then
+        local err_msg = string.format("Ferramenta '%s' não existe.", tostring(name))
+        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, err_msg)
+        return out, false, false, nil, nil
+    end
+
+    -- ==========================================
+    -- GATEKEEPER DE SKILLS (Autorização)
+    -- ==========================================
+    local agents = require('multi_context.agents').load_agents()
+    local active_agent = react_loop.state.active_agent
+    local is_authorized = false
+
+    if active_agent and agents[active_agent] and agents[active_agent].skills then
+        for _, skill in ipairs(agents[active_agent].skills) do
+            if skill == name then is_authorized = true; break end
+        end
+    else
+        is_authorized = true -- Sem agente ativo (Modo Root/Manual), permite tudo
+    end
+
+    if not is_authorized then
+        local err_msg = string.format("Operação negada. O agente @%s não possui a Skill '%s'.", tostring(active_agent), tostring(name))
+        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
+        return out, false, false, nil, nil -- Não aborta o loop inteiro, mas devolve o erro
+    end
+    -- ==========================================
+
+    local choice = 1
+    if not approve_all_ref.value then
+        if is_autonomous then
+            if name == "run_shell" and is_dangerous(clean_inner) then
+                vim.notify("🛡️ Comando PERIGOSO detectado.", vim.log.levels.ERROR)
+                choice = vim.fn.confirm("Permitir execução PERIGOSA: " .. clean_inner, "&Sim\n&Nao\n&Todos\n&Cancelar", 2)
+            elseif name == "rewrite_chat_buffer" then
+                choice = vim.fn.confirm("Agente solicitou DESTRUIR E COMPRIMIR o chat. Permitir?", "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
+            else choice = 3; approve_all_ref.value = true end
+        else
+            choice = vim.fn.confirm(string.format("Agente requisitou [%s]. Permitir?", tostring(name)), "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
+        end
+    end
+
+    if choice == 3 then approve_all_ref.value = true; choice = 1 end
+    if choice == 4 or choice == 0 then
+        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>', tostring(tool_data.raw_tag), clean_inner)
+        return out, true, false, nil, nil
+    end
+
+    local result = ""
+    local should_continue_loop = false
+    local pending_rewrite_content = nil
+    local backup_made = nil
+
+    if choice == 2 then
+        result = "Acesso NEGADO pelo usuario."
+        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, result)
+        return out, false, false, nil, nil
+    end
+
+    if name == "rewrite_chat_buffer" then
+        backup_made = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+        local backup_file = vim.fn.stdpath("data") .. "/mctx_backup_" .. os.date("%Y%m%d_%H%M%S") .. ".mctx"
+        vim.fn.writefile(backup_made, backup_file)
+        pending_rewrite_content = clean_inner
+        result = "Buffer reescrito."
+    elseif name == "list_files" then 
+        should_continue_loop = true; result = tools.list_files()
+    elseif name == "read_file" then 
+        should_continue_loop = true; result = tools.read_file(tool_data.path)
+    elseif name == "search_code" then 
+        should_continue_loop = true; result = tools.search_code(tool_data.query)
+    elseif name == "edit_file" then 
+        result = tools.edit_file(tool_data.path, clean_inner)
+        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
+    elseif name == "run_shell" then 
+        result = tools.run_shell(clean_inner)
+    elseif name == "replace_lines" then 
+        result = tools.replace_lines(tool_data.path, tool_data.start_line, tool_data.end_line, clean_inner)
+        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
+    elseif name == "get_diagnostics" then 
+        should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
+    end
+    
+    local output = ""
+    if not pending_rewrite_content then
+        output = string.format('<tool_call name="%s" path="%s">\n%s\n</tool_call>\n\n>[Sistema]: Resultado:\n```text\n%s\n```', tostring(name), tostring(tool_data.path or ""), clean_inner, result)
+    end
+
+    return output, false, should_continue_loop, pending_rewrite_content, backup_made
+end
+
+return M
+======= ./lua/multi_context/refactorate.sh =========
+#!/bin/bash
+
+echo "Instalando fechamento implícito de tags no parser do MultiContext..."
+
+python3 - << 'EOF'
+import os
+
+init_path = os.path.expanduser("~/.config/nvim/lua/multi_context/init.lua")
+
+try:
+    with open(init_path, "r") as f:
+        content = f.read()
+
+    start_marker = "local is_self_closing = tag_str:match"
+    end_marker = "local attrs_str, name"
+
+    start_idx = content.find(start_marker)
+    end_idx = content.find(end_marker, start_idx)
+
+    if start_idx != -1 and end_idx != -1:
+        before = content[:start_idx]
+        after = content[end_idx:]
+        
+        new_block = r"""local is_self_closing = tag_str:match("/%s*>$")
+        local close_start, close_end, inner
+        if is_self_closing then
+            inner = ""
+            close_start = tag_end + 1
+            close_end = tag_end
+        else
+            close_start, close_end = content_to_process:find("</tool_call%s*>", tag_end + 1)
+            local next_open = content_to_process:find("<tool_call", tag_end + 1)
+            
+            -- MÁGICA: Se outra tag abrir antes dessa fechar, forçamos o fechamento implícito!
+            if next_open and (not close_start or next_open < close_start) then
+                close_start = next_open
+                close_end = next_open - 1
+                inner = content_to_process:sub(tag_end + 1, close_start - 1)
+            elseif not close_start then 
+                inner = content_to_process:sub(tag_end + 1)
+                close_end = #content_to_process
+            else 
+                inner = content_to_process:sub(tag_end + 1, close_start - 1) 
+            end
+        end
+        
+        """
+        
+        with open(init_path, "w") as f:
+            f.write(before + new_block + after)
+        print("✅ Fechamento implícito de tags instalado com sucesso!")
+    else:
+        print("⚠️ Não foi possível encontrar a área de substituição.")
+
+except Exception as e:
+    print(f"❌ Erro ao modificar init.lua: {e}")
+EOF
+
+echo "Pronto! O plugin agora é à prova de encadeamento maluco."
+======= ./lua/multi_context/api_client.lua =========
+-- lua/multi_context/api_client.lua
+local M = {}
+
+local function build_queue(cfg)
+    local queue = {}
+    for _, a in ipairs(cfg.apis) do
+        if a.name == cfg.default_api then table.insert(queue, a); break end
+    end
+    if cfg.fallback_mode then
+        for _, a in ipairs(cfg.apis) do
+            if a['include_in_fall-back_mode'] and a.name ~= cfg.default_api then table.insert(queue, a) end
+        end
+    end
+    return queue
+end
+
+M.execute = function(messages, on_start, on_chunk, on_done, on_error)
+    local config = require('multi_context.config')
+    local api_handlers = require('multi_context.api_handlers')
+
+    local cfg = config.load_api_config()
+    if not cfg then on_error("Configuração de APIs não encontrada."); return end
+
+    local queue = build_queue(cfg)
+    if #queue == 0 then on_error("Nenhuma API na fila. Configure com :ContextApis"); return end
+
+    local api_keys = config.load_api_keys()
+
+    local function try(idx)
+        if idx > #queue then on_error("Erro em todas as APIs da fila."); return end
+        local entry = queue[idx]
+        local handler = api_handlers[entry.api_type or "openai"]
+        
+        if not handler then try(idx + 1); return end
+        
+        handler.make_request(entry, messages, api_keys, nil, function(chunk, err, done, metrics, job_id)
+            vim.schedule(function()
+                if job_id and on_start then on_start(job_id) end
+                if err then try(idx + 1); return end
+                if chunk then on_chunk(chunk, entry) end
+                if done then on_done(entry, metrics) end
+            end)
+        end)
+    end
+
+    try(1)
+end
+
+return M
+======= ./lua/multi_context/init.lua =========
+-- lua/multi_context/init.lua
+local api = vim.api
+local utils = require('multi_context.utils')
+local popup = require('multi_context.ui.popup')
+local commands = require('multi_context.commands')
+local config = require('multi_context.config')
+
+local tool_parser = require('multi_context.tool_parser')
+local tool_runner = require('multi_context.tool_runner')
+local react_loop = require('multi_context.react_loop')
+local prompt_parser = require('multi_context.prompt_parser')
+local scroller = require('multi_context.ui.scroller')
+
+local M = {}
+M.popup_buf = popup.popup_buf
+M.popup_win = popup.popup_win
+M.current_workspace_file = nil
+
+M.setup = function(opts) if config and config.setup then config.setup(opts) end end
+
+M.ContextChatFull = commands.ContextChatFull
+M.ContextChatSelection = commands.ContextChatSelection
+M.ContextChatFolder = commands.ContextChatFolder
+M.ContextChatHandler = commands.ContextChatHandler
+M.ContextChatRepo = commands.ContextChatRepo
+M.ContextChatGit = commands.ContextChatGit
+M.ContextApis = commands.ContextApis
+M.ContextTree = commands.ContextTree
+M.ContextBuffers = commands.ContextBuffers
+M.TogglePopup = commands.TogglePopup
+
+M.ContextUndo = function()
+    local p = require('multi_context.ui.popup')
+    local buf = p.popup_buf
+    if not buf or not api.nvim_buf_is_valid(buf) then buf = api.nvim_get_current_buf() end
+    if react_loop.state.last_backup then
+        api.nvim_buf_set_lines(buf, 0, -1, false, react_loop.state.last_backup)
+        require('multi_context.ui.highlights').apply_chat(buf)
+        p.create_folds(buf)
+        p.update_title()
+        vim.notify("✅ Chat restaurado do último backup com sucesso!", vim.log.levels.INFO)
+    else
+        vim.notify("Nenhum backup de compressão encontrado nesta sessão.", vim.log.levels.WARN)
+    end
+end
+
+M.ToggleWorkspaceView = function()
+    local ui_popup = require('multi_context.ui.popup')
+    local is_popup = (ui_popup.popup_win and vim.api.nvim_win_is_valid(ui_popup.popup_win) and vim.api.nvim_get_current_win() == ui_popup.popup_win)
+    if is_popup then
+        local lines = vim.api.nvim_buf_get_lines(ui_popup.popup_buf, 0, -1, false)
+        vim.api.nvim_win_hide(ui_popup.popup_win)
+        M.current_workspace_file = utils.export_to_workspace(table.concat(lines, "\n"), M.current_workspace_file)
+    else
+        local cur_buf = vim.api.nvim_get_current_buf()
+        if vim.api.nvim_buf_get_name(cur_buf):match("%.mctx$") then
+            M.current_workspace_file = vim.api.nvim_buf_get_name(cur_buf)
+            ui_popup.create_popup(cur_buf)
+        else
+            vim.notify("Você não está em um arquivo de workspace (.mctx).", vim.log.levels.WARN)
+        end
+    end
+end
+
+local original_open_popup = popup.create_popup
+popup.create_popup = function(initial_content)
+    local b, w = original_open_popup(initial_content)
+    M.popup_buf = popup.popup_buf
+    M.popup_win = popup.popup_win
+    return b, w
+end
+
+M.TerminateTurn = function()
+    react_loop.reset_turn()
+    local p = require('multi_context.ui.popup')
+    local buf = p.popup_buf
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
+    
+    local cfg = require('multi_context.config')
+    local current_api = cfg.get_current_api()
+    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    
+    local next_prompt_lines = { "", "## API atual: " .. current_api, user_prefix .. " " }
+    
+    if react_loop.state.queued_tasks and react_loop.state.queued_tasks ~= "" then
+        table.insert(next_prompt_lines, "> [Checkpoint] Avalie a resposta acima. Pressione <CR> para continuar a fila:")
+        for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
+        react_loop.state.queued_tasks = nil
+    end
+    
+    vim.api.nvim_buf_set_lines(buf, -1, -1, false, next_prompt_lines)
+    p.create_folds(buf)
+    require('multi_context.ui.highlights').apply_chat(buf)
+    p.update_title()
+    
+    if p.popup_win and vim.api.nvim_win_is_valid(p.popup_win) then
+        vim.api.nvim_win_set_cursor(p.popup_win, { vim.api.nvim_buf_line_count(buf), #next_prompt_lines[#next_prompt_lines] })
+        vim.cmd("normal! zz"); vim.cmd("startinsert!")
+    end
+end
+
+local function get_context_md_content()
+    local root = vim.fn.system("git rev-parse --show-toplevel")
+    if vim.v.shell_error == 0 then root = root:gsub("\n", "") else root = vim.fn.getcwd() end
+    local filepath = root .. "/CONTEXT.md"
+    if vim.fn.filereadable(filepath) == 1 then return table.concat(vim.fn.readfile(filepath), "\n") end
+    return nil
+end
+
+function M.SendFromPopup()
+    if not popup.popup_buf or not api.nvim_buf_is_valid(popup.popup_buf) then return end
+    local buf = popup.popup_buf
+    local start_idx, _ = utils.find_last_user_line(buf)
+    if not start_idx then return end
+
+    local cfg = require('multi_context.config')
+    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    local lines = api.nvim_buf_get_lines(buf, start_idx, -1, false)
+    if lines[1] then lines[1] = lines[1]:gsub("^" .. user_prefix .. "%s*", "") end
+
+    local agents = require('multi_context.agents').load_agents()
+    local current_task_lines = {}; local queued_tasks_lines = {}; local found_agent_count = 0
+
+    for _, line in ipairs(lines) do
+        if not line:match("^> %[Checkpoint%]") then
+            local possible_agent = line:match("@([%w_]+)")
+            if possible_agent and agents[possible_agent] then found_agent_count = found_agent_count + 1 end
+            if found_agent_count <= 1 then table.insert(current_task_lines, line) else table.insert(queued_tasks_lines, line) end
+        end
+    end
+
+    local raw_user_text = table.concat(current_task_lines, "\n"):gsub("^%s*", ""):gsub("%s*$", "")
+    if #queued_tasks_lines > 0 then react_loop.state.queued_tasks = table.concat(queued_tasks_lines, "\n") end
+    if raw_user_text == "" then vim.notify("Digite algo antes de enviar.", vim.log.levels.WARN); return end
+
+    local parsed_intent = prompt_parser.parse_user_input(raw_user_text, agents)
+    
+    if parsed_intent.agent_name then
+        if parsed_intent.agent_name == "reset" then react_loop.state.active_agent = nil
+        else react_loop.state.active_agent = parsed_intent.agent_name end
+    end
+    if parsed_intent.is_autonomous then react_loop.state.is_autonomous = true end
+
+    local text_to_send = parsed_intent.text_to_send
+    local active_agent_name = react_loop.state.active_agent
+
+    local sending_msg = "[Enviando requisição" .. (active_agent_name and (" via @" .. active_agent_name) or "") .. "...]"
+    api.nvim_buf_set_lines(buf, -1, -1, false, { "", sending_msg })
+
+    local history_lines = api.nvim_buf_get_lines(buf, 0, start_idx, false)
+    local messages = require('multi_context.conversation').build_history(history_lines)
+    
+    local base_sys_prompt = "Você é um Engenheiro de Software Autônomo no Neovim."
+    local memory_context = get_context_md_content()
+    local system_prompt = prompt_parser.build_system_prompt(base_sys_prompt, memory_context, active_agent_name, agents)
+    
+    table.insert(messages, 1, { role = "system", content = system_prompt })
+    
+    if #messages > 1 and messages[#messages].role == "user" then
+        messages[#messages].content = messages[#messages].content .. "\n\n" .. text_to_send
+    else
+        table.insert(messages, { role = "user", content = text_to_send })
+    end
+
+    local response_started = false
+    local accumulated_text = ""
+    local current_ia_start_idx = nil
+    
+    local function remove_sending_msg()
+        local count = api.nvim_buf_line_count(buf)
+        local last_line = api.nvim_buf_get_lines(buf, count - 1, count, false)[1]
+        if last_line:match("%[Enviando requisi") then api.nvim_buf_set_lines(buf, count - 2, count, false, {}) end
+    end
+
+    scroller.start_streaming(buf, popup.popup_win)
+
+    require('multi_context.api_client').execute(messages, 
+        function(job_id)
+            react_loop.state.active_job_id = job_id
+            react_loop.state.user_aborted = false
+        end,
+        function(chunk, api_entry)
+            if not response_started then
+                remove_sending_msg()
+                local ia_title = "## IA (" .. api_entry.model .. ")" .. (active_agent_name and ("[@" .. active_agent_name .. "]") or "") .. " >> "
+                local count_before = api.nvim_buf_line_count(buf)
+                api.nvim_buf_set_lines(buf, -1, -1, false, { "", ia_title, "" })
+                current_ia_start_idx = count_before + 2
+                response_started = true
+            end
+            if type(chunk) == "string" and chunk ~= "" then
+                local lines_to_add = vim.split(chunk, "\n", {plain = true})
+                local count = api.nvim_buf_line_count(buf)
+                local last_line = api.nvim_buf_get_lines(buf, count - 1, count, false)[1]
+                lines_to_add[1] = last_line .. lines_to_add[1]
+                api.nvim_buf_set_lines(buf, count - 1, count, false, lines_to_add)
+                
+                scroller.on_chunk_received(buf, popup.popup_win)
+                
+                -- ===============================================
+                -- MONITORAMENTO LIVE (Auto-Halt)
+                -- ===============================================
+                accumulated_text = accumulated_text .. chunk
+                if accumulated_text:match("</tool_call>%s*$") then
+                    local tags = {}
+                    for n in accumulated_text:gmatch('<tool_call[^>]*name="([^"]+)"') do table.insert(tags, n) end
+                    local last_name = tags[#tags]
+                    if last_name and (last_name == "edit_file" or last_name == "replace_lines" or last_name == "run_shell") then
+                        react_loop.abort_stream(false)
+                    end
+                end
+                
+                if popup.popup_win and api.nvim_win_is_valid(popup.popup_win) then
+                    popup.update_title()
+                end
+            end
+        end,
+        function(api_entry, metrics)
+            scroller.stop_streaming(buf)
+            react_loop.state.active_job_id = nil
+            
+            -- Trata o Abort Manual <C-x> e Automático
+            if react_loop.state.user_aborted then
+                api.nvim_buf_set_lines(buf, -1, -1, false, { "", ">[Sistema]: 🛑 Geração interrompida pelo usuário." })
+                M.TerminateTurn()
+                return
+            end
+            
+            if not response_started then remove_sending_msg() end
+            if metrics and (metrics.cache_read_input_tokens or 0) > 0 then
+                vim.notify(string.format("⚡ Prompt Caching: %d tokens economizados!", metrics.cache_read_input_tokens), vim.log.levels.INFO)
+            end
+            
+            local b_lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+            local has_tool = false
+            local scan_start = current_ia_start_idx or 1
+            for i = scan_start, #b_lines do
+                if b_lines[i]:match("<tool_call") then has_tool = true; break end
+            end
+
+            if has_tool then vim.defer_fn(function() require('multi_context').ExecuteTools(current_ia_start_idx) end, 100)
+            else M.TerminateTurn() end
+        end,
+        function(err_msg)
+            scroller.stop_streaming(buf)
+            remove_sending_msg()
+            api.nvim_buf_set_lines(buf, -1, -1, false, { "", "**[ERRO]** " .. err_msg, "", user_prefix .. " " })
+            react_loop.state.is_autonomous = false
+        end
+    )
+end
+
+function M.ExecuteTools(ia_idx)
+    local p = require('multi_context.ui.popup')
+    local buf = p.popup_buf
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then buf = vim.api.nvim_get_current_buf() end
+
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    local last_ia_idx = ia_idx
+    
+    if not last_ia_idx then
+        last_ia_idx = 0
+        for i = #lines, 1, -1 do if lines[i]:match("^## IA %(") then last_ia_idx = i; break end end
+        if last_ia_idx == 0 then
+            for i = #lines, 1, -1 do if lines[i]:match("^## IA") then last_ia_idx = i; break end end
+        end
+    end
+    if last_ia_idx == 0 then return end
+
+    local prefix_lines = {}; for i = 1, last_ia_idx - 1 do table.insert(prefix_lines, lines[i]) end
+    local process_lines = {}; for i = last_ia_idx, #lines do table.insert(process_lines, lines[i]) end
+    
+    local content_to_process = tool_parser.sanitize_payload(table.concat(process_lines, "\n"))
+
+    local new_content = ""
+    local cursor = 1
+    local has_changes = false
+    local abort_all = false
+    local approve_all_ref = { value = false }
+    local pending_rewrite_content = nil
+    local should_continue_loop = false 
+
+    while cursor <= #content_to_process do
+        local parsed_tag = tool_parser.parse_next_tool(content_to_process, cursor)
+        
+        if not parsed_tag then
+            new_content = new_content .. content_to_process:sub(cursor)
+            break
+        end
+
+        new_content = new_content .. parsed_tag.text_before
+
+        if parsed_tag.is_invalid or not parsed_tag.name or parsed_tag.name == "" then
+            new_content = new_content .. parsed_tag.raw_tag .. (parsed_tag.inner or "") .. (parsed_tag.close_start and "</tool_call>" or "")
+            cursor = parsed_tag.close_end + 1
+            goto continue
+        end
+
+        if abort_all then
+            new_content = new_content .. parsed_tag.raw_tag .. parsed_tag.inner .. "</tool_call>"
+            cursor = parsed_tag.close_end + 1
+            goto continue
+        end
+
+        has_changes = true
+
+        do
+            local tag_output, should_abort, cont_loop, rew_content, backup_made = tool_runner.execute(
+                parsed_tag, 
+                react_loop.state.is_autonomous, 
+                approve_all_ref, 
+                buf
+            )
+
+            if backup_made then react_loop.state.last_backup = backup_made end
+            if rew_content then pending_rewrite_content = rew_content end
+            if cont_loop then should_continue_loop = true end
+
+            if should_abort then
+                abort_all = true
+                new_content = new_content .. parsed_tag.raw_tag .. parsed_tag.inner .. "</tool_call>"
+            else
+                new_content = new_content .. tag_output
+                if tag_output:match(">%[Sistema%]: ERRO %- Ferramenta") then
+                    react_loop.state.is_autonomous = false
+                    should_continue_loop = false
+                end
+            end
+        end
+
+        ::continue::
+        cursor = parsed_tag.close_end + 1
+    end
+
+    if not has_changes or abort_all then M.TerminateTurn(); return end
+
+    if pending_rewrite_content then
+        local rewrite_lines = vim.split(pending_rewrite_content, "\n", {plain=true})
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, rewrite_lines)
+    else
+        local final_lines = {}
+        for _, l in ipairs(prefix_lines) do table.insert(final_lines, l) end
+        for _, l in ipairs(vim.split(new_content, "\n", {plain=true})) do table.insert(final_lines, l) end
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, final_lines)
+    end
+
+    if pending_rewrite_content or (not should_continue_loop and not react_loop.state.is_autonomous) then
+        M.TerminateTurn(); return
+    end
+
+    if react_loop.check_circuit_breaker() then
+        M.TerminateTurn(); return
+    end
+
+    local cfg = require('multi_context.config')
+    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    
+    local sys_msg = "[Sistema]: Informação coletada. Analise o resultado e continue."
+    if not should_continue_loop and react_loop.state.is_autonomous then
+        sys_msg = "[Sistema]: Ação executada. Verifique se o passo foi concluído ou prossiga para a próxima ação."
+    end
+
+    local b_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    table.insert(b_lines, ""); table.insert(b_lines, user_prefix .. " " .. sys_msg)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, b_lines)
+    require('multi_context.ui.highlights').apply_chat(buf)
+
+    vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
+end
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    callback = function()
+        if _G.MultiContextTempFiles then for _, f in ipairs(_G.MultiContextTempFiles) do pcall(os.remove, f) end end
+    end
+})
+
+vim.cmd([[
+command! -range Context lua require('multi_context').ContextChatHandler(<line1>, <line2>)
+command! -nargs=0 ContextUndo lua require('multi_context').ContextUndo()
+command! -nargs=0 ContextFolder lua require('multi_context').ContextChatFolder()
+command! -nargs=0 ContextRepo lua require('multi_context').ContextChatRepo()
+command! -nargs=0 ContextGit lua require('multi_context').ContextChatGit()
+command! -nargs=0 ContextApis lua require('multi_context').ContextApis()
+command! -nargs=0 ContextTree lua require('multi_context').ContextTree()
+command! -nargs=0 ContextBuffers lua require('multi_context').ContextBuffers()
+command! -nargs=0 ContextToggle lua require('multi_context').TogglePopup()
+]])
+
+return M
+======= ./lua/multi_context/tools.lua =========
+-- lua/multi_context/tools.lua
+local M = {}
+
+local function get_repo_root()
+    vim.fn.system("git rev-parse --show-toplevel")
+    if vim.v.shell_error ~= 0 then return nil end
+    return vim.fn.system("git rev-parse --show-toplevel"):gsub("\n", "")
+end
+
+local function resolve_path(path)
+    if not path or path == "" then return nil end
+    path = vim.trim(path)
+    if path:sub(1, 1) == "/" then return path end
+    local root = get_repo_root() or vim.fn.getcwd()
+    return root .. "/" .. path
+end
+
+M.list_files = function()
+    local root = get_repo_root()
+    if not root then return "ERRO: Fora de um repositório Git." end
+    local files = vim.fn.system("git -C " .. vim.fn.shellescape(root) .. " ls-files")
+    return "Arquivos rastreados pelo Git:\n" .. files
+end
+
+M.read_file = function(path)
+    local full_path = resolve_path(path)
+    if not full_path then return "ERRO: Atributo 'path' obrigatório." end
+    if vim.fn.filereadable(full_path) == 0 then return "ERRO: Arquivo não encontrado (" .. full_path .. ")" end
+    return table.concat(vim.fn.readfile(full_path), "\n")
+end
+
+M.edit_file = function(path, content)
+    local full_path = resolve_path(path)
+    if not full_path then return "ERRO: O atributo 'path' é obrigatório." end
+    
+    local dir = vim.fn.fnamemodify(full_path, ":h")
+    if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
+
+    -- Blindagem: Limpa lixo de formatação da IA
+    content = content:gsub("\r", "")
+    content = content:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
+    
+    local lines = vim.split(content, "\n", {plain=true})
+    local bufnr = vim.fn.bufnr(full_path)
+    
+    if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+        vim.api.nvim_buf_call(bufnr, function() vim.cmd("silent! write") end)
+    else
+        if vim.fn.writefile(lines, full_path) == -1 then
+            return "ERRO: Falha de permissão ao salvar " .. full_path
+        end
+    end
+    vim.notify("✅ Arquivo criado/salvo: " .. full_path, vim.log.levels.INFO)
+    return "SUCESSO: Arquivo " .. full_path .. " foi sobrescrito/criado."
+end
+
+M.run_shell = function(cmd)
+    if not cmd or cmd == "" then return "ERRO: Comando não fornecido." end
+    local root = get_repo_root() or vim.fn.getcwd()
+    cmd = vim.trim(cmd)
+    local bash_script = string.format("cd %s && %s", vim.fn.shellescape(root), cmd)
+    local out = vim.fn.system({'bash', '-c', bash_script})
+    local status = vim.v.shell_error ~= 0 and ("FALHA (Código " .. vim.v.shell_error .. ")") or "SUCESSO"
+    return string.format("Comando:\n%s\n\nStatus: %s\nSaída:\n%s", cmd, status, out)
+end
+
+M.search_code = function(query)
+    local root = get_repo_root()
+    if not root then return "ERRO: Fora de repositório Git." end
+    if not query or query == "" then return "ERRO: 'query' obrigatória." end
+    local cmd = string.format("git -C %s grep -n -i -I %s", vim.fn.shellescape(root), vim.fn.shellescape(query))
+    local out = vim.fn.system(cmd)
+    if vim.v.shell_error ~= 0 or out == "" then return "Nenhum resultado para: " .. query end
+    if #out > 3000 then out = out:sub(1, 3000) .. "\n\n... [AVISO: TRUNCADO] ..." end
+    return "Resultados da busca:\n" .. out
+end
+
+M.replace_lines = function(path, start_line, end_line, content)
+    local full_path = resolve_path(path)
+    if not full_path then return "ERRO: 'path' obrigatório." end
+    start_line, end_line = tonumber(start_line), tonumber(end_line)
+    if not start_line or not end_line then return "ERRO: 'start' e 'end' devem ser números." end
+    
+    local bufnr = vim.fn.bufnr(full_path)
+    local lines = {}
+    if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+        lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    else
+        if vim.fn.filereadable(full_path) == 0 then return "ERRO: Arquivo não encontrado." end
+        lines = vim.fn.readfile(full_path)
+    end
+    
+    if start_line < 1 then start_line = 1 end
+    if end_line > #lines then end_line = #lines end
+    
+    content = content:gsub("\r", "")
+    content = content:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
+    local new_lines = content == "" and {} or vim.split(content, "\n", {plain=true})
+    
+    local final_lines = {}
+    for i = 1, start_line - 1 do table.insert(final_lines, lines[i]) end
+    for _, l in ipairs(new_lines) do table.insert(final_lines, l) end
+    for i = end_line + 1, #lines do table.insert(final_lines, lines[i]) end
+    
+    if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
+        vim.api.nvim_buf_call(bufnr, function() vim.cmd("silent! write") end)
+    else
+        vim.fn.writefile(final_lines, full_path)
+    end
+    vim.notify("✅ Edição aplicada: " .. full_path, vim.log.levels.INFO)
+    return "SUCESSO: Edição nas linhas " .. start_line .. " a " .. end_line
+end
+
+M.get_diagnostics = function(path)
+    -- 1. Exige explicitamente o caminho do arquivo
+    if not path or path == "" or path == "nil" then
+        return "ERRO: O atributo 'path' é OBRIGATÓRIO. Ex: <tool_call name=\"get_diagnostics\" path=\"caminho/do/arquivo.lua\"></tool_call>"
+    end
+
+    -- 2. Resolve o caminho e carrega o buffer
+    path = vim.trim(path)
+    local full_path = resolve_path(path)
+    if not full_path then return "ERRO: 'path' inválido." end
+    
+    local bufnr = vim.fn.bufnr(full_path)
+    if bufnr == -1 then
+        if vim.fn.filereadable(full_path) == 0 then
+            return "ERRO: Arquivo não encontrado: " .. full_path
+        end
+        bufnr = vim.fn.bufadd(full_path)
+        if bufnr == 0 then return "ERRO: Não foi possível carregar o arquivo: " .. full_path end
+        vim.fn.bufload(bufnr)
+    end
+
+    -- 3. Verifica presença de LSP ativo
+    local has_lsp = vim.lsp.buf_is_attached and vim.lsp.buf_is_attached(bufnr)
+    if not has_lsp then
+        local clients = vim.lsp.get_clients and vim.lsp.get_clients({bufnr = bufnr}) or {}
+        has_lsp = #clients > 0
+    end
+
+    if has_lsp then
+        -- Aguarda o LSP recalcular diagnósticos (até 2s)
+        vim.wait(2000, function() return false end, 50)
+        vim.wait(300)
+    end
+
+    -- 4. Coleta diagnósticos
+    local diagnostics = vim.diagnostic.get(bufnr)
+    if not diagnostics or #diagnostics == 0 then
+        if not has_lsp then
+            return "AVISO: Nenhum servidor LSP ativo detectado para: " .. full_path
+        end
+        return "✅ Nenhum diagnóstico ou erro encontrado em: " .. full_path
+    end
+
+    -- 5. Formata e Trunca a resposta para proteger a janela de contexto
+    local MAX_DIAGS = 50
+    local MAX_BYTES = 3000
+    local severity_names = { [1] = "ERROR", [2] = "WARN", [3] = "INFO", [4] = "HINT" }
+    local out_lines = {}
+    local count = math.min(#diagnostics, MAX_DIAGS)
+
+    for i = 1, count do
+        local d = diagnostics[i]
+        local sev = severity_names[d.severity] or "?"
+        local msg = d.message or ""
+        local lnum = (d.lnum or 0) + 1
+        local col = (d.col or 0) + 1
+        local source = d.source or ""
+        table.insert(out_lines, string.format("L%d:C%d [%s] %s%s", lnum, col, sev, msg, source ~= "" and (" ("..source..")") or ""))
+    end
+
+    local result = "Diagnósticos para " .. full_path .. ":\n" .. table.concat(out_lines, "\n")
+
+    if #result > MAX_BYTES then
+        result = result:sub(1, MAX_BYTES) .. "\n\n[AVISO: TRUNCADO - " .. #diagnostics .. " diagnósticos no total, exibindo " .. count .. "]"
+    elseif #diagnostics > MAX_DIAGS then
+        result = result .. "\n\n[AVISO: " .. #diagnostics .. " diagnósticos no total, exibindo os primeiros " .. MAX_DIAGS .. "]"
+    end
+
+    return result
+end
+
+return M
+======= ./lua/multi_context/conversation.lua =========
+local M = {}
+local api = vim.api
+
+-- Regex hiper tolerantes para não quebrar em exports .mctx formatados de forma estranha
+local user_pat = "^##%s*([%w_]+)%s*>>"
+local ia_pat   = "^##%s*IA.*>>"
+
+M.find_last_user_line = function(buf)
+    local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+    for i = #lines, 1, -1 do
+        if lines[i]:match(user_pat) then return i - 1, lines[i] end
+    end
+    return nil
+end
+
+M.build_history = function(buf_or_lines)
+    local lines = type(buf_or_lines) == "table" and buf_or_lines or api.nvim_buf_get_lines(buf_or_lines, 0, -1, false)
+    local messages = {}; local role = nil; local acc = {}
+    local orphaned_text = {} -- NOVO: Guarda o texto injetado pelos comandos :Context
+
+    local function flush()
+        if role and #acc > 0 then
+            local text = table.concat(acc, "\n"):match("^%s*(.-)%s*$")
+            if text ~= "" then 
+                -- MÁGICA 1: Se houver texto injetado no topo (ex: git diff), mescla na 1ª msg do usuário
+                if role == "user" and #orphaned_text > 0 then
+                    text = table.concat(orphaned_text, "\n") .. "\n\n" .. text
+                    orphaned_text = {}
+                end
+                
+                -- MÁGICA 2: Previne 2 mensagens seguidas com mesmo papel (evita crash na Anthropic)
+                if #messages > 0 and messages[#messages].role == role then
+                    messages[#messages].content = messages[#messages].content .. "\n\n" .. text
+                else
+                    table.insert(messages, { role = role, content = text })
+                end
+            end
+        end
+        acc = {}
+    end
+
+    for _, line in ipairs(lines) do
+        if line:match(user_pat) then
+            flush(); role = "user"
+            local body = line:gsub(user_pat .. "%s*", "")
+            if body ~= "" then table.insert(acc, body) end
+        elseif line:match(ia_pat) then
+            flush(); role = "assistant"
+        elseif not line:match("^## API atual:") then
+            if role then 
+                table.insert(acc, line) 
+            else
+                -- Coleta texto antes da primeira tag (o contexto injetado pelos comandos :Context*)
+                if line:match("%S") then table.insert(orphaned_text, line) end
+            end
+        end
+    end
+    flush()
+    
+    -- Fallback: Se sobrou texto órfão e não havia NENHUMA tag anterior no histórico
+    if #orphaned_text > 0 then
+        local text = table.concat(orphaned_text, "\n"):match("^%s*(.-)%s*$")
+        if text ~= "" then
+            table.insert(messages, { role = "user", content = text })
+        end
+    end
+    
+    return messages
+end
+return M

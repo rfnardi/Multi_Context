@@ -26,7 +26,14 @@ M.read_file = function(path)
     local full_path = resolve_path(path)
     if not full_path then return "ERRO: Atributo 'path' obrigatório." end
     if vim.fn.filereadable(full_path) == 0 then return "ERRO: Arquivo não encontrado (" .. full_path .. ")" end
-    return table.concat(vim.fn.readfile(full_path), "\n")
+    
+    local lines = vim.fn.readfile(full_path)
+    local numbered_lines = {}
+    for i, line in ipairs(lines) do
+        table.insert(numbered_lines, string.format("%d | %s", i, line))
+    end
+    
+    return table.concat(numbered_lines, "\n")
 end
 
 M.edit_file = function(path, content)

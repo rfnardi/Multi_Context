@@ -10,7 +10,7 @@
 
 Diferente de plugins convencionais de autocompletar, o MultiContext atua como um engenheiro de software: ele navega no sistema, edita arquivos em background, roda testes no terminal e se auto-corrige usando um motor de raciocínio ReAct (Reasoning and Acting).
 
-> **Objetivo:** Acelerar o fluxo de trabalho permitindo que a IA construa, teste e valide código de ponta a ponta, com consumo extremamente otimizado de tokens de contexto.
+> **Objetivo:** Acelerar o fluxo de trabalho permitindo que a IA construa, teste e valide código de ponta a ponta, com consumo extremamente otimizado de tokens de contexto e alta resiliência a falhas de rede.
 
 ---
 
@@ -19,14 +19,23 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 | ✅ | Funcionalidade | Descrição |
 |:---:|---|---|
 | 🥷 | **Arquitetura de Skills** | Agentes seguem o Princípio do Menor Privilégio. O `@arquiteto` não consegue acidentalmente rodar o bash, bloqueado pelo Gatekeeper nativo. |
-| 🧩 | **Mini-Manuais Dinâmicos** | O prompt de sistema concatena a documentação `.md` apenas das habilidades autorizadas do agente, economizando centenas de tokens. |
-| 🔄 | **Motor Autônomo (ReAct)** | A IA encadeia ferramentas sozinha (flag `--auto`) com um *Circuit Breaker* de segurança de 15 iterações. |
-| ⚡ | **Prompt Caching Nativo** | Cache de contexto em servidores (Anthropic, DeepSeek, OpenAI) reduzindo custos draconianamente. |
-| 🔍 | **LSP Smart Push (Auto-LSP)** | Se a IA quebrar a sintaxe de um código, o plugin corta a execução na raiz, lê o erro do Neovim e força a IA a consertar imediatamente. |
-| 📜 | **Smart Auto-Scroll** | O texto desce automaticamente, mas **pausa silenciosamente** se você mover o cursor para cima para ler o histórico, retomando no final do buffer. |
+| 🛡️ | **Parser Anti-Alucinação** | Novo motor XML tolerante a falhas. Se a IA esquecer de fechar uma tag ou aninhar código errado, o plugin faz o "fechamento implícito" salvando a execução. |
+| 🔀 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (ex: Rate Limit da OpenAI), o plugin tenta automaticamente a próxima API da sua fila (ex: Claude ou DeepSeek) de forma invisível. |
+| ⚡ | **Prompt Caching Nativo** | Cache de contexto em servidores (Anthropic, DeepSeek, OpenAI) reduzindo custos draconianamente, notificado na interface. |
+| 🔄 | **Motor Autônomo (ReAct)** | A IA encadeia ferramentas sozinha (flag `--auto`) com um *Circuit Breaker* de segurança de 15 iterações e auto-corte de requisições desnecessárias. |
+| 🔍 | **LSP Smart Push (Auto-LSP)** | Se a IA quebrar a sintaxe de um código, o plugin lê o erro do Neovim em background e força a IA a consertar imediatamente na mesma iteração. |
+| 📜 | **Smart Auto-Scroll** | O texto desce automaticamente, mas **pausa silenciosamente** se você mover o cursor para ler o histórico, retomando ao descer para a última linha. |
 | 🛑 | **Job Control (Pânico)** | Pressione `<C-x>` a qualquer momento para assassinar a conexão com a API via `jobstop`. |
-| 🧠 | **Memória de Longo Prazo** | O arquivo `CONTEXT.md` atualiza e persiste decisões, atuando como "cérebro" do projeto. |
-| 🗑️ | **Garbage Collection Ativa** | Comprime buffers gigantes jogando fora logs inúteis para salvar memória (`:ContextUndo` suportado). |
+
+---
+
+## 🔌 Provedores Suportados (Zero Dependências)
+O plugin possui uma camada nativa de transporte HTTP (`curl`) super otimizada, com suporte nativo e tratamento rigoroso de formato para:
+- **Anthropic** (Claude 3.5 Sonnet) - *Com suporte nativo a Strict Role Enforcement*
+- **OpenAI** (GPT-4o)
+- **DeepSeek** (Coder V2 / V3)
+- **Google Gemini**
+- **Cloudflare AI**
 
 ---
 
@@ -36,7 +45,7 @@ O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará to
 
 ### Requisitos do Sistema
 - **Neovim 0.8+** (Para a API `vim.diagnostic` e float windows).
-- `curl` (Para requisições HTTP não-bloqueantes).
+- `curl` (Motor de rede assíncrono).
 - `git` e `tree` (Ferramentas base de extração de contexto).
 
 ### Instalando com `vim-plug` (Recomendado)
@@ -46,16 +55,11 @@ Adicione no seu `init.vim` ou gerenciador de plugins:
 Plug 'seu-usuario/multi_context_plugin'
 ```
 
-*Dica para Desenvolvimento:* Se o plugin estiver local, aponte a pasta:
-```vim
-Plug '~/repos/multi_context_plugin' 
-```
-
 Rode `:PlugInstall` e adicione o *setup*:
 
 ```lua
 require('multi_context').setup({
-  user_name = "Nardi", -- Seu nome no chat
+  user_name = "SeuNome", -- Seu nome no chat
 })
 ```
 
@@ -65,8 +69,8 @@ require('multi_context').setup({
 
 No primeiro uso, o plugin gerará 3 arquivos na pasta `stdpath("config")` (geralmente `~/.config/nvim/`):
 
-1. **`api_keys.json`**: Insira suas chaves (OpenAI, Anthropic, Gemini, DeepSeek).
-2. **`context_apis.json`**: Cadastre os endpoints e parâmetros dos seus modelos favoritos. Alterne entre eles via comando `:ContextApis`.
+1. **`api_keys.json`**: Insira suas chaves de acesso.
+2. **`context_apis.json`**: Cadastre os endpoints dos modelos. Aqui você pode ativar o `"fallback_mode": true` para criar filas de contingência.
 3. **`mctx_agents.json`**: Crie e customize seus próprios agentes e distribua permissões no array `"skills"`.
 
 ---
@@ -81,8 +85,9 @@ No primeiro uso, o plugin gerará 3 arquivos na pasta `stdpath("config")` (geral
 | `:ContextRepo` | Inicia a sessão mapeando todo o projeto do Git. |
 | `:ContextGit` | Envia as alterações não commitadas (`git diff`). |
 | `:ContextBuffers`| Envia todos os buffers de código carregados no Neovim. |
+| `:ContextApis` | ⚙️ **Abre o menu interativo para trocar rapidamente de IA base.** |
 | `:ContextTree` | Desenha a árvore do projeto no prompt. |
-| `:ContextUndo` | Restaura o buffer de chat após uma compressão destrutiva. |
+| `:ContextUndo` | Restaura o buffer de chat após uma compressão destrutiva da IA. |
 | `:ContextToggle` | Abre ou esconde a janela flutuante sem perder o histórico. |
 
 ---
@@ -98,30 +103,32 @@ No primeiro uso, o plugin gerará 3 arquivos na pasta `stdpath("config")` (geral
 | **`k` / `<C-u>`** | Normal | Pausa o Auto-Scroll direcionalmente para ler histórico. |
 | **`G`** | Normal | Retoma a leitura da última linha engatando o Auto-Scroll. |
 
-> **Modo Manual vs `--auto`:** Se a IA sugerir edição/shell sem a flag `--auto`, o Neovim exigirá sua confirmação em uma janela limpa `[Sim/Não/Todos]`. Com `--auto`, o loop funciona 100% invisível em background.
+> **Modo Manual vs `--auto`:** Se a IA sugerir edição/shell sem a flag `--auto`, o Neovim exigirá sua confirmação em uma janela limpa `[Sim/Não/Todos]`. Com `--auto`, o loop funciona invisível em background.
 
 ---
 
 ## 🏗️ Estrutura de Módulos (OSS Design)
 
-Totalmente reescrito na Fase 13 para respeitar *Single Responsibility Principle (SRP)*:
+O código foi rigorosamente refatorado seguindo o *Single Responsibility Principle (SRP)*:
 
 ```text
 lua/multi_context/
 ├── init.lua              # Monitoramento live e hooks de UI
-├── api_client.lua        # HTTP Assíncrono com injeção de Job_ID
-├── prompt_parser.lua     # Extrator de intenções e Montador JIT de Habilidades
+├── transport.lua         # 🌐 Novo motor nativo de rede via `curl` (Não-bloqueante)
+├── api_client.lua        # 🔀 Orquestrador de filas e Fallback Automático
+├── tool_parser.lua       # 🛡️ Sanitizador XML e reparador de tags
+├── prompt_parser.lua     # Montador dinâmico de restrições de sistema
 ├── tool_runner.lua       # Gatekeeper de Segurança e Injetor de LSP
 ├── react_loop.lua        # Gerente de Sessão (Circuit Breaker e Job Abort)
 ├── skills/               # Cartões modulares (.md) e Registry de permissões
-└── ui/                   # Smart Auto-Scroll e Popups
+└── ui/                   # Smart Auto-Scroll, Menus e Popups
 ```
 
 ---
 
 ## 🧪 Testes Automatizados (TDD)
 
-O plugin é coberto por testes robustos usando `plenary.nvim`. As lógicas textuais e matemáticas (Race Conditions de cursor) rodam de forma independente do editor visual.
+O plugin é mantido sob alta confiabilidade com suítes de teste usando `plenary.nvim`, garantindo que os lógicas de extração, rede e parser não quebrem o editor.
 ```bash
 make test
 ```
@@ -130,4 +137,4 @@ make test
 
 ## 📜 Licença
 
-Desenvolvido para hackers e entusiastas do Neovim. Licenciado sob a **MIT License** – veja o arquivo `LICENSE` para detalhes.
+Desenvolvido para hackers e entusiastas do Neovim. Licenciado sob a **MIT License**.

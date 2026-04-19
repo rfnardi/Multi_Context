@@ -22,7 +22,13 @@ local function read_file_safe(filepath)
             return { "=== AVISO: ARQUIVO BINÁRIO IGNORADO ===" }
         end
     end
-    return vim.fn.readfile(filepath)
+    
+    local lines = vim.fn.readfile(filepath)
+    local numbered = {}
+    for i, l in ipairs(lines) do
+        table.insert(numbered, string.format("%d | %s", i, l))
+    end
+    return numbered
 end
 
 M.get_git_diff = function()
@@ -55,7 +61,9 @@ M.get_all_buffers_content = function()
             local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
             if #lines > 0 and name ~= "" then
                 table.insert(result, "=== Buffer: " .. name .. " ===")
-                vim.list_extend(result, lines)
+                for i, l in ipairs(lines) do
+                    table.insert(result, string.format("%d | %s", i, l))
+                end
                 table.insert(result, "")
             end
         end
@@ -65,7 +73,12 @@ end
 
 M.get_current_buffer = function()
     local buf = api.nvim_get_current_buf()
-    return "=== BUFFER ATUAL ===\n" .. table.concat(api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
+    local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+    local numbered = {}
+    for i, l in ipairs(lines) do 
+        table.insert(numbered, string.format("%d | %s", i, l)) 
+    end
+    return "=== BUFFER ATUAL ===\n" .. table.concat(numbered, "\n")
 end
 
 M.get_visual_selection = function(line1, line2)
@@ -73,7 +86,14 @@ M.get_visual_selection = function(line1, line2)
     local s = tonumber(line1) or vim.fn.getpos("'<")[2]
     local e = tonumber(line2) or vim.fn.getpos("'>")[2]
     if s > e then s, e = e, s end
-    return "=== SELEÇÃO (linhas " .. s .. "-" .. e .. ") ===\n" .. table.concat(api.nvim_buf_get_lines(buf, s - 1, e, false), "\n")
+    
+    local lines = api.nvim_buf_get_lines(buf, s - 1, e, false)
+    local numbered = {}
+    for i, l in ipairs(lines) do 
+        table.insert(numbered, string.format("%d | %s", s + i - 1, l)) 
+    end
+    
+    return "=== SELEÇÃO (linhas " .. s .. "-" .. e .. ") ===\n" .. table.concat(numbered, "\n")
 end
 
 M.get_folder_context = function()

@@ -5,3 +5,4 @@
 .luarc.json
 mctx_backup_*.mctx
 .mctx_chats/
+./*.sh
