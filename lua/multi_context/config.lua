@@ -140,4 +140,14 @@ M.get_current_api = function()
     return cfg.default_api or ""
 end
 
+M.get_spawn_apis = function()
+    local cfg = M.load_api_config()
+    if not cfg or not cfg.apis then return {} end
+    local spawn_apis = {}
+    for _, a in ipairs(cfg.apis) do
+        if a.allow_spawn then table.insert(spawn_apis, a) end
+    end
+    return spawn_apis
+end
+
 return M
