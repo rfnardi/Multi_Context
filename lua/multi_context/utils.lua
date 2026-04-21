@@ -12,6 +12,105 @@ M.estimate_tokens = function(buf)
     return math.floor(char_count / 4)
 end
 
+
+M.build_workspace_content = function(buf, existing_filename)
+    local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+    local content = table.concat(lines, "\n")
+    
+    local session_id = existing_filename and string.match(existing_filename, "chat_(d+_d+).mctx")
+    local created_at = os.date("Y-m-dTH:M:S")
+    local updated_at = os.date("Y-m-dTH:M:S")
+
+    -- Se já for uma sessão antiga, extraímos o ID/Creation e removemos a tag suja
+    local existing_session = content:match("<mctx_session(.-)/>")
+    if existing_session then
+        local old_id = existing_session:match('id="([^"]+)"')
+        local old_created = existing_session:match('created="([^"]+)"')
+        if old_id then session_id = old_id end
+        if old_created then created_at = old_created end
+        content = content:gsub("<mctx_session.-/>s*", "")
+    end
+    
+    if not session_id then session_id = os.date("Ymd_HMS") end
+    
+    -- Limpa estado do swarm antigo e substitui
+    content = content:gsub("<swarm_state>.-</swarm_state>s*", "")
+    
+    local swarm = require('multi_context.swarm_manager')
+    local popup = require('multi_context.ui.popup')
+    
+    local state_data = { queue = swarm.state.queue or {}, reports = swarm.state.reports or {}, buffers = {} }
+    
+    if popup.swarm_buffers then
+        for i, sb in ipairs(popup.swarm_buffers) do
+            if i > 1 and sb.buf and api.nvim_buf_is_valid(sb.buf) then
+                local b_lines = api.nvim_buf_get_lines(sb.buf, 0, -1, false)
+                table.insert(state_data.buffers, { name = sb.name, status = sb.status, lines = b_lines })
+            end
+        end
+    end
+    
+    local ok, json_state = pcall(vim.fn.json_encode, state_data)
+    local swarm_xml = ""
+    if ok and json_state and json_state ~= "{}" then
+        swarm_xml = "\n<swarm_state>\n" .. json_state .. "\n</swarm_state>"
+    end
+    
+    local header = string.format('<mctx_session id="s" created="s" updated="s" />\n', session_id, created_at, updated_at)
+    local new_content = header .. vim.trim(content) .. "\n" .. swarm_xml
+    
+    local new_filename = existing_filename
+    if not new_filename then
+        local root = vim.fn.system("git rev-parse --show-toplevel")
+        if vim.v.shell_error == 0 then root = root:gsub("\n", "") else root = vim.fn.getcwd() end
+        local chat_dir = root .. "/.mctx_chats"
+        new_filename = chat_dir .. "/chat_" .. session_id .. ".mctx"
+    end
+    
+    return new_filename, new_content
+end
+
+M.load_workspace_state = function(buf)
+    local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+    local content = table.concat(lines, "\n")
+    
+    local swarm_state_str = content:match("<swarm_state>s*(.-)s*</swarm_state>")
+    if swarm_state_str then
+        local ok, parsed = pcall(vim.fn.json_decode, swarm_state_str)
+        if ok and type(parsed) == "table" then
+            local swarm = require('multi_context.swarm_manager')
+            local popup = require('multi_context.ui.popup')
+            
+            swarm.state.queue = parsed.queue or {}
+            swarm.state.reports = parsed.reports or {}
+            
+            if parsed.buffers then
+                for _, bdata in ipairs(parsed.buffers) do
+                    local exists = false
+                    if popup.swarm_buffers then
+                        for _, sb in ipairs(popup.swarm_buffers) do
+                            if sb.name == bdata.name then exists = true; break end
+                        end
+                    end
+                    if not exists then
+                        local new_buf = api.nvim_create_buf(false, true)
+                        vim.bo[new_buf].buftype   = 'nofile'
+                        vim.bo[new_buf].bufhidden = 'hide'
+                        vim.bo[new_buf].swapfile  = false
+                        vim.bo[new_buf].filetype  = 'multicontext_chat'
+                        api.nvim_buf_set_lines(new_buf, 0, -1, false, bdata.lines or {})
+                        
+                        if not popup.swarm_buffers then popup.swarm_buffers = {} end
+                        table.insert(popup.swarm_buffers, { buf = new_buf, name = bdata.name, status = bdata.status or "Restaurado" })
+                        require('multi_context.ui.highlights').apply_chat(new_buf)
+                        popup.create_folds(new_buf)
+                    end
+                end
+            end
+        end
+    end
+end
+
 M.export_to_workspace = function(content, existing_filename)
     local filename = existing_filename
     if not filename then

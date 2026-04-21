@@ -88,13 +88,14 @@ M.ToggleWorkspaceView = function()
     local ui_popup = require('multi_context.ui.popup')
     local is_popup = (ui_popup.popup_win and vim.api.nvim_win_is_valid(ui_popup.popup_win) and vim.api.nvim_get_current_win() == ui_popup.popup_win)
     if is_popup then
-        local lines = vim.api.nvim_buf_get_lines(ui_popup.popup_buf, 0, -1, false)
         vim.api.nvim_win_hide(ui_popup.popup_win)
-        M.current_workspace_file = utils.export_to_workspace(table.concat(lines, "\n"), M.current_workspace_file)
+        local new_filename, content = utils.build_workspace_content(ui_popup.popup_buf, M.current_workspace_file)
+        M.current_workspace_file = utils.export_to_workspace(content, new_filename)
     else
         local cur_buf = vim.api.nvim_get_current_buf()
-        if vim.api.nvim_buf_get_name(cur_buf):match("%.mctx$") then
+        if vim.api.nvim_buf_get_name(cur_buf):match(".mctx$") then
             M.current_workspace_file = vim.api.nvim_buf_get_name(cur_buf)
+            utils.load_workspace_state(cur_buf)
             ui_popup.create_popup(cur_buf)
         else
             vim.notify("Você não está em um arquivo de workspace (.mctx).", vim.log.levels.WARN)
