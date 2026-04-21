@@ -6,3 +6,5 @@
 mctx_backup_*.mctx
 .mctx_chats/
 ./*.sh
+!./run_tests.sh
+./*.mctx
