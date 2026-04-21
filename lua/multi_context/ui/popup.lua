@@ -4,6 +4,8 @@ local M   = {}
 M.popup_buf = nil
 M.popup_win = nil
 M.code_buf_before_popup = nil
+M.swarm_buffers = {}
+M.current_swarm_index = 1
 
 function M.create_popup(initial_content_or_bufnr)
     -- RASTREAMENTO: Salva o buffer de código ativo antes do popup roubar o foco
@@ -55,6 +57,10 @@ function M.create_popup(initial_content_or_bufnr)
     end
 
     M.popup_buf = buf
+    if not M.swarm_buffers or #M.swarm_buffers == 0 or M.swarm_buffers[1].buf ~= buf then
+        M.swarm_buffers = { { buf = buf, name = "Main" } }
+        M.current_swarm_index = 1
+    end
     vim.bo[buf].filetype  = 'multicontext_chat'
 
     local km = { noremap = true, silent = true }
@@ -65,7 +71,10 @@ function M.create_popup(initial_content_or_bufnr)
     api.nvim_buf_set_keymap(buf, "n", "<S-CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<A-b>", "<Cmd>lua require('multi_context.utils').copy_code_block()<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<A-b>", "<Esc><Cmd>lua require('multi_context.utils').copy_code_block()<CR>a", km)
-    api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
+        api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(1)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(-1)<CR>", km)
+    
     api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
@@ -208,16 +217,75 @@ end
 -- MÁGICA VISUAL: Altera o Título da Janela Dinamicamente
 -- =======================================================
 function M.update_title()
-    if not M.popup_buf or not api.nvim_buf_is_valid(M.popup_buf) then return end
-    if not M.popup_win or not api.nvim_win_is_valid(M.popup_win) then return end
+    if not M.popup_win or not vim.api.nvim_win_is_valid(M.popup_win) then return end
     
-    local ok, conf = pcall(api.nvim_win_get_config, M.popup_win)
+    local ok, conf = pcall(vim.api.nvim_win_get_config, M.popup_win)
     if ok and conf.relative and conf.relative ~= "" then
         local utils = require('multi_context.utils')
-        local tokens = utils.estimate_tokens(M.popup_buf)
         
-        local new_title = string.format(" Multi_Context_Chat | ~%d tokens ", tokens)
-        pcall(api.nvim_win_set_config, M.popup_win, { title = new_title, title_pos = 'center' })
+        -- Descobre qual buffer está na tela agora
+        local active_buf = M.popup_buf
+        if M.swarm_buffers and #M.swarm_buffers > 0 and M.current_swarm_index then
+            local sb = M.swarm_buffers[M.current_swarm_index]
+            if sb and sb.buf and vim.api.nvim_buf_is_valid(sb.buf) then
+                active_buf = sb.buf
+            end
+        end
+        
+        -- Calcula os tokens do buffer que o usuário está olhando
+        local tokens = utils.estimate_tokens(active_buf)
+        
+        local new_title = ""
+        if M.swarm_buffers and #M.swarm_buffers > 1 then
+            local parts = {}
+            for i, sb in ipairs(M.swarm_buffers) do
+                local prefix = (i == M.current_swarm_index) and "*" or ""
+                table.insert(parts, string.format("%s[%d:%s]", prefix, i, sb.name))
+            end
+            new_title = " " .. table.concat(parts, " | ") .. string.format(" | ~%d tokens ", tokens) .. " "
+        else
+            new_title = string.format(" Multi_Context_Chat | ~%d tokens ", tokens)
+        end
+        
+        pcall(vim.api.nvim_win_set_config, M.popup_win, { title = new_title, title_pos = 'center' })
+    end
+end
+
+
+function M.create_swarm_buffer(agent_name, initial_instruction, api_name)
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[buf].buftype   = 'nofile'
+    vim.bo[buf].bufhidden = 'hide'
+    vim.bo[buf].swapfile  = false
+    vim.bo[buf].filetype  = 'multicontext_chat'
+
+    local lines = { "=== SWARM WORKER ===", "Agente: @" .. agent_name, "API: " .. (api_name or "Desconhecida"), "", initial_instruction or "", "" }
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+    if not M.swarm_buffers then M.swarm_buffers = {} end
+    table.insert(M.swarm_buffers, { buf = buf, name = agent_name, status = "Rodando" })
+
+    local km = { noremap = true, silent = true }
+    vim.api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
+    vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(1)<CR>", km)
+    vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(-1)<CR>", km)
+    
+    require('multi_context.ui.highlights').apply_chat(buf)
+    M.create_folds(buf)
+    
+    return buf
+end
+
+function M.cycle_swarm_buffer(dir)
+    if not M.swarm_buffers or #M.swarm_buffers < 2 then return end
+    M.current_swarm_index = M.current_swarm_index + dir
+    if M.current_swarm_index > #M.swarm_buffers then M.current_swarm_index = 1 end
+    if M.current_swarm_index < 1 then M.current_swarm_index = #M.swarm_buffers end
+
+    local target_buf = M.swarm_buffers[M.current_swarm_index].buf
+    if M.popup_win and vim.api.nvim_win_is_valid(M.popup_win) then
+        vim.api.nvim_win_set_buf(M.popup_win, target_buf)
+        M.update_title()
     end
 end
 

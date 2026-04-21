@@ -6,7 +6,7 @@ local react_loop = require('multi_context.react_loop')
 local valid_tools = {
     list_files = true, read_file = true, search_code = true,
     edit_file = true, run_shell = true, replace_lines = true,
-    rewrite_chat_buffer = true, get_diagnostics = true
+    rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true
 }
 
 local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
@@ -99,8 +99,19 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     elseif name == "replace_lines" then 
         result = tools.replace_lines(tool_data.path, tool_data.start_line, tool_data.end_line, clean_inner)
         if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
-    elseif name == "get_diagnostics" then 
+        elseif name == "get_diagnostics" then 
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
+    elseif name == "spawn_swarm" then
+        local swarm = require('multi_context.swarm_manager')
+        if swarm.init_swarm(clean_inner) then
+            swarm.on_swarm_complete = require('multi_context').OnSwarmComplete
+            vim.defer_fn(function() swarm.dispatch_next() end, 100)
+            result = "SWARM INICIADO. O trabalho foi delegado aos sub-agentes e está rodando em background."
+            should_continue_loop = false
+        else
+            result = "ERRO: O payload JSON fornecido para spawn_swarm é inválido."
+        end
+
     end
     
     local output = ""

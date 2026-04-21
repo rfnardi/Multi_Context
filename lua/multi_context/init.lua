@@ -18,6 +18,46 @@ M.current_workspace_file = nil
 
 M.setup = function(opts) if config and config.setup then config.setup(opts) end end
 
+M.OnSwarmComplete = function(summary)
+    local p = require('multi_context.ui.popup')
+    local buf = p.popup_buf
+    if not buf or not api.nvim_buf_is_valid(buf) then return end
+
+    -- Volta o foco pro Main Buffer na janela flutuante
+    if p.swarm_buffers and #p.swarm_buffers > 0 then
+        p.current_swarm_index = 1
+        if p.popup_win and api.nvim_win_is_valid(p.popup_win) then
+            api.nvim_win_set_buf(p.popup_win, p.swarm_buffers[1].buf)
+            p.update_title()
+        end
+    end
+
+    local cfg = require('multi_context.config')
+    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    
+    local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
+    table.insert(lines, "")
+    table.insert(lines, user_prefix .. " [Sistema]:")
+    
+    local append_text = summary .. "\n\nPor favor, consolide essas informações, verifique se houve algum erro nos sub-agentes, e dê sua palavra final para o usuário."
+    for _, l in ipairs(vim.split(append_text, "\n", {plain=true})) do
+        table.insert(lines, l)
+    end
+
+    api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    require('multi_context.ui.highlights').apply_chat(buf)
+    p.create_folds(buf)
+
+    -- Rola a tela para o final
+    if p.popup_win and api.nvim_win_is_valid(p.popup_win) then
+        api.nvim_win_set_cursor(p.popup_win, {api.nvim_buf_line_count(buf), 0})
+        vim.cmd("normal! zz")
+    end
+
+    -- Religa a IA automaticamente para dar a palavra final
+    vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
+end
+
 M.ContextChatFull = commands.ContextChatFull
 M.ContextChatSelection = commands.ContextChatSelection
 M.ContextChatFolder = commands.ContextChatFolder
@@ -94,7 +134,7 @@ M.TerminateTurn = function()
     p.update_title()
     
     if p.popup_win and vim.api.nvim_win_is_valid(p.popup_win) then
-        vim.api.nvim_win_set_cursor(p.popup_win, { vim.api.nvim_buf_line_count(buf), #next_prompt_lines[#next_prompt_lines] })
+        pcall(vim.api.nvim_win_set_cursor, p.popup_win, { vim.api.nvim_buf_line_count(buf), 0 })
         vim.cmd("normal! zz"); vim.cmd("startinsert!")
     end
 end

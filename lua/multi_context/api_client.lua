@@ -14,15 +14,21 @@ local function build_queue(cfg)
     return queue
 end
 
-M.execute = function(messages, on_start, on_chunk, on_done, on_error)
+M.execute = function(messages, on_start, on_chunk, on_done, on_error, force_api_cfg)
     local config = require('multi_context.config')
     local api_handlers = require('multi_context.api_handlers')
 
     local cfg = config.load_api_config()
     if not cfg then on_error("Configuração de APIs não encontrada."); return end
 
-    local queue = build_queue(cfg)
-    if #queue == 0 then on_error("Nenhuma API na fila. Configure com :ContextApis"); return end
+        local queue = {}
+    if force_api_cfg then
+        table.insert(queue, force_api_cfg)
+    else
+        queue = build_queue(cfg)
+        if #queue == 0 then on_error("Nenhuma API na fila. Configure com :ContextApis"); return end
+    end
+
 
     local api_keys = config.load_api_keys()
 
