@@ -127,7 +127,7 @@ M.dispatch_next = function()
                         end
                         
                                                 worker.busy = false
-                        local clean_res = final_report_text:gsub("s+", "")
+                        local clean_res = final_report_text:gsub("%s+", "")
                         
                         task.retries = task.retries or 0
                         if clean_res == "" and task.retries < 2 then
@@ -142,7 +142,7 @@ M.dispatch_next = function()
                             if clean_res == "" then final_report_text = "FALHA: A API falhou repetidas vezes em processar esta tarefa." end
                             table.insert(M.state.reports, { agent = task.agent, result = final_report_text })
                         end
-                        M.dispatch_next() -- Chama o próximo da fila
+                        vim.schedule(M.dispatch_next) -- Chama o próximo da fila
 
                     end,
                     function(err)
@@ -165,7 +165,7 @@ M.dispatch_next = function()
                         else
                             table.insert(M.state.reports, { agent = task.agent, result = "ERRO FATAL APÓS TENTATIVAS: " .. tostring(err) })
                         end
-                        M.dispatch_next()
+                        vim.schedule(M.dispatch_next)
 
                     end,
                     worker.api

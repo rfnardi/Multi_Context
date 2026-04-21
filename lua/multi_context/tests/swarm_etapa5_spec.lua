@@ -90,17 +90,19 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
         popup.update_title()
         
         local conf_main = vim.api.nvim_win_get_config(win)
+        local title_main = type(conf_main.title) == "table" and conf_main.title[1][1] or conf_main.title or ""
         -- Verifica se o asterisco está no Main
-        assert.truthy(conf_main.title:match("%*%[1:Main%]"), "Deve destacar a aba Main")
-        assert.truthy(conf_main.title:match("%[2:qa%]"), "Não deve destacar a aba QA")
-        assert.truthy(conf_main.title:match("tokens"), "Deve conter a palavra tokens")
+        assert.truthy(title_main:match("%*%[1:Main%]"), "Deve destacar a aba Main")
+        assert.truthy(title_main:match("%[2:qa%]"), "Não deve destacar a aba QA")
+        assert.truthy(title_main:match("tokens"), "Deve conter a palavra tokens")
 
         -- Alterna para o buffer do Worker (índice 2)
         popup.cycle_swarm_buffer(1)
         
         local conf_sub = vim.api.nvim_win_get_config(win)
-        assert.truthy(conf_sub.title:match("%[1:Main%]"), "Não deve destacar a aba Main")
-        assert.truthy(conf_sub.title:match("%*%[2:qa%]"), "Deve destacar a aba QA")
+        local title_sub = type(conf_sub.title) == "table" and conf_sub.title[1][1] or conf_sub.title or ""
+        assert.truthy(title_sub:match("%[1:Main%]"), "Não deve destacar a aba Main")
+        assert.truthy(title_sub:match("%*%[2:qa%]"), "Deve destacar a aba QA")
     end)
     
     it("Deve confirmar a presença do agente @qa no acervo", function()

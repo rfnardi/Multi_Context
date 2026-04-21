@@ -62,6 +62,9 @@ describe("Swarm Etapa 4 - Execucao Assincrona e Merge:", function()
 
         swarm.dispatch_next()
 
+        -- Espera até 100ms para o vim.schedule(M.dispatch_next) processar
+        vim.wait(100, function() return final_summary ~= nil end, 5)
+
         assert.is_false(swarm.state.workers[1].busy, "O worker deve voltar a ficar livre apos o on_done")
         assert.is_not_nil(final_summary, "Como a fila esvaziou, o relatorio final deve ter sido gerado")
         assert.truthy(final_summary:match("qa"), "O resumo deve conter a tarefa do agente qa")
