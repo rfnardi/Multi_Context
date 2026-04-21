@@ -47,3 +47,43 @@ Teste
         assert.are.same("coder", popup.swarm_buffers[2].name)
     end)
 end)
+
+    it("Deve orquestrar o load pelo comando ToggleWorkspaceView (init.lua)", function()
+        local init = require('multi_context.init')
+        local utils = require('multi_context.utils')
+        
+        -- Configura um buffer simulando um arquivo aberto em disco
+        local buf = vim.api.nvim_create_buf(true, false)
+        vim.api.nvim_buf_set_name(buf, "/caminho/falso/chat_123.mctx")
+        vim.api.nvim_set_current_buf(buf)
+        
+        -- Simulamos a UI limpa
+        popup.popup_win = nil
+        init.current_workspace_file = nil
+        
+        -- Adiciona payload no buffer
+        local payload = {
+            '<mctx_session id="123" />',
+            '## User >>',
+            'Contexto'
+        }
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, payload)
+        
+        -- Mockamos as funções pesadas da UI para não travar o ambiente Headless
+        local orig_create_popup = popup.create_popup
+        local was_popup_called = false
+        popup.create_popup = function(b) 
+            was_popup_called = true
+            popup.popup_buf = b
+        end
+        
+        -- Ação E2E: Usuário digita o comando para carregar a sessão!
+        init.ToggleWorkspaceView()
+        
+        -- Asserts: O core do plugin tem que entender que isso é um load
+        assert.truthy(init.current_workspace_file:match("chat_123%.mctx"), "O arquivo de workspace atual não foi setado!")
+        assert.is_true(was_popup_called, "A janela flutuante não foi invocada pelo init.lua!")
+        
+        -- Cleanup
+        popup.create_popup = orig_create_popup
+    end)
