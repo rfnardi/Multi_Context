@@ -20,7 +20,12 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     local name = tool_data.name
     local clean_inner = tool_data.inner
 
-    if not valid_tools[name] then
+    local skills_manager = require('multi_context.skills_manager')
+    local custom_skills = skills_manager.get_skills()
+    local is_custom_skill = custom_skills[name] ~= nil
+
+    if not valid_tools[name] and not is_custom_skill then
+
         local err_msg = string.format("Ferramenta '%s' não existe.", tostring(name))
         local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, err_msg)
         return out, false, false, nil, nil
@@ -79,7 +84,22 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         return out, false, false, nil, nil
     end
 
-    if name == "rewrite_chat_buffer" then
+    if is_custom_skill then
+        local args = {}
+        if clean_inner then
+            for p_name, p_val in clean_inner:gmatch("<([%w_]+)[^>]*>(.-)</%1>") do
+                args[p_name] = vim.trim(p_val)
+            end
+        end
+        local ok, skill_res = pcall(custom_skills[name].execute, args)
+        if ok then
+            result = tostring(skill_res)
+            should_continue_loop = true
+        else
+            result = "ERRO NA EXECUCAO DA SKILL: " .. tostring(skill_res)
+        end
+    elseif name == "rewrite_chat_buffer" then
+
         backup_made = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
         local backup_file = vim.fn.stdpath("data") .. "/mctx_backup_" .. os.date("%Y%m%d_%H%M%S") .. ".mctx"
         vim.fn.writefile(backup_made, backup_file)

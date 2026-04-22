@@ -149,6 +149,7 @@ local function get_context_md_content()
 end
 
 function M.SendFromPopup()
+    pcall(function() require('multi_context.skills_manager').load_skills() end)
     if not popup.popup_buf or not api.nvim_buf_is_valid(popup.popup_buf) then return end
     local buf = popup.popup_buf
     local start_idx, _ = utils.find_last_user_line(buf)
@@ -425,6 +426,7 @@ command! -nargs=0 ContextApis lua require('multi_context').ContextApis()
 command! -nargs=0 ContextTree lua require('multi_context').ContextTree()
 command! -nargs=0 ContextBuffers lua require('multi_context').ContextBuffers()
 command! -nargs=0 ContextToggle lua require('multi_context').TogglePopup()
+command! -nargs=0 ContextReloadSkills lua require('multi_context.skills_manager').load_skills(); vim.notify('Skills customizadas recarregadas!', vim.log.levels.INFO)
 ]])
 
 return M
