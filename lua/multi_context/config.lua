@@ -98,7 +98,15 @@ M.load_api_config = function()
     if not f then return nil end
     local content = f:read('*a'); f:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
+        if ok and parsed and parsed.apis then
+        for _, api in ipairs(parsed.apis) do
+            if not api.abstraction_level then
+                api.abstraction_level = "medium"
+            end
+        end
+    end
     return ok and parsed or nil
+
 end
 
 M.load_api_keys = function()

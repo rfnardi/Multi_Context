@@ -32,7 +32,7 @@ describe("Swarm Etapa 4 - Execucao Assincrona e Merge:", function()
         
         -- Injetando 1 worker ocioso diretamente no estado
         swarm.state.workers = {
-            { api = { name = "worker_1", api_type = "openai" }, busy = false, current_task = nil }
+            { api = { name = "worker_1", abstraction_level = "high", api_type = "openai" }, busy = false, current_task = nil }
         }
     end)
 

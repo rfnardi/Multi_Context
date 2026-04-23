@@ -40,9 +40,44 @@ M.dispatch_next = function()
     end
 
     -- DESPACHANTE (MAP)
-    for _, worker in ipairs(M.state.workers) do
-        if not worker.busy and #M.state.queue > 0 then
-            local task = table.remove(M.state.queue, 1)
+        local level_val = { low = 1, medium = 2, high = 3 }
+    local loaded_agents = require('multi_context.agents').load_agents()
+
+    -- Processa a fila inteira procurando match para cada tarefa
+    local i = 1
+        local max_attempts = #M.state.queue
+    local attempts = 0
+    while i <= #M.state.queue and attempts < max_attempts do
+        attempts = attempts + 1
+        local task = M.state.queue[i]
+        local agent_def = loaded_agents[task.agent]
+        local req_level = (agent_def and agent_def.abstraction_level) and level_val[agent_def.abstraction_level] or 3
+        
+        local selected_worker = nil
+        local best_diff = 999
+        
+        for _, worker in ipairs(M.state.workers) do
+            if not worker.busy then
+                local api_level = worker.api.abstraction_level and level_val[worker.api.abstraction_level] or 2
+                
+                -- Se a API é forte o suficiente para a tarefa
+                if api_level >= req_level then
+                    local diff = api_level - req_level
+                    -- Preferimos o Match perfeito (diff 0). Se nao houver, pegamos o proximo mais barato
+                    if diff < best_diff then
+                        best_diff = diff
+                        selected_worker = worker
+                    end
+                end
+            end
+        end
+
+        if selected_worker then
+            table.remove(M.state.queue, i)
+            local worker = selected_worker
+            worker.busy = true
+            worker.current_task = task
+
             worker.busy = true
             worker.current_task = task
             local buf_id = popup.create_swarm_buffer(task.agent, task.instruction, worker.api.name)
@@ -61,7 +96,9 @@ M.dispatch_next = function()
                     end
                 end
             end
-            system_prompt = system_prompt .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text
+            system_prompt = system_prompt .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text            
+            system_prompt = system_prompt .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. Esta tag encerra a sua execução. Sem ela, o mestre não lerá sua resposta."
+
             
             local messages = {
                 { role = "system", content = system_prompt },
@@ -87,7 +124,14 @@ M.dispatch_next = function()
                     function(api_entry, metrics)
                         visual_history = visual_history .. "\n\n## IA >>\n" .. current_chunk
                         table.insert(messages, { role = "assistant", content = current_chunk })
-                        final_report_text = final_report_text .. "\n" .. current_chunk
+                                                -- FASE 20: Extrai APENAS o bloco estruturado, evitando Token Leak
+                        local extracted_report = current_chunk:match("<final_report>(.-)</final_report>")
+                        if extracted_report then
+                            final_report_text = vim.trim(extracted_report)
+                        else
+                            final_report_text = "" -- Forçará o retry logo abaixo
+                        end
+
                         
                         local sanitized = tool_parser.sanitize_payload(current_chunk)
                         
@@ -173,6 +217,8 @@ M.dispatch_next = function()
             end
             
             execute_turn()
+        else
+            i = i + 1
         end
     end
 end

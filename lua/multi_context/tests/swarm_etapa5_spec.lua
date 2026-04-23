@@ -21,7 +21,7 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
         
         -- Mock de Config para 1 Worker
         config.get_spawn_apis = function()
-            return {{ name = "mock_api", model = "mock_model", allow_spawn = true }}
+            return {{ name = "mock_api", model = "mock_model", allow_spawn = true, abstraction_level = "high" }}
         end
     end)
 

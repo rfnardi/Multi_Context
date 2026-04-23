@@ -23,7 +23,15 @@ M.load_agents = function()
     local content = file:read('*a')
     file:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
+        if ok and parsed then
+        for _, agent in pairs(parsed) do
+            if not agent.abstraction_level then
+                agent.abstraction_level = "high"
+            end
+        end
+    end
     return ok and parsed or {}
+
 end
 
 M.get_agent_names = function()

@@ -12,8 +12,8 @@ describe("Swarm Etapa 3 - Manager e Fila:", function()
         config.options = config.options or { user_name = "User" }
         config.get_spawn_apis = function()
             return {
-                { name = "worker_1", model = "model_A", allow_spawn = true },
-                { name = "worker_2", model = "model_B", allow_spawn = true }
+                { name = "worker_1", abstraction_level = "high", model = "model_A", allow_spawn = true },
+                { name = "worker_2", abstraction_level = "high", model = "model_B", allow_spawn = true }
             }
         end
         
@@ -61,8 +61,8 @@ describe("Swarm Etapa 3 - Manager e Fila:", function()
         }
         
         swarm.state.workers = {
-            { api = { name = "w1" }, busy = false },
-            { api = { name = "w2" }, busy = false }
+            { api = { name = "w1", abstraction_level = "high" }, busy = false },
+            { api = { name = "w2", abstraction_level = "high" }, busy = false }
         }
 
         -- Agora pode rodar o dispatch_next com segurança sem explodir a UI
