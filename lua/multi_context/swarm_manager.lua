@@ -16,6 +16,14 @@ M.init_swarm = function(json_payload)
     if not json_payload or json_payload == "" then return false end
     local ok, decoded = pcall(vim.fn.json_decode, vim.trim(json_payload))
     if not ok or type(decoded) ~= "table" or type(decoded.tasks) ~= "table" then return false end
+    
+    -- Pré-processamento de Tarefas Avançadas (Fase 21)
+    for _, task in ipairs(decoded.tasks) do
+        if not task.agent and type(task.chain) == "table" and #task.chain > 0 then
+            task.agent = task.chain[1]
+        end
+    end
+    
     M.state.queue = decoded.tasks
     local apis = config.get_spawn_apis()
     for _, api_cfg in ipairs(apis) do
@@ -154,6 +162,45 @@ M.dispatch_next = function()
                             end
                             
                             if new_content ~= "" then
+                                local switch_target = new_content:match("SWITCH_AGENT_REQUEST:([%w_]+)")
+                                if switch_target then
+                                    local is_allowed = false
+                                    if type(task.allow_switch) == "table" then
+                                        for _, allowed in ipairs(task.allow_switch) do
+                                            if allowed == switch_target then is_allowed = true; break end
+                                        end
+                                    end
+                                    
+                                    if is_allowed then
+                                        task.agent = switch_target
+                                        local loaded_agents = require('multi_context.agents').load_agents()
+                                        local new_system = "Você é um sub-agente operando em modo SWARM. Sua tarefa estrita é: " .. (task.instruction or "")
+                                        if loaded_agents[switch_target] then
+                                            new_system = new_system .. "\n\n=== SUAS DIRETRIZES ===\n" .. loaded_agents[switch_target].system_prompt
+                                        end
+                                        new_system = new_system .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text
+                                        new_system = new_system .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. Esta tag encerra a sua execução. Sem ela, o mestre não lerá sua resposta."
+                                        
+                                        messages[1].content = new_system
+                                        new_content = "SUCESSO: Controle transferido para @" .. switch_target .. ". O sistema foi reconfigurado com suas diretrizes."
+                                        
+                                        if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
+                                            local popup = require('multi_context.ui.popup')
+                                            if popup.swarm_buffers then
+                                                for _, sb in ipairs(popup.swarm_buffers) do
+                                                    if sb.buf == buf_id then
+                                                        sb.name = switch_target
+                                                        break
+                                                    end
+                                                end
+                                            end
+                                            pcall(popup.update_title)
+                                        end
+                                    else
+                                        new_content = "ERRO: O agente @" .. task.agent .. " não tem permissão para transferir o controle para @" .. switch_target .. " (Verifique allow_switch)."
+                                    end
+                                end
+
                                 visual_history = visual_history .. "\n\n## Sistema >>\n" .. new_content
                                 table.insert(messages, { role = "user", content = new_content })
                                 -- Recursão! O agente chama a API novamente para ler o output da ferramenta
@@ -184,7 +231,21 @@ M.dispatch_next = function()
                             table.insert(M.state.queue, task)
                         else
                             if clean_res == "" then final_report_text = "FALHA: A API falhou repetidas vezes em processar esta tarefa." end
+                            local has_next = false
+                            if type(task.chain) == 'table' then
+                                local c_idx = 0
+                                for idx, a in ipairs(task.chain) do if a == task.agent then c_idx = idx; break end end
+                                if c_idx > 0 and c_idx < #task.chain then
+                                    task.agent = task.chain[c_idx + 1]
+                                    task.instruction = (task.instruction or '') .. '\n\n=== RELATÓRIO DO AGENTE ANTERIOR ===\n' .. final_report_text
+                                    task.retries = 0
+                                    table.insert(M.state.queue, task)
+                                    has_next = true
+                                end
+                            end
+                            if not has_next then
                             table.insert(M.state.reports, { agent = task.agent, result = final_report_text })
+                            end
                         end
                         vim.schedule(M.dispatch_next) -- Chama o próximo da fila
 

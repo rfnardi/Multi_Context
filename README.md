@@ -18,22 +18,22 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 
 | ✅ | Funcionalidade | Descrição |
 |:---:|---|---|
-| 🐝 | **Swarm Architecture** | O agente `@tech_lead` pode invocar múltiplos sub-agentes (ex: Coder, QA) para trabalharem paralelamente em background num carrossel dinâmico. |
-| 🔌 | **Extensibilidade Pluggável** | Crie scripts Lua locais e ensine instantaneamente habilidades para a IA (ex: consultar Jira, SQL) sem precisar modificar o código-fonte do plugin! |
+| 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico em background. |
+| 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. |
+| ⚙️ | **Pipelines & Coreografia** | IAs podem montar esteiras de produção (`chain`) ou repassar o controle do corpo e do código para outros especialistas *on-the-fly* (`switch_agent`). |
+| 🛡️ | **Token Leak Prevention** | Sub-agentes isolam seus raciocínios caóticos, devolvendo ao Tech Lead apenas um `<final_report>` limpo, economizando milhares de tokens. |
+| 🔌 | **Extensibilidade Pluggável** | Crie scripts Lua locais (`mctx_skills/`) e ensine instantaneamente habilidades customizadas para a IA (ex: Jira, SQL) sem tocar no core do plugin. |
 | 💾 | **Workspace Stateful** | Feche o Neovim a qualquer momento. O plugin empacota sua fila assíncrona, respostas em andamento e reabre todas as abas onde você parou. |
-| 🥷 | **Arquitetura de Skills** | Agentes seguem o Princípio do Menor Privilégio. O `@arquiteto` não consegue acidentalmente rodar o bash, bloqueado pelo Gatekeeper nativo. |
-| 🛡️ | **Parser Anti-Alucinação** | Novo motor XML tolerante a falhas. Se a IA esquecer de fechar uma tag, o plugin faz o "fechamento implícito" salvando a execução. |
+| 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. Bloqueados pelo Gatekeeper nativo, IAs sem permissão não podem usar bash ou editar o disco. |
 | 🔀 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (ex: Rate Limit da OpenAI), o plugin tenta automaticamente a próxima API da sua fila de forma invisível. |
-| 🔄 | **Motor Autônomo (ReAct)** | A IA encadeia ferramentas sozinha (flag `--auto`) com um *Circuit Breaker* de segurança e auto-corte de requisições desnecessárias. |
-| 🔍 | **LSP Smart Push** | Se a IA quebrar a sintaxe, o plugin lê o erro do Neovim em background e força a IA a consertar imediatamente na mesma iteração. |
 | 🛑 | **Job Control (Pânico)** | Pressione `<C-x>` a qualquer momento para assassinar a conexão com a API via `jobstop`. |
 
 ---
 
 ## 🔌 Provedores Suportados (Zero Dependências)
 O plugin possui uma camada nativa de transporte HTTP (`curl`) super otimizada, com suporte nativo e tratamento rigoroso de formato para:
-- **Anthropic** (Claude 3.5 Sonnet) - *Com suporte nativo a Strict Role Enforcement*
-- **OpenAI** (GPT-4o)
+- **Anthropic** (Claude 3.5 Sonnet) - *Com suporte nativo a Strict Role Enforcement & Prompt Caching*
+- **OpenAI** (GPT-4o / o1)
 - **DeepSeek** (Coder V2 / V3)
 - **Google Gemini**
 - **Cloudflare AI**
@@ -116,7 +116,7 @@ require('multi_context').setup({
 
 O plugin é mantido sob alta confiabilidade com dezenas de testes usando `plenary.nvim`, garantindo que as lógicas de extração, rede e parser funcionem perfeitamente.
 ```bash
-make test_all
+make test_agregate_results
 ```
 
 ---

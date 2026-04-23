@@ -6,7 +6,7 @@ local react_loop = require('multi_context.react_loop')
 local valid_tools = {
     list_files = true, read_file = true, search_code = true,
     edit_file = true, run_shell = true, replace_lines = true,
-    rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true
+    rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true, switch_agent = true
 }
 
 local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
@@ -132,8 +132,15 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
             result = "ERRO: O payload JSON fornecido para spawn_swarm é inválido."
         end
 
-    end
     
+    elseif name == "switch_agent" then
+        local target = clean_inner:match("<target_agent>(.-)</target_agent>")
+        if not target then target = clean_inner:match("([%w_]+)") end
+        if target then target = vim.trim(target) else target = "" end
+        result = "SWITCH_AGENT_REQUEST:" .. target
+        should_continue_loop = true
+    end
+
     local output = ""
     if not pending_rewrite_content then
         output = string.format('<tool_call name="%s" path="%s">\n%s\n</tool_call>\n\n>[Sistema]: Resultado:\n```text\n%s\n```', tostring(name), tostring(tool_data.path or ""), clean_inner, result)
