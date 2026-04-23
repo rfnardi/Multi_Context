@@ -7,32 +7,56 @@ M.parse_user_input = function(raw_text, agents_table)
         agent_name = nil,
         is_autonomous = false
     }
-
+    
+    local ok_sq, squads_manager = pcall(require, 'multi_context.squads')
+    local squads = ok_sq and squads_manager.load_squads() or {}
+    
     local agent_match = parsed.text_to_send:match("@([%w_]+)")
     if agent_match then
         if agent_match == "reset" then
             parsed.agent_name = "reset"
             parsed.text_to_send = parsed.text_to_send:gsub("@reset%s*", "")
+        elseif squads[agent_match] then
+            local squad_def = squads[agent_match]
+            parsed.text_to_send = parsed.text_to_send:gsub("@" .. agent_match .. "%s*", "")
+            parsed.text_to_send = parsed.text_to_send:gsub("^%s*", ""):gsub("%s*$", "")
+            
+            local main_task = vim.deepcopy(squad_def.tasks[1] or {})
+            if parsed.text_to_send ~= "" then
+                main_task.instruction = (main_task.instruction or "") .. "\n\nSolicitação do Usuário:\n" .. parsed.text_to_send
+            end
+            
+            local payload = { tasks = { main_task } }
+            if squad_def.tasks then
+                for i = 2, #squad_def.tasks do table.insert(payload.tasks, squad_def.tasks[i]) end
+            end
+            
+            local ok_json, json_payload = pcall(vim.fn.json_encode, payload)
+            parsed.agent_name = "tech_lead"
+            parsed.text_to_send = string.format("<tool_call name=\"spawn_swarm\">\n```json\n%s\n```\n</tool_call>", json_payload)
+            parsed.is_autonomous = true
         elseif agents_table[agent_match] then
             parsed.agent_name = agent_match
             parsed.text_to_send = parsed.text_to_send:gsub("@" .. agent_match .. "%s*", "")
         end
     end
-
+    
     if parsed.text_to_send:match("%-%-auto") then
         parsed.is_autonomous = true
         parsed.text_to_send = parsed.text_to_send:gsub("%-%-auto%s*", "")
     end
-
+    
     parsed.text_to_send = parsed.text_to_send:gsub("^%s*", ""):gsub("%s*$", "")
     return parsed
 end
+
+
 
 M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table)
     local system_prompt = base_prompt
 
     if memory_context then
-        system_prompt = system_prompt .. "\n\n=== ESTADO ATUAL DO PROJETO (MEMÓRIA) ===\n" .. memory_context .. "\n- Atualize o CONTEXT.md sempre que finalizar uma tarefa para não perder a memória."
+        system_prompt = system_prompt .. "\n\n=== ESTADO ATUAL DO PROJETO (MEMÓRIA) ===\n" .. memory_context .. "\n- Atualize o CONTEXT.md ao concluir tarefas."
     end
 
     if active_agent_name and active_agent_name ~= "reset" and agents_table and agents_table[active_agent_name] then

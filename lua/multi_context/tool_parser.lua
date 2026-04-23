@@ -3,7 +3,7 @@ local M = {}
 
 local valid_tools_list = {
     "list_files", "read_file", "search_code", "edit_file", 
-    "run_shell", "replace_lines", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent"
+    "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent"
 }
 
 -- 1. SANITIZADOR ANTI-ALUCINAÇÃO DE SINTAXE

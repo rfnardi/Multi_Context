@@ -191,4 +191,52 @@ M.get_diagnostics = function(path)
     return result
 end
 
+
+M.apply_diff = function(path, diff_content)
+    local full_path = resolve_path(path)
+    if not full_path then return "ERRO: 'path' obrigatório." end
+    
+    local bufnr = vim.fn.bufnr(full_path)
+    local lines = {}
+    
+    -- Antes de aplicar o diff em disco, garantimos que o disco está atualizado com o buffer vivo
+    if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+        lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        vim.fn.writefile(lines, full_path)
+    else
+        if vim.fn.filereadable(full_path) == 0 then return "ERRO: Arquivo não encontrado." end
+    end
+    
+    -- Limpa sujeira comum que as LLMs adicionam ao redor do diff
+    diff_content = diff_content:gsub("\r", "")
+    diff_content = diff_content:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
+    
+    local tmp_patch = os.tmpname()
+    vim.fn.writefile(vim.split(diff_content, "\n", {plain=true}), tmp_patch)
+    
+    -- Chama o binário UNIX `patch`. A flag --force impede que o binário fique pendurado esperando input no terminal se falhar.
+    local cmd = string.format("patch --force -u %s -i %s", vim.fn.shellescape(full_path), vim.fn.shellescape(tmp_patch))
+    local out = vim.fn.system(cmd)
+    local status = vim.v.shell_error
+    
+    -- Limpa os rastros
+    os.remove(tmp_patch)
+    os.remove(full_path .. ".orig")
+    os.remove(full_path .. ".rej")
+    
+    if status ~= 0 then
+        return "FALHA ao aplicar diff (Código " .. status .. "):\n" .. out
+    end
+    
+    -- Se o buffer estava aberto no vim, fazemos o recarregamento (hot-reload) do arquivo modificado
+    if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+        local new_lines = vim.fn.readfile(full_path)
+        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, new_lines)
+        vim.api.nvim_buf_call(bufnr, function() vim.cmd("silent! write") end)
+    end
+    
+    vim.notify("✅ Diff aplicado: " .. full_path, vim.log.levels.INFO)
+    return "SUCESSO: Diff aplicado no arquivo " .. full_path
+end
+
 return M

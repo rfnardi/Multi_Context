@@ -6,6 +6,8 @@ M.defaults = {
     config_path   = vim.fn.stdpath("config") .. "/context_apis.json",
     api_keys_path = vim.fn.stdpath("config") .. "/api_keys.json",
     default_api   = nil,
+    cognitive_horizon = 4000,
+    user_tolerance = 1.0,
     appearance    = {
         border = "rounded",
         width  = 0.7,
@@ -77,7 +79,7 @@ function M.setup(user_opts)
             for _, v in pairs(parsed) do
                 if v.use_tools ~= nil then
                     if v.use_tools == true then
-                        v.skills = {"list_files", "search_code", "read_file", "replace_lines", "edit_file", "run_shell", "rewrite_chat_buffer", "get_diagnostics"}
+                        v.skills = {"list_files", "search_code", "read_file", "replace_lines", "apply_diff", "edit_file", "run_shell", "rewrite_chat_buffer", "get_diagnostics"}
                     else
                         v.skills = {}
                     end

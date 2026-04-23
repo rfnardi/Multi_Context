@@ -16,16 +16,18 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 
 ## 🚀 Funcionalidades Principais
 
-| ✅ | Funcionalidade | Descrição |
+| Ícone | Funcionalidade | Descrição |
 |:---:|---|---|
-| 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico em background. |
+| 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico de abas em background. |
 | 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. |
-| ⚙️ | **Pipelines & Coreografia** | IAs podem montar esteiras de produção (`chain`) ou repassar o controle do corpo e do código para outros especialistas *on-the-fly* (`switch_agent`). |
-| 🛡️ | **Token Leak Prevention** | Sub-agentes isolam seus raciocínios caóticos, devolvendo ao Tech Lead apenas um `<final_report>` limpo, economizando milhares de tokens. |
+| 🛡️ | **Context Watchdog** | Um rastreador preditivo (EMA) monitora o tamanho do chat. Se ele ameaçar estourar a janela saudável, o sistema invoca o `@archivist` para comprimir o histórico no modelo Quadripartite (`<genesis>`, `<journey>`, `<now>`, `<plan>`). |
+| 🎖️ | **Esquadrões (Squads)** | Invoque equipes inteiras mencionando `@squad_nome` (ex: `@squad_dev`). O sistema compila e dispara o enxame mascarando o JSON complexo. |
+| 🔀 | **Pipelines & Coreografia** | IAs podem montar esteiras de produção (`chain`) ou repassar o controle do corpo e do código para outros especialistas *on-the-fly* (`switch_agent`). |
+| 📉 | **Token Leak Prevention** | Sub-agentes isolam seus raciocínios caóticos, devolvendo ao Tech Lead apenas um `<final_report>` limpo, economizando milhares de tokens. |
 | 🔌 | **Extensibilidade Pluggável** | Crie scripts Lua locais (`mctx_skills/`) e ensine instantaneamente habilidades customizadas para a IA (ex: Jira, SQL) sem tocar no core do plugin. |
-| 💾 | **Workspace Stateful** | Feche o Neovim a qualquer momento. O plugin empacota sua fila assíncrona, respostas em andamento e reabre todas as abas onde você parou. |
+| 💾 | **Workspace Stateful** | Feche o Neovim a qualquer momento. O plugin empacota sua fila assíncrona, respostas em andamento em disco (`.mctx`) e reabre todas as abas onde você parou. |
 | 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. Bloqueados pelo Gatekeeper nativo, IAs sem permissão não podem usar bash ou editar o disco. |
-| 🔀 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (ex: Rate Limit da OpenAI), o plugin tenta automaticamente a próxima API da sua fila de forma invisível. |
+| 🔄 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (ex: Rate Limit da OpenAI), o plugin tenta automaticamente a próxima API da sua fila de forma invisível. |
 | 🛑 | **Job Control (Pânico)** | Pressione `<C-x>` a qualquer momento para assassinar a conexão com a API via `jobstop`. |
 
 ---
@@ -65,7 +67,23 @@ A IA aprenderá a usar essa ferramenta instantaneamente. Use o comando `:Context
 
 O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará todos os arquivos base de configuração na sua pasta `~/.config/nvim/` sem tocar no código-fonte original.
 
-### Instalando com `vim-plug` (Recomendado)
+### 1. Instalando com `lazy.nvim`
+
+```lua
+{
+    "seu-usuario/multi_context_plugin",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    opts = {
+        user_name = "Seu Nome", -- Será exibido no chat
+    },
+    keys = {
+        { "<leader>mc", "<cmd>ContextToggle<cr>", desc = "Toggle MultiContext Chat" },
+        { "<leader>ma", "<cmd>ContextApis<cr>", desc = "Gerenciar Fila de APIs" },
+    }
+}
+```
+
+### 2. Instalando com `vim-plug`
 
 Adicione no seu `init.vim` ou gerenciador de plugins:
 ```vim
@@ -87,15 +105,16 @@ require('multi_context').setup({
 | Comando | Descrição |
 |---|---|
 | `:ContextChatFull` | Abre o chat vazio ou retoma o workspace ativo. |
-| `:'<,'>Context` | *(Visual)* Envia as linhas selecionadas para o chat. |
+| `:Context` | *(Normal/Visual)* Envia o buffer ou as linhas selecionadas para o chat. |
 | `:ContextFolder` | Inicia a sessão enviando os arquivos do diretório atual. |
 | `:ContextRepo` | Inicia a sessão mapeando todo o projeto do Git. |
 | `:ContextGit` | Envia as alterações não commitadas (`git diff`). |
 | `:ContextBuffers`| Envia todos os buffers de código carregados no Neovim. |
-| `:ContextApis` | ⚙️ **Abre o menu interativo para trocar rapidamente de IA base.** |
+| `:ContextApis` | ⚙️ **Abre o menu interativo para ordenar APIs e gerenciar permissões de Swarm.** |
 | `:ContextTree` | Desenha a árvore do projeto no prompt. |
-| `:ContextReloadSkills`| Recarrega imediatamente sua pasta local de habilidades (`~/.config/nvim/mctx_skills`). |
+| `:ContextReloadSkills`| Recarrega imediatamente sua pasta local de habilidades. |
 | `:ContextToggle` | Abre ou esconde a janela flutuante. |
+| `:ContextUndo` | Desfaz a última destruição/compressão do chat feita pelo `@archivist`. |
 
 ---
 
@@ -103,9 +122,10 @@ require('multi_context').setup({
 
 | Atalho | Modo | Ação |
 |---|---|---|
-| **`<CR>` / `<C-CR>`** | Insert/Normal | Envia a mensagem e invoca a IA. |
-| **`@`** | Insert | Abre o menu flutuante para invocar um Agente (`@coder`, `@qa`). |
+| **`<CR>` / `<C-CR>` / `<S-CR>`** | Insert/Normal | Envia a mensagem e invoca a IA. |
+| **`@`** | Insert | Abre o menu flutuante para invocar um Agente (`@coder`, `@qa`) ou um Esquadrão. |
 | **`<Tab>` / `<S-Tab>`** | Normal | Navega pelo carrossel dinâmico do Enxame (Swarms) rodando em background. |
+| **`<A-x>`** | Insert/Normal | ⚡ **Força a execução manual imediata** de tags de ferramentas no chat. |
 | **`<C-x>`** | Insert/Normal | 🛑 **Botão de Pânico:** Corta a conexão HTTP e interrompe o stream. |
 | **`<A-b>`** | Insert/Normal | Copia o último bloco de código para a área de transferência. |
 | **`k` / `<C-u>`** | Normal | Pausa o Auto-Scroll direcionalmente para ler histórico. |

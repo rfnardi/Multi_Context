@@ -5,7 +5,7 @@ local react_loop = require('multi_context.react_loop')
 
 local valid_tools = {
     list_files = true, read_file = true, search_code = true,
-    edit_file = true, run_shell = true, replace_lines = true,
+    edit_file = true, run_shell = true, replace_lines = true, apply_diff = true,
     rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true, switch_agent = true
 }
 
@@ -25,7 +25,6 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     local is_custom_skill = custom_skills[name] ~= nil
 
     if not valid_tools[name] and not is_custom_skill then
-
         local err_msg = string.format("Ferramenta '%s' não existe.", tostring(name))
         local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, err_msg)
         return out, false, false, nil, nil
@@ -49,7 +48,7 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     if not is_authorized then
         local err_msg = string.format("Operação negada. O agente @%s não possui a Skill '%s'.", tostring(active_agent), tostring(name))
         local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
-        return out, false, false, nil, nil -- Não aborta o loop inteiro, mas devolve o erro
+        return out, false, false, nil, nil
     end
     -- ==========================================
 
@@ -99,7 +98,6 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
             result = "ERRO NA EXECUCAO DA SKILL: " .. tostring(skill_res)
         end
     elseif name == "rewrite_chat_buffer" then
-
         backup_made = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
         local backup_file = vim.fn.stdpath("data") .. "/mctx_backup_" .. os.date("%Y%m%d_%H%M%S") .. ".mctx"
         vim.fn.writefile(backup_made, backup_file)
@@ -119,7 +117,10 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     elseif name == "replace_lines" then 
         result = tools.replace_lines(tool_data.path, tool_data.start_line, tool_data.end_line, clean_inner)
         if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
-        elseif name == "get_diagnostics" then 
+    elseif name == "apply_diff" then
+        result = tools.apply_diff(tool_data.path, clean_inner)
+        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
+    elseif name == "get_diagnostics" then 
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
     elseif name == "spawn_swarm" then
         local swarm = require('multi_context.swarm_manager')
@@ -131,8 +132,6 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         else
             result = "ERRO: O payload JSON fornecido para spawn_swarm é inválido."
         end
-
-    
     elseif name == "switch_agent" then
         local target = clean_inner:match("<target_agent>(.-)</target_agent>")
         if not target then target = clean_inner:match("([%w_]+)") end
