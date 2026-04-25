@@ -74,6 +74,15 @@ lua/multi_context/
 - Persistência e Ressurreição de todo o Enxame através de injeção JSON-in-XML no arquivo `.mctx`.
 - Edições cirúrgicas nativas acopladas ao Kernel UNIX via `patch --force`.
 
+### 7. Canvas Fuzzy e UX Preditiva (Fase 29)
+- **Seletores Inteligentes (Telescope-like)**: Ao invocar `@` (Agentes) ou `\` (Injetores), o menu não é estático. Ele opera como um Fuzzy Finder ao vivo que lê o buffer no modo Insert (`TextChangedI`) e filtra os resultados instantaneamente, lidando com erros de digitação e pesquisas parciais.
+- **Smart Placement**: O motor de injeção protege o prompt do usuário, lançando os enormes blocos de contexto (dumps, logs) na linha *abaixo* do cursor, preservando a legibilidade e o raciocínio atual.
+
+### 8. Motor Polyglot (Linguagem Agnóstica)
+- **Liberdade Absoluta**: Skills e Injectors não estão mais presos a scripts `.lua`. O motor agora aceita **qualquer script executável do sistema** (`.sh`, `.fish`, `.py`, `.js`, binários Golang/Rust).
+- **Injeção de Metadados em Comentários**: O usuário documenta o script livremente usando cabeçalhos simples (`# DESC: ...` e `# PARAM: target | string | true | desc`).
+- **Ponte de Variáveis de Ambiente**: A IA interage com as linguagens do usuário exportando os parâmetros extraídos como `env` POSIX (ex: envia o parâmetro `query` como `$MCTX_QUERY` direto para o script Bash/Fish local).
+
 ---
 
 ## Estado Atual do Desenvolvimento
@@ -86,4 +95,4 @@ O core do produto é um motor de orquestração industrial de ponta.
 - IAM de Agentes e Skills editáveis em tempo real.
 - Swarm Avançado (MoA, Pipelines, Coreografia).
 - Unified Diff, Workspace Persistente e Esquadrões.
-- **Cobertura Testes Plenary:** 92 de 92 Sucessos absolutos (0 Falhas / 0 Erros).
+- **Cobertura Testes Plenary:** 94 de 94 Sucessos absolutos (0 Falhas / 0 Erros).
