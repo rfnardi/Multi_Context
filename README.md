@@ -18,7 +18,7 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 
 | Ícone | Funcionalidade | Descrição |
 |:---:|---|---|
-| 🎛️ | **Virtual UI Engine** | Painel centralizado e interativo estilo React (Virtual DOM) para orquestrar APIs, Fallbacks, Watchdog e Skills com suporte a reordenação nativa (`dd`, `p`, `<Space>`, `c`). |
+| 🎛️ | **Virtual UI Engine & IAM** | Painel centralizado e interativo estilo React (Virtual DOM) para orquestrar APIs, Fallbacks, Watchdog e Skills. Permite **Drill-down** para expandir agentes, **criar novas Personas/Skills dinamicamente** e gerenciar permissões (`●`/`○`) on-the-fly. Suporta reordenação nativa (`dd`, `p`, `<Space>`, `c`, `e`). |
 | 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico de abas em background. |
 | 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. |
 | 🛡️ | **Context Watchdog 2.0** | Um rastreador preditivo (EMA) monitora a janela do chat. Se ameaçar estourar, invoca o `@archivist` usando 3 motores de compressão configuráveis (**Semântico, Percentual ou Fixo**) encapsulando a memória no formato Quadripartite. |
@@ -27,7 +27,7 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 | 📉 | **Token Leak Prevention** | Sub-agentes isolam seus raciocínios caóticos, devolvendo ao Tech Lead apenas um `<final_report>` limpo, economizando milhares de tokens. |
 | 🔌 | **Extensibilidade Pluggável** | Crie scripts Lua locais (`mctx_skills/`) e ensine instantaneamente habilidades customizadas para a IA (ex: Jira, SQL) sem tocar no core do plugin. |
 | 💾 | **Workspace Stateful** | Feche o Neovim a qualquer momento. O plugin empacota sua fila assíncrona, respostas em andamento em disco (`.mctx`) e reabre todas as abas onde você parou. |
-| 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. Bloqueados pelo Gatekeeper nativo, IAs sem permissão não podem usar bash ou editar o disco. |
+| 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. Bloqueados pelo Gatekeeper nativo, IAs sem permissão não podem usar bash, invocar outros agentes ou editar o disco. Tudo controlado visualmente pela UI Virtual. |
 | 🔄 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (ex: Rate Limit da OpenAI), o plugin tenta automaticamente a próxima API da sua fila de forma invisível. |
 | 🛑 | **Job Control (Pânico)** | Pressione `<C-x>` a qualquer momento para assassinar a conexão com a API via `jobstop`. |
 
@@ -44,7 +44,7 @@ O plugin possui uma camada nativa de transporte HTTP (`curl`) super otimizada, c
 ---
 
 ## 🛠️ Criando suas Próprias Skills (Extensibilidade)
-Você pode ensinar qualquer coisa à IA localmente. Basta criar um script `.lua` na sua pasta de configuração: `~/.config/nvim/mctx_skills/`
+Você pode ensinar qualquer coisa à IA localmente. Basta ir ao Painel de Controle (`:ContextControls`), expandir a seção de Skills e clicar em `[ + Criar Nova Skill ]`. O plugin gera o boilerplate automaticamente. Os arquivos ficam salvos em `~/.config/nvim/mctx_skills/`
 
 Exemplo de uma skill `banco_de_dados.lua`:
 ```lua
@@ -60,7 +60,7 @@ return {
     end
 }
 ```
-A IA aprenderá a usar essa ferramenta instantaneamente. Use o comando `:ContextReloadSkills` se fizer alterações com o Neovim aberto.
+A IA aprenderá a usar essa ferramenta instantaneamente. Use o comando `:ContextReloadSkills` se fizer alterações externas com o Neovim aberto.
 
 ---
 
@@ -111,7 +111,7 @@ require('multi_context').setup({
 | `:ContextRepo` | Inicia a sessão mapeando todo o projeto do Git. |
 | `:ContextGit` | Envia as alterações não commitadas (`git diff`). |
 | `:ContextBuffers`| Envia todos os buffers de código carregados no Neovim. |
-| `:ContextControls` | ⚙️ **Abre o Painel Virtual Unificado para gerenciar APIs, Swarms, Compressão e Limites.** |
+| `:ContextControls` | ⚙️ **Abre o Painel Virtual Unificado para gerenciar APIs, Swarms, Compressão, Skills e Permissões IAM.** |
 | `:ContextTree` | Desenha a árvore do projeto no prompt. |
 | `:ContextReloadSkills`| Recarrega imediatamente sua pasta local de habilidades. |
 | `:ContextToggle` | Abre ou esconde a janela flutuante principal. |
@@ -119,8 +119,9 @@ require('multi_context').setup({
 
 ---
 
-## ⌨️ UX e Atalhos do Chat
+## ⌨️ UX e Atalhos do Chat e Painel
 
+### Atalhos do Chat Principal
 | Atalho | Modo | Ação |
 |---|---|---|
 | **`<CR>` / `<C-CR>` / `<S-CR>`** | Insert/Normal | Envia a mensagem e invoca a IA. |
@@ -130,11 +131,20 @@ require('multi_context').setup({
 | **`<A-b>`** | Insert/Normal | Copia o último bloco de código para a área de transferência. |
 | **`k` / `<C-u>`** | Normal | Pausa o Auto-Scroll direcionalmente para ler histórico. |
 
+### Atalhos do Painel Virtual (`:ContextControls`)
+| Atalho | Ação |
+|---|---|
+| **`<CR>`** | Expande categorias, faz Drill-down em agentes ou invoca criação de entidades `[+]`. |
+| **`<Space>`**| Altera Toggles (`●`/`○`) de permissões, troca APIs ativas ou cicla modos. |
+| **`c`** | Edita/Muda um valor numérico ou textual (Limites, Nível Cognitivo, Nome). |
+| **`e`** | Abre instantaneamente o arquivo `.lua` para edição expressa de uma Skill Customizada. |
+| **`dd` / `p`** | Corta e cola APIs e opções para reordenar hierarquias e filas de prioridade. |
+
 ---
 
 ## 🧪 Testes Automatizados (TDD)
 
-O plugin é mantido sob alta confiabilidade (atualmente com **84 de 84 testes passando sem falhas**) usando `plenary.nvim`, garantindo que as lógicas de extração, rede, parser e resiliência de buffers funcionem perfeitamente em ambientes assíncronos.
+O plugin é mantido sob alta confiabilidade (atualmente com **87 de 87 testes passando sem falhas**) usando `plenary.nvim`, garantindo que as lógicas de extração, rede, parser, interface virtual, permissões e resiliência de buffers funcionem perfeitamente em ambientes assíncronos.
 ```bash
 make test_agregate_results
 ```

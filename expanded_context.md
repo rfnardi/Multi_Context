@@ -1,7 +1,8 @@
-Aabaixo está o contexto do meu projeto de Plugin do neovim.
-Vamos operar da seguinte forma dentro da perspectiva TDD: você escreverá/atualizará ao longo do trabalho apenas 3 arquivos: create_tests.sh, collect_info.sh e refactorate.sh que rodarei de dentro do terminal do neovim na raíz do projeto. 
 
-Quanto ao collect_info.sh, ele deverá coletar a informação desejada e jogar no stdout pois vou rodá-lo com :bash % | xclip -selection clipboard .
+Abaixo está o contexto do meu projeto de Plugin do neovim.
+Vamos operar da seguinte forma dentro da perspectiva TDD: você escreverá/atualizará ao longo do trabalho apenas 3 arquivos: create_tests.sh, collect_info.sh e refactorate.sh que rodarei de dentro do terminal do neovim na raíz do projeto. Primeiro você escreve os testes, eu rodo eles e te envio o resultado e então você cria o código da estrutura do projeto que faz os testes passarem. Eventualmente teremos etapas de ajustes de plano, sem escrita de código. 
+
+Quanto ao collect_info.sh, ele deverá coletar a informação desejada e jogar no stdout pois vou rodá-lo com :bash % | xclip -selection clipboard . Não escreva o collect_info.sh para coletar as informações dos testes, mas apenas para coletar informações de arquivos que enventualmente não lhe tenham sido passados.
 
 Quanto aos outros dois scripts, eles devem criar os testes e editar os arquivos diretamente, e não construírem outros scripts que editam arquivos que precisam ser executado para só então termos os arquivos editados. Eles devem usar diretamente cat << 'EOF' > arquivo_a_ser_substituído ou comandos sed, etc para fazer a edição DIRETA dos arquivos.
 # Árvore de arquivos:
@@ -18,15 +19,14 @@ Quanto aos outros dois scripts, eles devem criar os testes e editar os arquivos 
 │       ├── agents.lua
 │       ├── api_client.lua
 │       ├── api_handlers.lua
-│       ├── api_selector.lua
 │       ├── commands.lua
 │       ├── config.lua
 │       ├── context_builders.lua
+│       ├── context_controls.lua
 │       ├── conversation.lua
 │       ├── init.lua
 │       ├── memory_tracker.lua
 │       ├── prompt_parser.lua
-│       ├── [01;32mqueue_editor.lua[0m
 │       ├── react_loop.lua
 │       ├── refactorate.sh
 │       ├── [01;34mskills[0m
@@ -52,6 +52,7 @@ Quanto aos outros dois scripts, eles devem criar os testes e editar os arquivos 
 │       │   ├── archivist_spec.lua
 │       │   ├── config_spec.lua
 │       │   ├── context_builders_spec.lua
+│       │   ├── context_controls_spec.lua
 │       │   ├── conversation_spec.lua
 │       │   ├── diagnostics_spec.lua
 │       │   ├── init_tracker_spec.lua
@@ -60,7 +61,6 @@ Quanto aos outros dois scripts, eles devem criar os testes e editar os arquivos 
 │       │   ├── [01;32mprompt_optimization_spec.lua[0m
 │       │   ├── prompt_parser_spec.lua
 │       │   ├── [01;32mprompt_squads_spec.lua[0m
-│       │   ├── [01;32mqueue_editor_spec.lua[0m
 │       │   ├── react_loop_spec.lua
 │       │   ├── scroller_spec.lua
 │       │   ├── session_spec.lua
@@ -92,18 +92,18 @@ Quanto aos outros dois scripts, eles devem criar os testes e editar os arquivos 
 ├── refactorate.sh
 └── [01;32mrun_tests.sh[0m
 
-7 directories, 78 files
+7 directories, 77 files
 ======= Context.md (arquivo que resume o estado do projeto)=======
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)** e um **Ecossistema de Skills Pluggáveis** que permite aos usuários expandirem as habilidades da IA localmente.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual UI em Grid** e um **Ecossistema de Skills Pluggáveis e Editáveis** que permite aos usuários forjarem as habilidades da IA localmente.
 
 ## Arquitetura Técnica
 
 ### Tecnologias Principais
 - **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **79/79 Passando Absolutamente**.
+- **Framework de Testes**: `plenary.nvim` (busted) - **84/84 Passando Absolutamente**.
 - **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
 - **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
 - **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
@@ -124,87 +124,70 @@ lua/multi_context/
 ├── squads.lua            # Loader e resolvedor de Esquadrões Meta-Agentes (Fase 23)
 ├── skills_manager.lua    # Loader assíncrono e validador de código externo (Hot-Reload)
 ├── react_loop.lua        # Gerenciador de estado de sessão e Circuit Breaker
-├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) (Fase 22)
+├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) e Imunidade de Turno Inicial
 ├── context_builders.lua  # Extratores de contexto injetando numeração de linhas estrita (1 | code)
-├── queue_editor.lua      # Interface interativa visual (UI) para gerenciar APIs e permissões de Swarm
+├── context_controls.lua  # Engine Virtual UI (Grid-Style) para Controle Mestre (API, IAM, Swarm, Watchdog)
 ├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff)
 ├── utils.lua             # Ferramentas de cálculo de token e serialização de Workspace
 ├── ui/
 │   ├── popup.lua         # Lógica da janela flutuante, carrossel de buffers e atalhos
 │   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
-│   └── highlights.lua    # Highlights sintáticos customizados
-└── tests/                # Suíte de testes automatizados (TDD/Plenary) - 79/79 Passando
+│   └── highlights.lua    # Highlights sintáticos unificados e paleta global
+└── tests/                # Suíte de testes automatizados (TDD/Plenary) - 84/84 Passando
 ```
 
 ## Funcionalidades e Capacidades Implementadas
 
-### 1. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
-- **Delegação via Tech Lead (Lazy Delegator)**: A persona `@tech_lead` orquestra a divisão de trabalho através da tool `spawn_swarm`, passando um payload JSON com as tarefas. O Tech Lead é orientado a não programar, mas sim projetar e repassar o trabalho.
-- **Roteamento Cognitivo (Mixture of Agents - MoA)**: APIs e Agentes possuem um `abstraction_level` (high, medium, low). O `swarm_manager` distribui as tarefas priorizando APIs mais baratas (medium/low) que deem conta do recado, subindo para APIs caras (high) apenas como *Fallback Direcional*.
-- **Pipelines Declarativos (Esteiras de Produção)**: Suporte à diretiva `"chain":["coder", "qa"]`. Quando o Coder termina, a tarefa não é encerrada: ela "reencarna" na fila para o QA, acumulando o contexto do agente anterior.
-- **Coreografia (Ping-Pong Autônomo)**: Sub-agentes autorizados via `"allow_switch"` podem usar a tool `switch_agent` para transferir o controle da aba e da tarefa em tempo real para outro agente (ex: chamar o DBA). O sistema injeta o novo System Prompt *in-flight* sem fechar o motor ReAct.
-- **Carrossel de Buffers (UI)**: Sub-agentes rodam em abas invisíveis (`nofile`) dentro do mesmo *popup*. O usuário navega em tempo real com `<Tab>` e `<S-Tab>`.
+### 1. Engine Virtual UI e Identity & Access Management (IAM) - (Fase 26)
+- **Grid Declarativo (Lazy-Style)**: Interface interativa unificada acessada via `:ContextControls`. Renderiza opções alinhadas horizontalmente com pontilhados (dot-leaders), cursores ocultos (`cursorline`) e ícones de alternância (`●` / `○`).
+- **Matriz de Permissões de Agentes**: Controle fino (Drill-down) que lista cada agente e permite ligar/desligar ferramentas específicas (Skills) apenas para aquele agente, salvando no perfil isolado.
+- **Fábrica de Entidades**: Criação de novas Skills customizadas e novas Personas dinamicamente a partir do painel.
+- **Edição Expressa**: O atalho `e` no painel sobre o nome de uma Skill abre instantaneamente o seu código Lua base para debug.
 
-### 2. Prevenção Extrema de Token Leak (Fase 20)
-- **Extração Cirúrgica (`<final_report>`)**: Em vez de retornar todo o scratchpad (logs de ferramentas, raciocínios intermediários) para o Tech Lead, o Swarm extrai rigorosamente apenas o que está dentro da tag `<final_report>`. Isso salva milhares de tokens a cada turno.
+### 2. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
+- **Delegação via Tech Lead**: Orquestração via `spawn_swarm`.
+- **Roteamento Cognitivo (MoA)**: O painel visual permite ordenar quem resolve qual tarefa e marcar quem é *Fallback Direcional*.
+- **Pipelines e Coreografia**: Reencarnação de tarefas em esteiras e injeção do sistema `switch_agent` para o agente ceder o controle in-flight.
 
-### 3. Persistência de Workspace Stateful (Fase 18.5)
-- **Metadata Envelope (`<mctx_session>`)**: Cada sessão salva em disco recebe um ID e timestamps. Isso evita a duplicação de arquivos e mantém rastreabilidade.
-- **JSON-in-XML**: Todo o estado volátil das tarefas do enxame (`M.state.queue`, buffers inativos e `reports`) é empacotado e salvo em uma tag oculta `<swarm_state>`. Quando o usuário reabre o Neovim e invoca o log, todo o Swarm ressuscita perfeitamente.
+### 3. O Guardião Preditivo, Compressão Quadripartite e 3 Motores (Fase 22 a 25)
+- **Watchdog via EMA**: O rastreador calcula a média móvel, somando o peso do buffer atual. Exibe a telemetria ao vivo na UI: `Multi_Context_Chat | ~3500 tokens | WD: Ask`.
+- **3 Motores de Compressão**: Configurável via painel interativo (Semântico, Percentual e Fixo).
+- **Imunidade de Turno (Cold Start)**: O sistema detecta colagens gigantes no começo da conversa e não sequestra a requisição do usuário no turno inaugural.
 
-### 4. Sistema Pluggável de Skills (Fase 19)
-- **Extensibilidade Local**: O `skills_manager` varre a pasta `~/.config/nvim/mctx_skills/` em busca de novos scripts `.lua`.
-- **Injeção de Prompt**: O plugin gera os manuais em formato XML das funções do usuário dinamicamente e ensina a IA a utilizá-las.
-- **Roteamento Seguro**: O `tool_runner` roda a ferramenta do usuário através de um `pcall` (Proteção contra crashes por código mal formatado).
-- **Hot-Reload Automático**: A qualquer momento a ram é limpa e atualizada via `:ContextReloadSkills`.
+### 4. Esquadrões Meta-Agentes e Skills Pluggáveis (Fases 19 e 23)
+- Compilação transparente de menções a esquadrões (ex: `@squad_dev`).
+- Scripts pluggáveis via `~/.config/nvim/mctx_skills/` com validação de Gatekeeper e hot-reload autônomo.
 
-### 5. O Guardião Preditivo e a Compressão Quadripartite (Fase 22)
-- **Watchdog via EMA**: Um rastreador analisa o tamanho histórico de tokens por turno usando uma Média Móvel Exponencial. Antes de despachar, o plugin projeta o tamanho futuro da requisição.
-- **A Persona `@archivist`**: Se a janela segura (Cognitive Horizon) estiver ameaçada, o sistema sequestra a requisição do usuário, invoca o Arquivista invisivelmente, extrai a Memória Quadripartite (`<genesis>`, `<journey>`, `<now>`, `<plan>`), destrói a prolixidade do chat em tela e injeta essa memória hiper-compacta, restaurando o contexto antes de prosseguir com a requisição original.
-
-### 6. Esquadrões Meta-Agentes (Squads - Fase 23)
-- **Compilação Transparente de Intents**: O usuário pode chamar equipes pré-definidas no chat (ex: `@squad_dev`). O `prompt_parser` detecta o Squad, anexa a intent do usuário e transpila isso para um Payload JSON rígido encabeçado pelo `@tech_lead`, ativando Swarms complexos com fluidez de linguagem natural.
-
-### 7. Unified Diff e Ferramentas Estritas (Fase 24)
-- **Binário Nativo `patch`**: Implementação da skill `apply_diff`, focada em edições cirúrgicas em arquivos de milhares de linhas utilizando a arquitetura Universal Diff, prevenindo a temida alucinação do *"resto do código inalterado aqui..."* das LLMs.
-- **Otimização Extrema de Prompts**: O manual do sistema base injetado na LLM foi emagrecido ao limite absoluto, garantindo a economia de centenas de tokens a cada requisição enviada.
-
-### 8. Sistema de Agentes Estritos e Resiliência
-- **Gatekeeper e Menor Privilégio**: Bloqueio de alucinações de agentes não autorizados usando ferramentas críticas (ex: Arquiteto rodando bash).
-- **Parser de Tags**: O `tool_parser.lua` força o fechamento implícito de `<tool_call>` corrompidas.
-- **Fallback Automático**: O `api_client` tenta automaticamente a próxima API da fila se a primária falhar por instabilidade ou Rate Limit.
+### 5. Unified Diff e Persistência de Workspace
+- Persistência e Ressurreição de todo o Enxame através de injeção JSON-in-XML no arquivo `.mctx`.
+- Edições cirúrgicas nativas acopladas ao Kernel UNIX via `patch --force`.
 
 ---
 
 ## Decisões Técnicas Críticas
 1. **Desacoplamento de UI e Background**: O motor Swarm distribui a carga via `curl` assíncrono e `vim.schedule()` mantendo a navegação do usuário fluida.
-2. **Injeção Dinâmica de System Prompt**: Para permitir a troca de agentes na mesma aba (Coreografia), a primeira posição do array `messages` é reescrita *on-the-fly* dentro do próprio `tool_runner`/`swarm_manager`, enganando a LLM para assumir a nova persona sem perder o fluxo de consciência da tarefa.
-3. **Delegation vs Execution (Skills)**: Isolamento das skills do usuário via `loadfile` e `pcall`.
-4. **Queue Editor Interativo (`queue_editor.lua`)**: Em vez de editar JSON bruto, manipulamos buffers `acwrite` renderizando opções virtuais (`[x]`) para alternar a flag `allow_spawn` em tempo real na interface do editor.
-5. **Uso de Ferramentas UNIX Nativas**: A escolha pelo utilitário `patch --force` garante operações de Unified Diff robustas a nível de Kernel sem reinventar a roda ou prender a *thread* com prompts de terminal interativos.
+2. **Injeção Dinâmica de System Prompt**: A primeira posição do array de redes é reescrita *on-the-fly* no `tool_runner`/`swarm_manager`, emulando a persona nova sem perder o raciocínio.
+3. **Virtual DOM com Mutação Segura**: O `:ContextControls` opera lendo e manipulando uma Tabela de Estado Lua e forçando re-renderizações no buffer visual sem bloquear arquivos. A limpeza agressiva previne vazamento de buffers (`buftype=acwrite`, `bufhidden=wipe`).
 
 ---
 
 ## Estado Atual do Desenvolvimento
 
-### ✅ Implementado, Estável e Testado (Fases 1 a 24)
-O core do produto alcançou o padrão de motor de orquestração industrial pesado.
-- Arquitetura Swarm Avançada com Roteamento Cognitivo (MoA), Pipelines e Coreografia.
-- Guardião Preditivo com compressão baseada no formato Quadripartite.
-- Suporte a Squads (Esquadrões) fluindo por linguagem natural.
-- Prevenção de Token Leak com `<final_report>`.
-- Persistência de Workspace e Ressurreição de Estado (`.mctx`).
-- Injeção e motor de execução de custom skills (Plugins), incluindo a skill pesada `apply_diff`.
-- Refinamento de UI para gestão de APIs (Queue Editor).
-- **Cobertura Testes Plenary:** 79 de 79 Sucessos absolutos (0 Falhas).
+### ✅ Implementado, Estável e Testado (Fases 1 a 26)
+O core do produto é um motor de orquestração industrial de ponta.
+- Interface `LazyVim-like` (Grid, Ícones, Toggles de Permissão, Drill-down).
+- Watchdog Preditivo 2.0 (Motores de Compressão Flexíveis).
+- IAM de Agentes e Skills editáveis em tempo real.
+- Swarm Avançado (MoA, Pipelines, Coreografia).
+- **Cobertura Testes Plenary:** 84 de 84 Sucessos absolutos (0 Falhas / 0 Erros).
 
 ### 🔄 Próximos Passos (Fase Opcional e Comunidade)
-Com a fundação tecnológica da V1 totalmente concluída e testada:
-1. **Catalogar Exemplos de Skills**: Criar um repositório ou pasta `examples/` contendo scripts avançados de skills prontas (ex: `read_jira.lua`, `sql_inspector.lua`, `run_pytest.lua`).
-2. **Distribuição via Lazy.nvim**: Preparar releases com *tags* (ex: `v1.0.0`) para garantir setups fluídos via gerenciadores de pacotes.
+Com a fundação tecnológica da V1.0 totalmente concluída e testada:
+1. **Catalogar Exemplos de Skills**: Criar um repositório com scripts avançados de skills prontas (ex: `read_jira.lua`, `sql_inspector.lua`, `run_pytest.lua`).
+2. **Distribuição via Lazy.nvim**: Preparar releases com *tags* (ex: `v1.0.0`) para distribuição.
 
 ---
-*Última atualização: 23 de Abril de 2026 - Preditividade de Contexto (Watchdog), Squads e Unified Diff consolidados.*
+*Última atualização: Abril de 2026 - Fase 26: Modernização UI/UX (Lazy-Style Grid) e Gestão IAM concluídos (84/84 tests).*
 
  # Conteúdo de todos os arquivos lua do projeto:
 ======== ./lua/multi_context/commands.lua ========
@@ -257,8 +240,8 @@ M.ContextChatGit = function()
     open_with(require('multi_context.context_builders').get_git_diff())
 end
 
-M.ContextApis = function()
-    require('multi_context.api_selector').open_api_selector()
+M.ContextControls = function()
+    require('multi_context.context_controls').open_panel()
 end
 
 M.ContextBuffers  = function()
@@ -289,6 +272,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/skills/registry.lua ========
 local M = {}
 
@@ -342,6 +330,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/react_loop.lua ========
 -- lua/multi_context/react_loop.lua
 local M = {}
@@ -385,6 +378,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/prompt_parser.lua ========
 local M = {}
 local registry = require('multi_context.skills.registry')
@@ -513,6 +511,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/utils_spec.lua ========
 local utils = require('multi_context.utils')
 
@@ -537,6 +540,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/api_handlers_spec.lua ========
 -- lua/multi_context/tests/api_handlers_spec.lua
 -- transport.lua carrega normalmente em headless nvim.
@@ -644,6 +652,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/init_tracker_spec.lua ========
 local init = require('multi_context.init')
 local memory_tracker = require('multi_context.memory_tracker')
@@ -694,6 +707,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/tool_parser_spec.lua ========
 -- lua/multi_context/tests/tool_parser_spec.lua
 local tool_parser = require('multi_context.tool_parser')
@@ -733,6 +751,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/diagnostics_spec.lua ========
 local tools = require('multi_context.tools')
 local api = vim.api
@@ -810,6 +833,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/scroller_spec.lua ========
 -- lua/multi_context/tests/scroller_spec.lua
 local scroller = require('multi_context.ui.scroller')
@@ -830,6 +858,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/swarm_phase21_spec.lua ========
 local swarm = require('multi_context.swarm_manager')
 local api_client = require('multi_context.api_client')
@@ -943,6 +976,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/session_spec.lua ========
 local utils = require('multi_context.utils')
 local swarm = require('multi_context.swarm_manager')
@@ -1037,6 +1075,85 @@ end)
 
 
 
+
+
+
+
+====================================
+======== ./lua/multi_context/tests/context_controls_spec.lua ========
+local controls = require('multi_context.context_controls')
+local config = require('multi_context.config')
+local api = vim.api
+
+describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
+    before_each(function()
+        package.loaded['multi_context.context_controls'] = nil
+        controls = require('multi_context.context_controls')
+        controls.reset_state()
+        
+        -- Mock for APIs and Agents
+        config.load_api_config = function()
+            return { fallback_mode = true, default_api = "api_A", apis = { { name = "api_A" } } }
+        end
+        package.loaded['multi_context.agents'] = {
+            load_agents = function() return { tech_lead = { skills = {"run_shell"} } } end
+        }
+        package.loaded['multi_context.skills_manager'] = {
+            load_skills = function() end,
+            get_skills = function() return { minha_skill = {} } end
+        }
+    end)
+
+    it("Deve inicializar as novas sessoes e carregar agentes e skills na memoria", function()
+        controls.init_state()
+        assert.are.same(6, #controls.state.sections, "Devem existir 6 sessoes no painel agora")
+        assert.is_not_nil(controls.state.agents["tech_lead"], "Os agentes devem ser carregados no estado")
+        assert.is_not_nil(controls.state.all_skills["minha_skill"], "Skills customizadas devem aparecer")
+        assert.is_not_nil(controls.state.all_skills["apply_diff"], "Skills nativas injetadas devem aparecer")
+    end)
+
+    it("Deve renderizar os botoes de criar Agente e Skill ao expandir as seções", function()
+        controls.init_state()
+        
+        controls.toggle_section(5) -- Gatekeeper
+        controls.toggle_section(6) -- Skills
+        
+        local lines = controls.render()
+        local found_new_agent = false
+        local found_new_skill = false
+        local found_tech_lead = false
+        
+        for _, line in ipairs(lines) do
+            if line:match("%+ Criar Novo Agente") then found_new_agent = true end
+            if line:match("%+ Criar Nova Skill") then found_new_skill = true end
+            if line:match("▶ tech_lead") then found_tech_lead = true end
+        end
+        
+        assert.is_true(found_new_agent, "O botão virtual de novo agente deve ser renderizado")
+        assert.is_true(found_new_skill, "O botão virtual de nova skill deve ser renderizado")
+        assert.is_true(found_tech_lead, "O agente existente deve aparecer listado")
+    end)
+    
+    it("Deve permitir Drill-down (Expandir um Agente) revelando a arvore de skills", function()
+        controls.init_state()
+        controls.toggle_section(5)
+        
+        -- Simulando que o usuario apertou <CR> em cima do tech_lead
+        controls.state.expanded_agents["tech_lead"] = true
+        
+        local lines = controls.render()
+        local found_run_shell = false
+        
+        for _, line in ipairs(lines) do
+            if line:match("├─ run_shell") and line:match("●") then found_run_shell = true end
+        end
+        
+        assert.is_true(found_run_shell, "Ao expandir, deve listar as skills e marcar com um dot as que o agente possui")
+    end)
+end)
+
+
+====================================
 ======== ./lua/multi_context/tests/swarm_etapa5_spec.lua ========
 -- lua/multi_context/tests/swarm_etapa5_spec.lua
 local swarm = require('multi_context.swarm_manager')
@@ -1156,6 +1273,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/conversation_spec.lua ========
 local conv = require('multi_context.conversation')
 local config = require('multi_context.config')
@@ -1229,6 +1351,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/prompt_parser_spec.lua ========
 -- Stub do registry para o teste isolado
 package.loaded['multi_context.skills.registry'] = {
@@ -1282,6 +1409,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/swarm_etapa1_spec.lua ========
 local tool_parser = require('multi_context.tool_parser')
 local config = require('multi_context.config')
@@ -1360,6 +1492,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/config_spec.lua ========
  -- lua/multi_context/tests/config_spec.lua -- Nota: O require foi movido para dentro dos blocos para respeitar a ordem de inicialização do minimal_init.lua
 
@@ -1431,7 +1568,7 @@ describe("Fase 25 - Configurações do Guardião 2.0:", function()
     -- Garante reload limpo para pegar defaults
     package.loaded['multi_context.config'] = nil
     config = require('multi_context.config')
-    config.setup()
+    config.options = vim.deepcopy(config.defaults)
     
     assert.is_not_nil(config.options.watchdog, "A tabela watchdog deve existir")
     assert.are.same("off", config.options.watchdog.mode, "O padrao deve ser off para nao assustar o usuario")
@@ -1444,6 +1581,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/swarm_etapa2_spec.lua ========
 local popup = require('multi_context.ui.popup')
 local api = vim.api
@@ -1516,6 +1658,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/skills_manager_spec.lua ========
 local skills = require('multi_context.skills_manager')
 local prompt_parser = require('multi_context.prompt_parser')
@@ -1620,6 +1767,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/archivist_spec.lua ========
 local init = require('multi_context') -- Usando require na raiz para capturar o mesmo cache!
 local popup = require('multi_context.ui.popup')
@@ -1681,6 +1833,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/react_loop_spec.lua ========
 -- lua/multi_context/tests/react_loop_spec.lua
 local react_loop = require('multi_context.react_loop')
@@ -1717,6 +1874,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/abstraction_level_spec.lua ========
 local agents = require('multi_context.agents')
 local config = require('multi_context.config')
@@ -1776,6 +1938,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/tools_spec.lua ========
 local tools = require('multi_context.tools')
 
@@ -1854,6 +2021,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/squads_spec.lua ========
 local squads = require('multi_context.squads')
 
@@ -1895,81 +2067,11 @@ end)
 
 
 
-======== ./lua/multi_context/tests/queue_editor_spec.lua ========
-local queue_editor = require('multi_context.queue_editor')
-local config = require('multi_context.config')
-
-describe("Queue Editor Module:", function()
-    local orig_load, orig_save, orig_notify
-    local saved_cfg = nil
-
-    before_each(function()
-        orig_load = config.load_api_config
-        orig_save = config.save_api_config
-        orig_notify = vim.notify
-        
-        vim.notify = function() end
-
-        -- Mock do arquivo de configuração JSON
-        config.load_api_config = function()
-            return {
-                apis = {
-                    { name = "api_principal", allow_spawn = false },
-                    { name = "api_worker", allow_spawn = true }
-                }
-            }
-        end
-        
-        -- Mock para interceptar o salvamento
-        config.save_api_config = function(cfg)
-            saved_cfg = cfg
-            return true
-        end
-    end)
-
-    after_each(function()
-        config.load_api_config = orig_load
-        config.save_api_config = orig_save
-        vim.notify = orig_notify
-        saved_cfg = nil
-    end)
-
-    it("Deve renderizar os marcadores allow_spawn, inverter os valores e salvar", function()
-        -- Abre o editor (cria o buffer UI)
-        queue_editor.open_editor()
-        
-        local buf = vim.api.nvim_get_current_buf()
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-        
-        -- Verifica renderização inicial
-        assert.truthy(lines[1]:match("%[ %] api_principal"), "API Principal deve nascer desmarcada para spawn")
-        assert.truthy(lines[2]:match("%[x%] api_worker"), "API Worker deve nascer marcada para spawn")
-        
-        -- Simulamos a edição pelo usuário (invertendo as flags e mudando a ordem)
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
-            "[ ] api_worker",
-            "[x] api_principal"
-        })
-        
-        -- Disparamos o evento de salvamento (comando :w)
-        vim.api.nvim_exec_autocmds("BufWriteCmd", { buffer = buf })
-        
-        -- Verificamos se o parser processou corretamente a UI de volta para a estrutura de dados
-        assert.is_not_nil(saved_cfg)
-        
-        -- api_worker subiu e perdeu o spawn
-        assert.are.same("api_worker", saved_cfg.apis[1].name)
-        assert.is_false(saved_cfg.apis[1].allow_spawn)
-        
-        -- api_principal desceu e ganhou o spawn
-        assert.are.same("api_principal", saved_cfg.apis[2].name)
-        assert.is_true(saved_cfg.apis[2].allow_spawn)
-    end)
-end)
 
 
 
 
+====================================
 ======== ./lua/multi_context/tests/swarm_etapa3_spec.lua ========
 -- lua/multi_context/tests/swarm_etapa3_spec.lua
 local popup = require('multi_context.ui.popup')
@@ -2054,6 +2156,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/prompt_optimization_spec.lua ========
 local registry = require('multi_context.skills.registry')
 local prompt_parser = require('multi_context.prompt_parser')
@@ -2100,6 +2207,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/watchdog_spec.lua ========
 local init = require('multi_context')
 local memory_tracker = require('multi_context.memory_tracker')
@@ -2168,6 +2280,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/context_builders_spec.lua ========
 local ctx = require('multi_context.context_builders')
 
@@ -2210,6 +2327,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/prompt_squads_spec.lua ========
 local prompt_parser = require('multi_context.prompt_parser')
 
@@ -2253,6 +2375,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/swarm_etapa4_spec.lua ========
 -- lua/multi_context/tests/swarm_etapa4_spec.lua
 local swarm = require('multi_context.swarm_manager')
@@ -2330,6 +2457,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/memory_tracker_spec.lua ========
 local memory_tracker = require('multi_context.memory_tracker')
 
@@ -2384,6 +2516,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/tools_diff_spec.lua ========
 local tools = require('multi_context.tools')
 
@@ -2438,6 +2575,11 @@ end)
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/minimal_init.lua ========
 vim.cmd([[set runtimepath+=. ]])
 
@@ -2452,6 +2594,11 @@ require('multi_context.config').setup({ user_name = "Nardi" })
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tests/swarm_routing_spec.lua ========
 local swarm = require('multi_context.swarm_manager')
 local agents = require('multi_context.agents')
@@ -2516,103 +2663,11 @@ end)
 
 
 
-======== ./lua/multi_context/queue_editor.lua ========
--- lua/multi_context/queue_editor.lua
--- Buffer interativo para reordenar a fila de APIs e alternar allow_spawn (dd/p para mover, <Space> para alternar, :w para salvar).
-local api = vim.api
-local M   = {}
-
-M.open_editor = function()
-    local config = require('multi_context.config')
-    local cfg    = config.load_api_config()
-    if not cfg then
-        vim.notify("Configuração não encontrada.", vim.log.levels.ERROR)
-        return
-    end
-
-    local lines_out = {}
-    for _, a in ipairs(cfg.apis) do
-        local box = a.allow_spawn and "[x]" or "[ ]"
-        table.insert(lines_out, box .. " " .. a.name)
-    end
-
-    local buf = api.nvim_create_buf(false, true)
-    api.nvim_buf_set_lines(buf, 0, -1, false, lines_out)
-
-    -- buftype 'acwrite' permite :w sem arquivo físico (evita E32)
-    vim.bo[buf].buftype = 'acwrite'
-    api.nvim_buf_set_name(buf, "MultiContext_Queue_Editor")
-
-    local height = math.min(#lines_out + 2, 20)
-    local win    = api.nvim_open_win(buf, true, {
-        relative  = 'editor',
-        width     = 58,
-        height    = height,
-        row       = 5,
-        col       = 10,
-        border    = 'rounded',
-        title     = ' Ordenar Fila (<Space> spawn · dd/p mover · :w salvar) ',
-        title_pos = 'center',
-    })
-
-    api.nvim_create_autocmd("BufWriteCmd", {
-        buffer   = buf,
-        callback = function()
-            local lines     = api.nvim_buf_get_lines(buf, 0, -1, false)
-            local reordered = {}
-            for _, line in ipairs(lines) do
-                local is_spawn = line:match("%[x%]") ~= nil
-                local name = line:match("%[%s*x?%s*%]%s*(.*)")
-                
-                if name then
-                    name = vim.trim(name)
-                    for _, a in ipairs(cfg.apis) do
-                        if a.name == name then
-                            local new_a = vim.deepcopy(a)
-                            new_a.allow_spawn = is_spawn
-                            table.insert(reordered, new_a)
-                            break
-                        end
-                    end
-                end
-            end
-            
-            cfg.apis = reordered
-            if config.save_api_config(cfg) then
-                vim.notify("Fila salva!", vim.log.levels.INFO)
-                vim.bo[buf].modified = false
-                api.nvim_win_close(win, true)
-            else
-                vim.notify("Erro ao salvar.", vim.log.levels.ERROR)
-            end
-        end,
-    })
-
-    api.nvim_buf_set_keymap(buf, "n", "q", ":q!<CR>", { noremap = true, silent = true })
-    api.nvim_buf_set_keymap(buf, "n", "<Space>", "<Cmd>lua require('multi_context.queue_editor').toggle_spawn()<CR>", { noremap = true, silent = true })
-end
-
-M.toggle_spawn = function()
-    local buf = api.nvim_get_current_buf()
-    local row = api.nvim_win_get_cursor(0)[1] - 1
-    local line = api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
-    
-    if not line then return end
-
-    if line:match("%[x%]") then
-        line = line:gsub("%[x%]", "[ ]", 1)
-    elseif line:match("%[%s*%]") then
-        line = line:gsub("%[%s*%]", "[x]", 1)
-    end
-
-    api.nvim_buf_set_lines(buf, row, row + 1, false, { line })
-end
-
-return M
 
 
 
 
+====================================
 ======== ./lua/multi_context/skills_manager.lua ========
 local M = {}
 
@@ -2664,6 +2719,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tool_parser.lua ========
 -- lua/multi_context/tool_parser.lua
 local M = {}
@@ -2798,6 +2858,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/config.lua ========
 -- lua/multi_context/config.lua
 local M = {}
@@ -2900,6 +2965,12 @@ function M.setup(user_opts)
 
     -- Chama a auto-configuração no start do plugin
     M.bootstrap()
+    local disk_cfg = M.load_api_config()
+    if disk_cfg then
+        if disk_cfg.watchdog then M.options.watchdog = vim.deepcopy(disk_cfg.watchdog) end
+        if disk_cfg.cognitive_horizon then M.options.cognitive_horizon = disk_cfg.cognitive_horizon end
+        if disk_cfg.user_tolerance then M.options.user_tolerance = disk_cfg.user_tolerance end
+    end
 end
 
 M.load_api_config = function()
@@ -2972,6 +3043,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/api_handlers.lua ========
 -- lua/multi_context/api_handlers.lua
 local M = {}
@@ -3150,6 +3226,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/transport.lua ========
 -- lua/multi_context/transport.lua
 local M = {}
@@ -3238,131 +3319,11 @@ return M
 
 
 
-======== ./lua/multi_context/api_selector.lua ========
--- api_selector.lua
--- Popup flutuante para selecionar a API padrão.
--- Usa config para leitura/escrita e ui/highlights para visuais.
-local api = vim.api
-local M   = {}
-
-M.selector_buf      = nil
-M.selector_win      = nil
-M.api_list          = {}
-M.current_selection = 1
-
-M.open_api_selector = function()
-    local config = require('multi_context.config')
-    M.api_list   = config.get_api_names()
-    if #M.api_list == 0 then
-        vim.notify("Nenhuma API configurada.", vim.log.levels.WARN)
-        return
-    end
-
-    local current = config.get_current_api()
-    M.current_selection = 1
-    for i, name in ipairs(M.api_list) do
-        if name == current then M.current_selection = i; break end
-    end
-
-    M.selector_buf = api.nvim_create_buf(false, true)
-
-    local width  = 60
-    local height = math.min(#M.api_list + 5, 22)
-    local row    = math.floor((vim.o.lines   - height) / 2)
-    local col    = math.floor((vim.o.columns - width)  / 2)
-
-    M.selector_win = api.nvim_open_win(M.selector_buf, true, {
-        relative  = "editor",
-        width     = width,
-        height    = height,
-        row       = row,
-        col       = col,
-        style     = "minimal",
-        border    = "rounded",
-        title     = " Selecionar API ",
-        title_pos = "center",
-    })
-
-    vim.bo[M.selector_buf].buftype    = "nofile"
-    vim.bo[M.selector_buf].modifiable = true
-
-    M._render()
-    M._keymaps()
-end
-
-M._render = function()
-    if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
-
-    local config  = require('multi_context.config')
-    local hl      = require('multi_context.ui.highlights')
-    local current = config.get_current_api()
-
-    local lines = {
-        "Selecione a API para usar nas requisições:",
-        "  j/k navegar   Enter selecionar   q sair",
-        "",
-    }
-    for i, name in ipairs(M.api_list) do
-        local cursor = (i == M.current_selection) and "❯ " or "  "
-        local tag    = (name == current)           and " (selecionada)" or ""
-        table.insert(lines, cursor .. name .. tag)
-    end
-    table.insert(lines, "")
-    table.insert(lines, "  API atual: " .. current)
-
-    vim.bo[M.selector_buf].modifiable = true
-    api.nvim_buf_set_lines(M.selector_buf, 0, -1, false, lines)
-    hl.apply_selector(M.selector_buf, M.api_list)
-end
-
-M._keymaps = function()
-    if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
-    local function mk(k, fn)
-        api.nvim_buf_set_keymap(M.selector_buf, "n", k, "",
-            { callback = fn, noremap = true, silent = true })
-    end
-    mk("j",     function() M._move(1)  end)
-    mk("k",     function() M._move(-1) end)
-    mk("<CR>",  M._select)
-    mk("q",     M._close)
-    mk("<Esc>", M._close)
-end
-
-M._move = function(dir)
-    local n = M.current_selection + dir
-    if n >= 1 and n <= #M.api_list then
-        M.current_selection = n
-        M._render()
-    end
-end
-
-M._select = function()
-    local config = require('multi_context.config')
-    local name   = M.api_list[M.current_selection]
-    if config.set_selected_api(name) then
-        vim.notify("API selecionada: " .. name, vim.log.levels.INFO)
-        require('multi_context.ui.popup').update_title()
-        M._close()
-    else
-        vim.notify("Erro ao selecionar: " .. name, vim.log.levels.ERROR)
-    end
-end
-
-M._close = function()
-    if M.selector_win and api.nvim_win_is_valid(M.selector_win) then
-        api.nvim_win_close(M.selector_win, true)
-    end
-    M.selector_buf      = nil
-    M.selector_win      = nil
-    M.api_list          = {}
-    M.current_selection = 1
-end
-
-return M
 
 
 
 
+====================================
 ======== ./lua/multi_context/utils.lua ========
 -- lua/multi_context/utils.lua
 local M   = {}
@@ -3568,6 +3529,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/squads.lua ========
 local M = {}
 M.squads_file = vim.fn.stdpath("config") .. "/mctx_squads.json"
@@ -3611,6 +3577,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/memory_tracker.lua ========
 local M = {}
 M.state = { ema = 0, count = 0 }
@@ -3641,6 +3612,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/context_builders.lua ========
 local M = {}
 local api = vim.api
@@ -3776,44 +3752,54 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/ui/highlights.lua ========
 local api = vim.api
 local M = {}
 
 M.define_groups = function()
-    vim.cmd("highlight default ContextSelectorTitle    gui=bold guifg=#FFA500 guibg=NONE")
-    vim.cmd("highlight default ContextSelectorCurrent  gui=bold guifg=#B22222 guibg=NONE")
-    vim.cmd("highlight default ContextSelectorSelected gui=bold guifg=#FFFF00 guibg=NONE")
+    -- === PALETA UNIFICADA (Chat e Controls) ===
+    
+    -- Laranja Primário (Header, Infos, Botões Ativos, Valores Numéricos)
     vim.cmd("highlight default ContextHeader gui=bold guifg=#FF4500 guibg=NONE")
-    vim.cmd("highlight default ContextUserAI gui=bold guifg=#0000CD guibg=NONE")
-    vim.cmd("highlight default ContextUser gui=bold guifg=#B22222 guibg=NONE")
     vim.cmd("highlight default ContextCurrentBuffer gui=bold guifg=#FFA500 guibg=NONE")
     vim.cmd("highlight default ContextUpdateMessages gui=bold guifg=#FFA500 guibg=NONE")
     vim.cmd("highlight default ContextBoldText gui=bold guifg=#FFA500 guibg=NONE")
     vim.cmd("highlight default ContextApiInfo gui=bold guifg=#FFA500 guibg=NONE")
+    
+    vim.cmd("highlight default link ContextUITitle ContextApiInfo")
+    vim.cmd("highlight default link ContextUISection ContextHeader")
+    vim.cmd("highlight default link ContextUIActive ContextBoldText")
+    vim.cmd("highlight default link ContextUIData ContextBoldText")
+
+    -- Vermelho/Firebrick (Usuário, Inativos)
+    vim.cmd("highlight default ContextUser gui=bold guifg=#B22222 guibg=NONE")
+    vim.cmd("highlight default link ContextUIInactive ContextUser")
+
+    -- Azul (Inteligência Artificial)
+    vim.cmd("highlight default ContextUserAI gui=bold guifg=#0000CD guibg=NONE")
+
+    -- Neutros/Cinza Escuro (Pontilhados, Ajuda de rodapé)
+    vim.cmd("highlight default ContextUIHelp guifg=#696969 guibg=NONE")
+    vim.cmd("highlight default ContextUIDot guifg=#404040 guibg=NONE")
 end
 
 M.apply_chat = function(buf)
     if not api.nvim_buf_is_valid(buf) then return end
-    
     vim.api.nvim_buf_call(buf, function()
         M.define_groups()
-        
         vim.cmd("syntax match ContextHeader '^===.*'")
         vim.cmd("syntax match ContextHeader '^== Arquivo:.*'")
         vim.cmd("syntax match ContextCurrentBuffer '^## buffer atual ##'")
         vim.cmd("syntax match ContextUpdateMessages '\\[mensagem enviada\\]'")
         vim.cmd("syntax match ContextUpdateMessages '\\[Enviando requisição.*\\]'")
-        
-        -- CORREÇÃO: Usando o Regex nativo do Vim (.*)
-        -- 1. Pinta QUALQUER cabecalho "## QualquerNome >>" de Vermelho
         vim.cmd("syntax match ContextUser '^## .* >>.*'")
-        
-        -- 2. Sobrescreve com Azul especificamente se for "## IA"
         vim.cmd("syntax match ContextUserAI '^## IA.*'")
-        
         vim.cmd("syntax match ContextApiInfo '^## API atual:.*'")
-        
         vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
         vim.cmd("syntax region ContextCodeBlock start='^```' end='^```'")
         vim.cmd("highlight default link ContextCodeBlock String")
@@ -3821,29 +3807,50 @@ M.apply_chat = function(buf)
     end)
 end
 
-M.apply_selector = function(buf, api_list)
+M.apply_controls = function(buf)
     if not api.nvim_buf_is_valid(buf) then return end
-    M.define_groups()
-    api.nvim_buf_add_highlight(buf, -1, "ContextSelectorTitle", 0, 0, -1)
-    api.nvim_buf_add_highlight(buf, -1, "ContextSelectorTitle", 1, 0, -1)
-
-    for i = 3, 3 + #api_list - 1 do
-        local line = api.nvim_buf_get_lines(buf, i, i + 1, false)[1]
-        if line then
-            if line:match("^❯") then api.nvim_buf_add_highlight(buf, -1, "ContextSelectorCurrent", i, 0, -1) end
-            if line:match("%(selecionada%)$") then api.nvim_buf_add_highlight(buf, -1, "ContextSelectorSelected", i, 0, -1) end
-        end
-    end
-
-    local total = api.nvim_buf_line_count(buf)
-    if total >= 2 then api.nvim_buf_add_highlight(buf, -1, "ContextSelectorTitle", total - 2, 0, -1) end
+    vim.api.nvim_buf_call(buf, function()
+        M.define_groups()
+        vim.cmd("syntax clear")
+        
+        -- Título Superior
+        vim.cmd("syntax match ContextUITitle '^===.*==='")
+        vim.cmd("syntax match ContextUITitle 'MultiContext AI.*'")
+        
+        -- Textos de Ajuda (Rodapé e Topo)
+        vim.cmd("syntax match ContextUIHelp '^.*<CR>.*<Space>.*'")
+        vim.cmd("syntax match ContextUIHelp '^.*Use j/k para navegar.*'")
+        
+        -- Expansores e Seções
+        vim.cmd("syntax match ContextUISection '^▶.*'")
+        vim.cmd("syntax match ContextUISection '^▼.*'")
+        
+        -- Grid Dots
+        vim.cmd("syntax match ContextUIDot '\\.\\.\\.*'")
+        
+        -- Valores Positivos / Ativos
+        vim.cmd("syntax match ContextUIActive '●'")
+        vim.cmd("syntax match ContextUIActive '\\[ Ask \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Auto \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Semântico \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Percentual \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Fixo \\]'")
+        
+        -- Valores Negativos / Inativos
+        vim.cmd("syntax match ContextUIInactive '○'")
+        vim.cmd("syntax match ContextUIInactive '\\[ Off \\]'")
+        
+        -- Valores em destaque numérico (Tokens, tolerância, %)
+        vim.cmd("syntax match ContextUIData '\\d\\+ tokens'")
+        vim.cmd("syntax match ContextUIData '\\d\\+%%'")
+        vim.cmd("syntax match ContextUIData '1\\.\\d\\+'")
+    end)
 end
 
 return M
 
 
-
-
+====================================
 ======== ./lua/multi_context/ui/scroller.lua ========
 -- lua/multi_context/ui/scroller.lua
 local api = vim.api
@@ -3917,6 +3924,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/ui/popup.lua ========
 local api = vim.api
 local M   = {}
@@ -4214,6 +4226,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/swarm_manager.lua ========
 local config = require('multi_context.config')
 local api_client = require('multi_context.api_client')
@@ -4506,6 +4523,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/agents.lua ========
 -- lua/multi_context/agents.lua
 local api = vim.api
@@ -4621,6 +4643,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tool_runner.lua ========
 -- lua/multi_context/tool_runner.lua
 local M = {}
@@ -4777,6 +4804,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/api_client.lua ========
 -- lua/multi_context/api_client.lua
 local M = {}
@@ -4837,6 +4869,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/init.lua ========
 -- lua/multi_context/init.lua
 local api = vim.api
@@ -4904,7 +4941,8 @@ M.ContextChatFolder = commands.ContextChatFolder
 M.ContextChatHandler = commands.ContextChatHandler
 M.ContextChatRepo = commands.ContextChatRepo
 M.ContextChatGit = commands.ContextChatGit
-M.ContextApis = commands.ContextApis
+M.ContextControls = commands.ContextControls
+M.ContextApis = commands.ContextControls
 M.ContextTree = commands.ContextTree
 M.ContextBuffers = commands.ContextBuffers
 M.TogglePopup = commands.TogglePopup
@@ -5282,7 +5320,8 @@ command! -nargs=0 ContextUndo lua require('multi_context').ContextUndo()
 command! -nargs=0 ContextFolder lua require('multi_context').ContextChatFolder()
 command! -nargs=0 ContextRepo lua require('multi_context').ContextChatRepo()
 command! -nargs=0 ContextGit lua require('multi_context').ContextChatGit()
-command! -nargs=0 ContextApis lua require('multi_context').ContextApis()
+command! -nargs=0 ContextControls lua require('multi_context').ContextControls()
+command! -nargs=0 ContextApis lua require('multi_context').ContextControls()
 command! -nargs=0 ContextTree lua require('multi_context').ContextTree()
 command! -nargs=0 ContextBuffers lua require('multi_context').ContextBuffers()
 command! -nargs=0 ContextToggle lua require('multi_context').TogglePopup()
@@ -5388,6 +5427,11 @@ return M
 
 
 
+
+
+
+
+====================================
 ======== ./lua/multi_context/tools.lua ========
 -- lua/multi_context/tools.lua
 local M = {}
@@ -5635,6 +5679,379 @@ return M
 
 
 
+
+
+
+
+====================================
+======== ./lua/multi_context/context_controls.lua ========
+local config = require('multi_context.config')
+local api = vim.api
+
+local M = {}
+
+M.state = {
+    sections = {
+        { id = "apis", title = "[1] PROVEDORES DE REDE E APIS", expanded = false },
+        { id = "swarm", title = "[2] ORQUESTRAÇÃO DE SWARM (MOA)", expanded = false },
+        { id = "watchdog", title = "[3] GUARDIÃO DE CONTEXTO (WATCHDOG)", expanded = false },
+        { id = "limits", title = "[4] COMPORTAMENTO E LIMITES GLOBAIS", expanded = false },
+        { id = "gatekeeper", title = "[5] PERFIS E PERMISSÕES (GATEKEEPER)", expanded = false },
+        { id = "skills", title = "[6] ECOSSISTEMA DE SKILLS LOCAIS", expanded = false }
+    },
+    apis = {}, default_api = "", fallback_mode = true,
+    watchdog = {}, horizon = 4000, tolerance = 1.0,
+    identity = "User", max_loops = 15,
+    agents = {}, expanded_agents = {},
+    all_skills = {},
+    clipboard_api = nil
+}
+
+M.line_map = {}
+M.buf = nil; M.win = nil
+
+M.reset_state = function()
+    if M.state and M.state.sections then
+        for _, s in ipairs(M.state.sections) do s.expanded = false end
+    end
+    M.state.expanded_agents = {}
+end
+
+M.init_state = function()
+    M.reset_state()
+    local cfg = config.load_api_config() or { apis = {} }
+    M.state.apis = vim.deepcopy(cfg.apis)
+    M.state.default_api = cfg.default_api or ""
+    M.state.fallback_mode = cfg.fallback_mode ~= false
+
+    M.state.watchdog = vim.deepcopy(config.options.watchdog or {})
+    M.state.horizon = config.options.cognitive_horizon or 4000
+    M.state.tolerance = config.options.user_tolerance or 1.0
+    M.state.identity = config.options.user_name or "User"
+    M.state.max_loops = 15
+
+    local agents = require('multi_context.agents')
+    local skills_mgr = require('multi_context.skills_manager')
+    M.state.agents = agents.load_agents() or {}
+    pcall(skills_mgr.load_skills)
+    M.state.all_skills = skills_mgr.get_skills() or {}
+    
+    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent"}
+    for _, t in ipairs(native_tools) do M.state.all_skills[t] = { name = t, is_native = true } end
+end
+
+M.toggle_section = function(idx)
+    if M.state.sections[idx] then M.state.sections[idx].expanded = not M.state.sections[idx].expanded end
+end
+
+local function format_row(label, value, total_width)
+    local label_len = vim.fn.strdisplaywidth(label)
+    local value_len = vim.fn.strdisplaywidth(value)
+    local dots_len = total_width - label_len - value_len - 2
+    if dots_len < 1 then dots_len = 1 end
+    return label .. " " .. string.rep(".", dots_len) .. " " .. value
+end
+
+local function add_line(lines, text, action) table.insert(lines, text); if action then M.line_map[#lines] = action end end
+
+M.render = function()
+    M.line_map = {}
+    local lines = {}
+    local w = 62
+
+    add_line(lines, "  MultiContext AI 🤖                                       [v1.0]", nil)
+    add_line(lines, "", nil)
+
+    for s_idx, sec in ipairs(M.state.sections) do
+        local prefix = sec.expanded and "▼ " or "▶ "
+        add_line(lines, prefix .. sec.title, { type = "section", idx = s_idx })
+        
+        if sec.expanded then
+            if sec.id == "apis" then
+                add_line(lines, format_row("    Motor Automático de Fallback", M.state.fallback_mode and "●" or "○", w), { type = "toggle_fallback" })
+                add_line(lines, "    Lista de Provedores:", nil)
+                for i, a in ipairs(M.state.apis) do
+                    local mark = (a.name == M.state.default_api) and "●" or "○"
+                    add_line(lines, format_row("    ├─ " .. a.name, mark, w), { type = "api_select", name = a.name, idx = i })
+                end
+            elseif sec.id == "swarm" then
+                add_line(lines, "    (Permissão para invocar sub-agentes e prioridade de uso)", nil)
+                for i, a in ipairs(M.state.apis) do
+                    local mark = a.allow_spawn and "●" or "○"
+                    add_line(lines, format_row("    " .. i .. ". " .. a.name .. " (" .. (a.abstraction_level or "medium") .. ")", mark, w), { type = "api_spawn", idx = i })
+                end
+            elseif sec.id == "watchdog" then
+                local wd = M.state.watchdog
+                local m_disp = wd.mode and (wd.mode:sub(1,1):upper() .. wd.mode:sub(2)) or "Off"
+                add_line(lines, format_row("    Status da Interceptação", "[ " .. m_disp .. " ]", w), { type = "wd_mode" })
+                add_line(lines, format_row("    Gatilho (Limiar)", M.state.horizon .. " tokens", w), { type = "wd_horizon" })
+                add_line(lines, format_row("    Tolerância do Usuário", tostring(M.state.tolerance), w), { type = "wd_tolerance" })
+                local strat = "Semântico"
+                if wd.strategy == "percent" then strat = "Percentual" elseif wd.strategy == "fixed" then strat = "Fixo" end
+                add_line(lines, format_row("    Estratégia", "[ " .. strat .. " ]", w), { type = "wd_strategy" })
+                
+                if wd.strategy == "percent" then
+                    add_line(lines, format_row("    Alvo Percentual", math.floor((wd.percent or 0.3) * 100) .. "%", w), { type = "wd_percent" })
+                elseif wd.strategy == "fixed" then
+                    add_line(lines, format_row("    Alvo Fixo", (wd.fixed_target or 1500) .. " tokens", w), { type = "wd_fixed" })
+                end
+            elseif sec.id == "limits" then
+                add_line(lines, format_row("    Identidade no Chat", "[ " .. M.state.identity .. " ]", w), { type = "limit_identity" })
+                add_line(lines, format_row("    Limite Autônomo (ReAct)", M.state.max_loops .. " turnos", w), { type = "limit_loops" })
+            elseif sec.id == "gatekeeper" then
+                add_line(lines, "    (Aperte <CR> num agente para configurar suas skills)", nil)
+                local agent_names = {}
+                for n, _ in pairs(M.state.agents) do table.insert(agent_names, n) end
+                table.sort(agent_names)
+
+                for _, ag_name in ipairs(agent_names) do
+                    local is_exp = M.state.expanded_agents[ag_name]
+                    add_line(lines, "    " .. (is_exp and "▼ " or "▶ ") .. ag_name, { type = "agent_expand", name = ag_name })
+                    if is_exp then
+                        local ag_data = M.state.agents[ag_name]
+                        local ag_skills = ag_data.skills or {}
+                        
+                        local skill_names = {}
+                        for sn, _ in pairs(M.state.all_skills) do table.insert(skill_names, sn) end
+                        table.sort(skill_names)
+
+                        for _, sn in ipairs(skill_names) do
+                            local has_skill = false
+                            for _, s in ipairs(ag_skills) do if s == sn then has_skill = true; break end end
+                            add_line(lines, format_row("      ├─ " .. sn, has_skill and "●" or "○", w), { type = "agent_skill_toggle", agent = ag_name, skill = sn })
+                        end
+                        add_line(lines, format_row("      └─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
+                    end
+                end
+                add_line(lines, "    [ + Criar Novo Agente ]", { type = "create_agent" })
+            elseif sec.id == "skills" then
+                add_line(lines, "    (Aperte 'e' sobre uma skill para editar seu código)", nil)
+                local skill_names = {}
+                for sn, _ in pairs(M.state.all_skills) do table.insert(skill_names, sn) end
+                table.sort(skill_names)
+                
+                for _, sn in ipairs(skill_names) do
+                    local sk = M.state.all_skills[sn]
+                    add_line(lines, format_row("    " .. sn, sk.is_native and "[ Nativa ]" or "[ Custom ]", w), { type = "edit_skill", name = sn })
+                end
+                add_line(lines, "    [ + Criar Nova Skill ]", { type = "create_skill" })
+            end
+            add_line(lines, "", nil)
+        end
+    end
+
+    while #lines < 22 do table.insert(lines, "") end
+    table.insert(lines, string.rep("─", w + 2))
+    table.insert(lines, "  <CR> Expandir   <Space> Alternar   <c> Alterar   <e> Editar")
+    return lines
+end
+
+M.update_buffer = function()
+    if not M.buf or not api.nvim_buf_is_valid(M.buf) then return end
+    vim.bo[M.buf].modifiable = true
+    api.nvim_buf_set_lines(M.buf, 0, -1, false, M.render())
+    vim.bo[M.buf].modifiable = false
+    vim.bo[M.buf].modified = false
+    pcall(function() require('multi_context.ui.highlights').apply_controls(M.buf) end)
+end
+
+M.handle_cr = function()
+    local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    if not action then return end
+    
+    if action.type == "section" then 
+        M.toggle_section(action.idx)
+        M.update_buffer()
+    elseif action.type == "agent_expand" then 
+        M.state.expanded_agents[action.name] = not M.state.expanded_agents[action.name]
+        M.update_buffer()
+    elseif action.type == "create_skill" then
+        vim.ui.input({ prompt = "Nome da nova Skill (.lua): " }, function(input)
+            if not input or input == "" then return end
+            input = input:gsub("%.lua$", "")
+            local dir = vim.fn.stdpath("config") .. "/mctx_skills"
+            if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
+            local path = dir .. "/" .. input .. ".lua"
+            
+            local boilerplate = {
+                "return {",
+                "    name = '" .. input .. "',",
+                "    description = 'Sua descrição aqui',",
+                "    parameters = {",
+                "        { name = 'arg1', type = 'string', required = true, desc = 'Descrição do argumento' }",
+                "    },",
+                "    execute = function(args)",
+                "        return 'Resultado da skill'",
+                "    end",
+                "}"
+            }
+            vim.fn.writefile(boilerplate, path)
+            vim.cmd("edit " .. path)
+            vim.notify("Skill criada! Execute :ContextReloadSkills após editar.", vim.log.levels.INFO)
+            pcall(api.nvim_win_close, M.win, true)
+        end)
+    elseif action.type == "create_agent" then
+        vim.ui.input({ prompt = "Nome da nova Persona: @" }, function(input)
+            if not input or input == "" then return end
+            if not M.state.agents[input] then
+                M.state.agents[input] = {
+                    system_prompt = "Você é um especialista em...",
+                    abstraction_level = "high",
+                    skills = {}
+                }
+                M.save_config()
+                vim.notify("Agente @" .. input .. " criado! Expanda-o para dar permissões.", vim.log.levels.INFO)
+                M.update_buffer()
+            end
+        end)
+    end
+end
+
+M.handle_space = function()
+    local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    if not action then return end
+
+    if action.type == "api_select" then M.state.default_api = action.name
+    elseif action.type == "toggle_fallback" then M.state.fallback_mode = not M.state.fallback_mode
+    elseif action.type == "api_spawn" then M.state.apis[action.idx].allow_spawn = not M.state.apis[action.idx].allow_spawn
+    elseif action.type == "wd_mode" then
+        local cycles = { off = "ask", ask = "auto", auto = "off" }
+        M.state.watchdog.mode = cycles[M.state.watchdog.mode or "off"] or "off"
+    elseif action.type == "wd_strategy" then
+        local cycles = { semantic = "percent", percent = "fixed", fixed = "semantic" }
+        M.state.watchdog.strategy = cycles[M.state.watchdog.strategy or "semantic"] or "semantic"
+    elseif action.type == "agent_skill_toggle" then
+        local ag = M.state.agents[action.agent]
+        if not ag.skills then ag.skills = {} end
+        local found_idx = nil
+        for i, s in ipairs(ag.skills) do if s == action.skill then found_idx = i; break end end
+        if found_idx then table.remove(ag.skills, found_idx) else table.insert(ag.skills, action.skill) end
+    end
+    M.update_buffer()
+end
+
+M.handle_edit = function()
+    local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    if not action then return end
+
+    local function prompt_str(msg, callback)
+        vim.ui.input({ prompt = msg }, function(input)
+            if input and input ~= "" then callback(input); M.update_buffer() end
+        end)
+    end
+
+    local function prompt_num(msg, callback)
+        prompt_str(msg, function(i) local n = tonumber(i); if n then callback(n) end end)
+    end
+
+    if action.type == "wd_horizon" then prompt_num("Novo Gatilho (tokens): ", function(n) M.state.horizon = n end)
+    elseif action.type == "wd_tolerance" then prompt_num("Nova Tolerância (ex: 1.0): ", function(n) M.state.tolerance = n end)
+    elseif action.type == "wd_percent" then prompt_num("Novo Percentual (ex: 30 para 30%): ", function(n) M.state.watchdog.percent = n / 100 end)
+    elseif action.type == "wd_fixed" then prompt_num("Novo Alvo Fixo (tokens): ", function(n) M.state.watchdog.fixed_target = n end)
+    elseif action.type == "limit_identity" then prompt_str("Seu Nome: ", function(s) M.state.identity = s end)
+    elseif action.type == "limit_loops" then prompt_num("Máximo de Turnos Autônomos: ", function(n) M.state.max_loops = n end)
+    elseif action.type == "agent_level" then
+        local cycles = { high = "medium", medium = "low", low = "high" }
+        local ag = M.state.agents[action.name]
+        ag.abstraction_level = cycles[ag.abstraction_level or "high"] or "high"
+        M.update_buffer()
+    end
+end
+
+M.handle_open_file = function()
+    local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    if action and action.type == "edit_skill" then
+        if M.state.all_skills[action.name].is_native then
+            vim.notify("Essa é uma ferramenta Core. O código não pode ser alterado por aqui.", vim.log.levels.WARN)
+            return
+        end
+        local path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
+        if vim.fn.filereadable(path) == 1 then
+            vim.cmd("edit " .. path)
+            pcall(api.nvim_win_close, M.win, true)
+        end
+    end
+end
+
+M.handle_dd = function()
+    local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    if action and (action.type == "api_select" or action.type == "api_spawn") then
+        M.state.clipboard_api = table.remove(M.state.apis, action.idx)
+        M.update_buffer()
+    end
+end
+
+M.handle_p = function()
+    if not M.state.clipboard_api then return end
+    local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    local idx = #M.state.apis + 1
+    if action and (action.type == "api_select" or action.type == "api_spawn") then idx = action.idx + 1 end
+    table.insert(M.state.apis, idx, M.state.clipboard_api)
+    M.state.clipboard_api = nil
+    M.update_buffer()
+end
+
+M.save_config = function()
+    local cfg = config.load_api_config() or { apis = {} }
+    cfg.apis = M.state.apis
+    cfg.default_api = M.state.default_api
+    cfg.fallback_mode = M.state.fallback_mode
+    
+    cfg.watchdog = vim.deepcopy(M.state.watchdog)
+    cfg.cognitive_horizon = M.state.horizon
+    cfg.user_tolerance = M.state.tolerance
+    config.save_api_config(cfg)
+    
+    config.options.user_name = M.state.identity
+    -- Aqui salvaríamos o max_loops no react_loop, mas manteremos no JSON de fallback no futuro se necessário
+    
+    -- IAM: Salva os Agentes e Permissões!
+    local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
+    local raw_json = vim.fn.json_encode(M.state.agents)
+    vim.fn.writefile({raw_json}, agents_file)
+    pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw_json), agents_file)) end)
+
+    M._last_saved_cfg = cfg
+    vim.notify("Configurações e Permissões salvas!", vim.log.levels.INFO)
+end
+
+M.open_panel = function()
+    M.init_state()
+    for _, b in ipairs(api.nvim_list_bufs()) do if api.nvim_buf_get_name(b):match("MultiContext_Controls$") then pcall(api.nvim_buf_delete, b, { force = true }) end end
+    M.buf = api.nvim_create_buf(false, true)
+    vim.bo[M.buf].buftype = 'acwrite'
+    vim.bo[M.buf].bufhidden = 'wipe'
+    vim.bo[M.buf].swapfile = false
+    api.nvim_buf_set_name(M.buf, "MultiContext_Controls")
+    
+    local w, h = 70, 25
+    M.win = api.nvim_open_win(M.buf, true, {
+        relative = 'editor', width = w, height = h,
+        row = math.floor((vim.o.lines - h) / 2), col = math.floor((vim.o.columns - w) / 2),
+        border = 'rounded', style = 'minimal'
+    })
+    
+    vim.wo[M.win].cursorline = true; vim.wo[M.win].wrap = false; vim.wo[M.win].number = true; vim.wo[M.win].relativenumber = true
+    M.update_buffer()
+    
+    local km = { noremap = true, silent = true }
+    local function map(k, f) api.nvim_buf_set_keymap(M.buf, "n", k, "", { callback = f, noremap = true, silent = true }) end
+    
+    map("<CR>", M.handle_cr)
+    map("<Space>", M.handle_space)
+    map("c", M.handle_edit)
+    map("e", M.handle_open_file)
+    map("dd", M.handle_dd)
+    map("p", M.handle_p)
+    api.nvim_buf_set_keymap(M.buf, "n", "q", ":q!<CR>", km)
+    
+    api.nvim_create_autocmd("BufWriteCmd", { buffer = M.buf, callback = M.save_config })
+end
+
+return M
+
+
+====================================
 ======== ./lua/multi_context/conversation.lua ========
 local M = {}
 local api = vim.api
@@ -5708,78 +6125,28 @@ end
 return M
 
 
-# E abaixo está o conteúdo do plano de implementação delineado em outro chat. Perceba que já fizemos algumas coisas. Você vai dar continuidade ao plano seguindo à risca as especificações.
 
-Excelente adição! Você tocou num ponto avançado de *Prompt Engineering* e governança de custos. Existem projetos onde a semântica é vital e a IA precisa de liberdade; e projetos enormes onde o limite estrito (hard-cap) é a única forma de evitar o estouro de limite de tokens e de faturamento.
 
-Aqui está o plano atualizado, incorporando os **3 Motores de Compressão**, sua mecânica de injeção e como isso reflete no nosso painel de controle interativo.
 
----
 
-## 🏛️ ESPECIFICAÇÃO DE DESIGN: FASE 25 (Governança e Controles)
 
-### 1. Motores de Compressão (A Regra de Ouro do Arquivista)
-O sistema terá três algoritmos de compressão, definidos na configuração e refletidos dinamicamente no prompt do `@archivist`.
 
-*   **Motor 1: Compressão Semântica (Default)**
-    *   *Mecânica:* O sistema dita a estrutura (Quadripartite), mas deixa o tamanho livre.
-    *   *Injeção no Prompt:* "Gere o XML. O tamanho final é determinado pela complexidade do histórico. Priorize a integridade da informação."
-*   **Motor 2: Compressão Percentual**
-    *   *Mecânica:* O sistema lê o tamanho do chat atual no momento da interceptação, calcula a porcentagem e passa para a IA. (ex: Chat atual 5000 tokens, Config de 30%).
-    *   *Injeção no Prompt:* "MANDATÓRIO: Sintetize pesadamente. Seu output estruturado não deve ultrapassar o teto aproximado de **1500 tokens**."
-*   **Motor 3: Compressão por Target Size (Fixo)**
-    *   *Mecânica:* Um valor absoluto configurado pelo usuário.
-    *   *Injeção no Prompt:* "MANDATÓRIO: A compressão é agressiva. Sob nenhuma circunstância o seu output estruturado pode ultrapassar **[X] tokens**."
+====================================
+E abaixo está o conteúdo do plano de implementação delineado em outro chat. Perceba que já fizemos algumas coisas. Você vai dar continuidade ao plano seguindo à risca as especificações. Começando por uma etapa inicial de análise do plano de trabalho. E atualização do plano de trabalho dividindo-o em fases estruturadas e objetivas.
 
-### 2. O Painel de Controle: `:ContextControls` (Atualizado)
+ 
+ 
+## 🗺️ PLANO TDD: FASE 26 (A Interface Definitiva e IAM)
 
-A Seção 3 será expandida para suportar não apenas os Modos do Watchdog, mas também o Motor de Compressão, exibindo ou ocultando parâmetros dinamicamente com base na estratégia escolhida.
+### Passo 1: Expansão do Motor Virtual e Mapeamento de Estado (Onde estamos agora)
 
-**UI Expandida (Visão do Usuário):**
-```text
-=== ⚙️ MULTICONTEXT CONTROLS ===
-(Use j/k para navegar, <Space> para alternar, <CR> expandir, c editar, :w salvar)
+Objetivo: Injetar as seções 4, 5 e 6 no context_controls.lua. Fazer o motor ler o mctx_agents.json, listar os agentes, permitir a expansão individual deles (Drill-down) para listar as skills e desenhar os botões de [ + ].
 
-▶ [1] PROVEDORES DE REDE E APIS
-▶ [2] ORQUESTRAÇÃO DE SWARM (MOA) E FALLBACKS
-▼ [3] GUARDIÃO DE CONTEXTO (WATCHDOG)
-      Status da Interceptação: [ Ask ]  (Off | Ask | Auto)
-      Gatilho (Limiar):        4000 tokens
-      Tolerância:              1.0
+### Passo 2: Interatividade e Mutação (Toggles e Edição)
 
-      --- Motor de Compressão (@archivist) ---
-      Estratégia:              [ Percentual ]  (Semântico | Percentual | Fixo)
-      Alvo Percentual:         30% do chat atual
-▶ [4] STATUS DO SISTEMA E SKILLS
-```
-*(Nota de UX: Se o usuário apertar `<Space>` em Estratégia e mudar para "Fixo", a linha de baixo muda instantaneamente para `Alvo (Fixo): 1000 tokens`)*
+Objetivo: Fazer a barra de espaço ligar/desligar skills dos agentes. Fazer a tecla c alterar o Limite de Loops e a Identidade. Fazer o :w salvar o mctx_agents.json.
 
-### 3. O Motor do Guardião 2.0 (Resiliência Consolidada)
-*   **Imunidade do Primeiro Turno:** O Watchdog aborta se for a primeira mensagem (`count < 2`). O Arquivista só trabalha com passado.
-*   **Matemática Real:** `tokens_buffer_atual + EMA`. O texto pendente do prompt do usuário NÃO será somado duas vezes.
-*   **Telemetria UI:** Título atualizado dinamicamente: ` Multi_Context_Chat | ~3500 tokens | WD: Ask `.
+### Passo 3: Modo de Criação e Atalho de Edição (e)
 
----
+Objetivo: Apertar <CR> nos botões [ + ] para criar entidades (gerando arquivos boilerplate de skill) e implementar a tecla e para abrir o código Lua da skill ou o prompt do agente.
 
-### 🗺️ PLANO DE IMPLEMENTAÇÃO TDD (Fase 25 - Atualizado)
-
-*   **Passo 1: Fundações, Configs e Desacoplamento**
-    *   *Meta:* Consertar o `memory_tracker` e adicionar os novos campos de configuração (Modos do Watchdog e os 3 Motores de Compressão).
-    *   *TDD:* Testaremos se a configuração padrão (`Off`, `Semântico`) é carregada. Testaremos se o preditor matemático ignora o prompt e se a Imunidade de Primeiro Turno devolve bloqueio (`false`) caso o chat tenha acabado de começar.
-*   **Passo 2: O System Agent (`@archivist`) e Engenharia de Prompt Dinâmica**
-    *   *Meta:* Interceptar a busca de agente e gerar o Prompt do Arquivista. Plugar a matemática para que, caso a estratégia seja "Percentual", ele calcule o valor na hora de enviar.
-    *   *TDD:* Simular a invocação do Arquivista usando o motor "Percentual" num chat com 10.000 tokens (mock). O teste afirmará que a string "MANDATÓRIO: [...] 3000 tokens" foi forjada dentro do *system prompt*.
-*   **Passo 3: A Engine Virtual do `:ContextControls`**
-    *   *Meta:* Criar o `context_controls.lua`. Fazer o renderizador de Árvore e a sintaxe visual (expansão/retração). Aqui excluiremos os antigos e isolados `queue_editor` e `api_selector`.
-    *   *TDD:* Validar a lógica de Estado x UI. Garantir que expandir uma seção retorna a quantidade exata de linhas.
-*   **Passo 4: Interatividade e Mutação de Estado**
-    *   *Meta:* Plugar as keybinds (`<Space>`, `c`, `dd/p`) e amarrar com a persistência (`config.save_api_config`). Garantir que a UI oculta/mostra o campo "Alvo" baseada na "Estratégia".
-    *   *TDD:* Simular eventos de teclado. Mudar a estratégia para "Fixo" apertando barra de espaço e verificar se a linha seguinte na UI refletiu o texto correto, e se `:w` salvou corretamente no JSON.
-
----
-
-O escopo da Fase 25 está totalmente fechado, integrando resiliência técnica, governança de custos (compressão) e uma experiência de usuário (Painel) de primeiro nível.
-
-Com seu **"De acordo"**, te envio agora o Script nº 1 contendo os testes do **Passo 1**!
-
-Perceba que já demos alguns passos. 

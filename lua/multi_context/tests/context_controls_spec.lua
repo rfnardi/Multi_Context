@@ -68,3 +68,115 @@ describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
         assert.is_true(found_run_shell, "Ao expandir, deve listar as skills e marcar com um dot as que o agente possui")
     end)
 end)
+
+describe("Fase 26.1 - Interatividade e Mutação (Toggles e Edição)", function()
+    local controls = require('multi_context.context_controls')
+
+    before_each(function()
+        controls.reset_state()
+        controls.init_state()
+        
+        -- Estado base simulado para o teste
+        controls.state.agents = {
+            coder = { skills = {"read_file"}, abstraction_level = "high" }
+        }
+        controls.state.all_skills = {
+            read_file = { name = "read_file", is_native = true },
+            run_shell = { name = "run_shell", is_native = true }
+        }
+    end)
+
+    it("Deve ligar e desligar uma skill do agente ao usar o espaco (handle_space)", function()
+        -- Simulando a renderizacao virtual em duas linhas do painel
+        controls.line_map = {
+            [1] = { type = "agent_skill_toggle", agent = "coder", skill = "run_shell" },
+            [2] = { type = "agent_skill_toggle", agent = "coder", skill = "read_file" }
+        }
+        
+        local orig_cursor = vim.api.nvim_win_get_cursor
+        
+        -- Mock: Usuário está na linha 1
+        vim.api.nvim_win_get_cursor = function() return {1, 0} end
+        controls.handle_space() -- Pressionou espaço!
+        
+        local has_run_shell = false
+        for _, s in ipairs(controls.state.agents["coder"].skills) do
+            if s == "run_shell" then has_run_shell = true end
+        end
+        assert.is_true(has_run_shell, "A skill run_shell deve ter sido adicionada a matriz de permissoes")
+        
+        -- Mock: Usuário está na linha 2 (A skill read_file ja existe pro coder)
+        vim.api.nvim_win_get_cursor = function() return {2, 0} end
+        controls.handle_space() -- Pressionou espaço!
+        
+        local has_read_file = false
+        for _, s in ipairs(controls.state.agents["coder"].skills) do
+            if s == "read_file" then has_read_file = true end
+        end
+        assert.is_false(has_read_file, "A skill read_file deve ter sido removida da matriz de permissoes")
+        
+        -- Cleanup
+        vim.api.nvim_win_get_cursor = orig_cursor
+    end)
+    
+    it("Deve alterar a Identidade e Limites com a tecla c (handle_edit)", function()
+        controls.line_map = {[1] = { type = "limit_identity" },
+            [2] = { type = "limit_loops" }
+        }
+        
+        local orig_cursor = vim.api.nvim_win_get_cursor
+        local orig_input = vim.ui.input
+        
+        -- Simulando o usuário editando a Identidade
+        vim.api.nvim_win_get_cursor = function() return {1, 0} end
+        vim.ui.input = function(opts, cb) cb("DevMaster") end
+        
+        controls.handle_edit()
+        assert.are.same("DevMaster", controls.state.identity)
+        
+        -- Simulando o usuário editando o limite de loops ReAct
+        vim.api.nvim_win_get_cursor = function() return {2, 0} end
+        vim.ui.input = function(opts, cb) cb("42") end
+        
+        controls.handle_edit()
+        assert.are.same(42, controls.state.max_loops)
+        
+        -- Cleanup
+        vim.api.nvim_win_get_cursor = orig_cursor
+        vim.ui.input = orig_input
+    end)
+end)
+
+describe("Fase 26.2 - Modo de Criacao e Atalhos", function()
+    local controls = require('multi_context.context_controls')
+
+    before_each(function()
+        controls.reset_state()
+        controls.init_state()
+    end)
+
+    it("Deve criar um novo agente via handle_cr no painel", function()
+        controls.line_map = {
+            [1] = { type = "create_agent" }
+        }
+        
+        local orig_cursor = vim.api.nvim_win_get_cursor
+        local orig_input = vim.ui.input
+        local orig_save = controls.save_config
+        
+        -- Mocks
+        vim.api.nvim_win_get_cursor = function() return {1, 0} end
+        vim.ui.input = function(opts, cb) cb("arquiteto_teste") end
+        controls.save_config = function() end -- Nao sobrescreve o json real durante o teste
+        
+        controls.handle_cr() -- Pressionou enter sobre a opcao [+ Criar Novo Agente]
+        
+        assert.is_not_nil(controls.state.agents["arquiteto_teste"], "A nova persona deve ser adicionada no estado em memoria")
+        assert.are.same("high", controls.state.agents["arquiteto_teste"].abstraction_level, "O default deve ser high")
+        
+        -- Cleanup
+        vim.api.nvim_win_get_cursor = orig_cursor
+        vim.ui.input = orig_input
+        controls.save_config = orig_save
+    end)
+end)
