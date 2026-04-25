@@ -39,3 +39,9 @@ describe("Fase 24 - Otimização de System Prompt (Token Saving):", function()
         assert.falsy(prompt:match("sempre que finalizar uma tarefa para não perder a memória"), "Retire explicações longas sobre o CONTEXT.md")
     end)
 end)
+
+
+
+
+
+

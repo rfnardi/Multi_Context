@@ -7,3 +7,9 @@ if vim.fn.isdirectory(plenary_dir) == 1 then
 end
 
 require('multi_context.config').setup({ user_name = "Nardi" })
+
+
+
+
+
+

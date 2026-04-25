@@ -36,3 +36,9 @@ M.get_squad_names = function()
 end
 
 return M
+
+
+
+
+
+

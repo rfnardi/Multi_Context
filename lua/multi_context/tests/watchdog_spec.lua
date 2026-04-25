@@ -61,3 +61,9 @@ describe("Fase 22 - Passo 2: O Interceptador do Watchdog", function()
         assert.truthy(user_restored_msg:match("Faça uma refatoração enorme"), "A segunda requisicao deve ser a restauracao do user")
     end)
 end)
+
+
+
+
+
+

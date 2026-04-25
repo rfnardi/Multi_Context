@@ -46,3 +46,9 @@ Auto-LSP ativo: edições injetam erros. NÃO CHAME get_diagnostics após editar
 end
 
 return M
+
+
+
+
+
+

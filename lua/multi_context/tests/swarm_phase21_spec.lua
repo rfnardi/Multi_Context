@@ -106,3 +106,9 @@ describe("Fase 21 - Pipelines e Coreografia:", function()
         assert.truthy(swarm.state.reports[1].result:match("QA testou e aprovou"))
     end)
 end)
+
+
+
+
+
+

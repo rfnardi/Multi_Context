@@ -34,3 +34,9 @@ describe("Fase 23 - Passo 1: Loader de Squads", function()
         assert.are.same("squad_ux", names[2])
     end)
 end)
+
+
+
+
+
+

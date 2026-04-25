@@ -64,7 +64,8 @@ M.ContextChatFolder = commands.ContextChatFolder
 M.ContextChatHandler = commands.ContextChatHandler
 M.ContextChatRepo = commands.ContextChatRepo
 M.ContextChatGit = commands.ContextChatGit
-M.ContextApis = commands.ContextApis
+M.ContextControls = commands.ContextControls
+M.ContextApis = commands.ContextControls
 M.ContextTree = commands.ContextTree
 M.ContextBuffers = commands.ContextBuffers
 M.TogglePopup = commands.TogglePopup
@@ -212,7 +213,7 @@ function M.SendFromPopup()
     
     local base_sys_prompt = "Você é um Engenheiro de Software Autônomo no Neovim."
     local memory_context = get_context_md_content()
-    local system_prompt = prompt_parser.build_system_prompt(base_sys_prompt, memory_context, active_agent_name, agents)
+    local system_prompt = prompt_parser.build_system_prompt(base_sys_prompt, memory_context, active_agent_name, agents, current_tokens)
     
     table.insert(messages, 1, { role = "system", content = system_prompt })
     
@@ -273,6 +274,8 @@ function M.SendFromPopup()
             end
         end,
         function(api_entry, metrics)
+            -- FASE 25: Alimenta a memória preditiva com os tokens gerados pela IA
+            require('multi_context.memory_tracker').add_turn(math.floor(#accumulated_text / 4))
             scroller.stop_streaming(buf)
             react_loop.state.active_job_id = nil
             
@@ -440,7 +443,8 @@ command! -nargs=0 ContextUndo lua require('multi_context').ContextUndo()
 command! -nargs=0 ContextFolder lua require('multi_context').ContextChatFolder()
 command! -nargs=0 ContextRepo lua require('multi_context').ContextChatRepo()
 command! -nargs=0 ContextGit lua require('multi_context').ContextChatGit()
-command! -nargs=0 ContextApis lua require('multi_context').ContextApis()
+command! -nargs=0 ContextControls lua require('multi_context').ContextControls()
+command! -nargs=0 ContextApis lua require('multi_context').ContextControls()
 command! -nargs=0 ContextTree lua require('multi_context').ContextTree()
 command! -nargs=0 ContextBuffers lua require('multi_context').ContextBuffers()
 command! -nargs=0 ContextToggle lua require('multi_context').TogglePopup()
@@ -542,3 +546,9 @@ M.HandleArchivistCompression = function(ia_idx)
 end
 
 return M
+
+
+
+
+
+

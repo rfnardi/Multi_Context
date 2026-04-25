@@ -112,3 +112,9 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
     end)
 
 end)
+
+
+
+
+
+

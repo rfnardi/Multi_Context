@@ -71,3 +71,9 @@ describe("Swarm Etapa 1 - Modelagem e Parser:", function()
         assert.is_true(has_spawn_skill)
     end)
 end)
+
+
+
+
+
+

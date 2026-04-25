@@ -36,3 +36,9 @@ describe("Fase 23 - Passo 2: O Compilador de Meta-Agentes", function()
         assert.truthy(parsed.text_to_send:match("Gere uma tela de login"), "A intent do usuario foi apensada a instrucao")
     end)
 end)
+
+
+
+
+
+

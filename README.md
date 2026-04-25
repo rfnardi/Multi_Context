@@ -10,7 +10,7 @@
 
 Diferente de plugins convencionais de autocompletar, o MultiContext atua como um engenheiro de software: ele navega no sistema, edita arquivos em background, roda testes no terminal, delega tarefas para enxames (Swarms) em abas paralelas e se auto-corrige usando um motor de raciocínio ReAct (Reasoning and Acting).
 
-> **Objetivo:** Acelerar o fluxo de trabalho permitindo que a IA construa, teste e valide código de ponta a ponta, com consumo extremamente otimizado de tokens de contexto e alta resiliência a falhas de rede.
+> **Objetivo:** Acelerar o fluxo de trabalho permitindo que a IA construa, teste e valide código de ponta a ponta, com consumo extremamente otimizado de tokens de contexto, governança de custos e alta resiliência a falhas de rede.
 
 ---
 
@@ -18,9 +18,10 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 
 | Ícone | Funcionalidade | Descrição |
 |:---:|---|---|
+| 🎛️ | **Virtual UI Engine** | Painel centralizado e interativo estilo React (Virtual DOM) para orquestrar APIs, Fallbacks, Watchdog e Skills com suporte a reordenação nativa (`dd`, `p`, `<Space>`, `c`). |
 | 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico de abas em background. |
 | 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. |
-| 🛡️ | **Context Watchdog** | Um rastreador preditivo (EMA) monitora o tamanho do chat. Se ele ameaçar estourar a janela saudável, o sistema invoca o `@archivist` para comprimir o histórico no modelo Quadripartite (`<genesis>`, `<journey>`, `<now>`, `<plan>`). |
+| 🛡️ | **Context Watchdog 2.0** | Um rastreador preditivo (EMA) monitora a janela do chat. Se ameaçar estourar, invoca o `@archivist` usando 3 motores de compressão configuráveis (**Semântico, Percentual ou Fixo**) encapsulando a memória no formato Quadripartite. |
 | 🎖️ | **Esquadrões (Squads)** | Invoque equipes inteiras mencionando `@squad_nome` (ex: `@squad_dev`). O sistema compila e dispara o enxame mascarando o JSON complexo. |
 | 🔀 | **Pipelines & Coreografia** | IAs podem montar esteiras de produção (`chain`) ou repassar o controle do corpo e do código para outros especialistas *on-the-fly* (`switch_agent`). |
 | 📉 | **Token Leak Prevention** | Sub-agentes isolam seus raciocínios caóticos, devolvendo ao Tech Lead apenas um `<final_report>` limpo, economizando milhares de tokens. |
@@ -78,7 +79,7 @@ O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará to
     },
     keys = {
         { "<leader>mc", "<cmd>ContextToggle<cr>", desc = "Toggle MultiContext Chat" },
-        { "<leader>ma", "<cmd>ContextApis<cr>", desc = "Gerenciar Fila de APIs" },
+        { "<leader>mp", "<cmd>ContextControls<cr>", desc = "Painel de Controle MultiContext" },
     }
 }
 ```
@@ -110,10 +111,10 @@ require('multi_context').setup({
 | `:ContextRepo` | Inicia a sessão mapeando todo o projeto do Git. |
 | `:ContextGit` | Envia as alterações não commitadas (`git diff`). |
 | `:ContextBuffers`| Envia todos os buffers de código carregados no Neovim. |
-| `:ContextApis` | ⚙️ **Abre o menu interativo para ordenar APIs e gerenciar permissões de Swarm.** |
+| `:ContextControls` | ⚙️ **Abre o Painel Virtual Unificado para gerenciar APIs, Swarms, Compressão e Limites.** |
 | `:ContextTree` | Desenha a árvore do projeto no prompt. |
 | `:ContextReloadSkills`| Recarrega imediatamente sua pasta local de habilidades. |
-| `:ContextToggle` | Abre ou esconde a janela flutuante. |
+| `:ContextToggle` | Abre ou esconde a janela flutuante principal. |
 | `:ContextUndo` | Desfaz a última destruição/compressão do chat feita pelo `@archivist`. |
 
 ---
@@ -125,7 +126,6 @@ require('multi_context').setup({
 | **`<CR>` / `<C-CR>` / `<S-CR>`** | Insert/Normal | Envia a mensagem e invoca a IA. |
 | **`@`** | Insert | Abre o menu flutuante para invocar um Agente (`@coder`, `@qa`) ou um Esquadrão. |
 | **`<Tab>` / `<S-Tab>`** | Normal | Navega pelo carrossel dinâmico do Enxame (Swarms) rodando em background. |
-| **`<A-x>`** | Insert/Normal | ⚡ **Força a execução manual imediata** de tags de ferramentas no chat. |
 | **`<C-x>`** | Insert/Normal | 🛑 **Botão de Pânico:** Corta a conexão HTTP e interrompe o stream. |
 | **`<A-b>`** | Insert/Normal | Copia o último bloco de código para a área de transferência. |
 | **`k` / `<C-u>`** | Normal | Pausa o Auto-Scroll direcionalmente para ler histórico. |
@@ -134,7 +134,7 @@ require('multi_context').setup({
 
 ## 🧪 Testes Automatizados (TDD)
 
-O plugin é mantido sob alta confiabilidade com dezenas de testes usando `plenary.nvim`, garantindo que as lógicas de extração, rede e parser funcionem perfeitamente.
+O plugin é mantido sob alta confiabilidade (atualmente com **84 de 84 testes passando sem falhas**) usando `plenary.nvim`, garantindo que as lógicas de extração, rede, parser e resiliência de buffers funcionem perfeitamente em ambientes assíncronos.
 ```bash
 make test_agregate_results
 ```

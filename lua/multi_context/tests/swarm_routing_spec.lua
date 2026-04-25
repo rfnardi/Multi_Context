@@ -57,3 +57,9 @@ describe("Fase 20 - Passo 2 (Fallback Direcional):", function()
         assert.is_true(swarm.state.workers[1].busy, "O worker forte deve assumir o trabalho")
     end)
 end)
+
+
+
+
+
+

@@ -71,3 +71,9 @@ describe("Tools Module (Execucao de Shell):", function()
         -- O erro exato do bash varia entre sistemas, mas a tag FALHA deve estar lá.
     end)
 end)
+
+
+
+
+
+

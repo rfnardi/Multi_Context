@@ -60,3 +60,26 @@ describe("Config Module (Manipulacao de Arquivo JSON):", function()
     os.remove(tmp_json)
   end)
 end) 
+
+describe("Fase 25 - Configurações do Guardião 2.0:", function()
+  local config = require('multi_context.config')
+
+  it("Deve carregar as opções default de Compressao e Modos", function()
+    -- Garante reload limpo para pegar defaults
+    package.loaded['multi_context.config'] = nil
+    config = require('multi_context.config')
+    config.setup()
+    
+    assert.is_not_nil(config.options.watchdog, "A tabela watchdog deve existir")
+    assert.are.same("off", config.options.watchdog.mode, "O padrao deve ser off para nao assustar o usuario")
+    assert.are.same("semantic", config.options.watchdog.strategy, "O padrao deve ser semantic")
+    assert.are.same(0.3, config.options.watchdog.percent, "Percentual alvo padrao deve ser 30%")
+    assert.are.same(1500, config.options.watchdog.fixed_target, "Alvo fixo padrao deve ser 1500 tokens")
+  end)
+end)
+
+
+
+
+
+

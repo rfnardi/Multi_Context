@@ -13,3 +13,9 @@ describe("Scroller Module (Smart Auto-Scroll):", function()
         assert.is_false(scroller.state.is_streaming)
     end)
 end)
+
+
+
+
+
+

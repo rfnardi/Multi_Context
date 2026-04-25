@@ -1,13 +1,13 @@
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)** e um **Ecossistema de Skills Pluggáveis** que permite aos usuários expandirem as habilidades da IA localmente.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual de UI** e um **Ecossistema de Skills Pluggáveis** que permite aos usuários expandirem as habilidades da IA localmente.
 
 ## Arquitetura Técnica
 
 ### Tecnologias Principais
 - **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **79/79 Passando Absolutamente**.
+- **Framework de Testes**: `plenary.nvim` (busted) - **84/84 Passando Absolutamente**.
 - **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
 - **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
 - **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
@@ -28,16 +28,16 @@ lua/multi_context/
 ├── squads.lua            # Loader e resolvedor de Esquadrões Meta-Agentes (Fase 23)
 ├── skills_manager.lua    # Loader assíncrono e validador de código externo (Hot-Reload)
 ├── react_loop.lua        # Gerenciador de estado de sessão e Circuit Breaker
-├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) (Fase 22)
+├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) e Imunidade de Turno Inicial
 ├── context_builders.lua  # Extratores de contexto injetando numeração de linhas estrita (1 | code)
-├── queue_editor.lua      # Interface interativa visual (UI) para gerenciar APIs e permissões de Swarm
+├── context_controls.lua  # Engine Virtual UI (Painel interativo unificado para APIs, Swarm e Watchdog)
 ├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff)
 ├── utils.lua             # Ferramentas de cálculo de token e serialização de Workspace
 ├── ui/
 │   ├── popup.lua         # Lógica da janela flutuante, carrossel de buffers e atalhos
 │   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
 │   └── highlights.lua    # Highlights sintáticos customizados
-└── tests/                # Suíte de testes automatizados (TDD/Plenary) - 79/79 Passando
+└── tests/                # Suíte de testes automatizados (TDD/Plenary) - 84/84 Passando
 ```
 
 ## Funcionalidades e Capacidades Implementadas
@@ -62,9 +62,10 @@ lua/multi_context/
 - **Roteamento Seguro**: O `tool_runner` roda a ferramenta do usuário através de um `pcall` (Proteção contra crashes por código mal formatado).
 - **Hot-Reload Automático**: A qualquer momento a ram é limpa e atualizada via `:ContextReloadSkills`.
 
-### 5. O Guardião Preditivo e a Compressão Quadripartite (Fase 22)
-- **Watchdog via EMA**: Um rastreador analisa o tamanho histórico de tokens por turno usando uma Média Móvel Exponencial. Antes de despachar, o plugin projeta o tamanho futuro da requisição.
+### 5. O Guardião Preditivo, Compressão Quadripartite e 3 Motores (Fase 22 a 25)
+- **Watchdog via EMA**: Um rastreador analisa o tamanho histórico de tokens por turno usando uma Média Móvel Exponencial. Antes de despachar, o plugin projeta o tamanho futuro da requisição ignorando a dupla contagem do buffer.
 - **A Persona `@archivist`**: Se a janela segura (Cognitive Horizon) estiver ameaçada, o sistema sequestra a requisição do usuário, invoca o Arquivista invisivelmente, extrai a Memória Quadripartite (`<genesis>`, `<journey>`, `<now>`, `<plan>`), destrói a prolixidade do chat em tela e injeta essa memória hiper-compacta, restaurando o contexto antes de prosseguir com a requisição original.
+- **3 Motores de Compressão (Watchdog 2.0)**: Configurável via painel interativo, permite escolher o direcionamento do System Prompt do arquivista entre: *Semântico* (Focado puramente na abstração), *Percentual* (Focado em N% de redução baseado no buffer atual) e *Fixo* (Teto rígido e restrito de tokens permitidos).
 
 ### 6. Esquadrões Meta-Agentes (Squads - Fase 23)
 - **Compilação Transparente de Intents**: O usuário pode chamar equipes pré-definidas no chat (ex: `@squad_dev`). O `prompt_parser` detecta o Squad, anexa a intent do usuário e transpila isso para um Payload JSON rígido encabeçado pelo `@tech_lead`, ativando Swarms complexos com fluidez de linguagem natural.
@@ -84,23 +85,23 @@ lua/multi_context/
 1. **Desacoplamento de UI e Background**: O motor Swarm distribui a carga via `curl` assíncrono e `vim.schedule()` mantendo a navegação do usuário fluida.
 2. **Injeção Dinâmica de System Prompt**: Para permitir a troca de agentes na mesma aba (Coreografia), a primeira posição do array `messages` é reescrita *on-the-fly* dentro do próprio `tool_runner`/`swarm_manager`, enganando a LLM para assumir a nova persona sem perder o fluxo de consciência da tarefa.
 3. **Delegation vs Execution (Skills)**: Isolamento das skills do usuário via `loadfile` e `pcall`.
-4. **Queue Editor Interativo (`queue_editor.lua`)**: Em vez de editar JSON bruto, manipulamos buffers `acwrite` renderizando opções virtuais (`[x]`) para alternar a flag `allow_spawn` em tempo real na interface do editor.
+4. **Engine Virtual UI (`context_controls.lua`)**: Em vez de múltiplos painéis soltos para gerenciar APIs e filas, criamos uma árvore de estado único e interativo estilo React (Virtual DOM) para orquestrar opções de API, Swarm e Watchdog. Utiliza manipulação nativa do Vim (`dd`, `p`, `<Space>`, `c`) para ordenação de fallback e dispõe de garbage collection preventivo contra buffers invisíveis (`Vim:E95`).
 5. **Uso de Ferramentas UNIX Nativas**: A escolha pelo utilitário `patch --force` garante operações de Unified Diff robustas a nível de Kernel sem reinventar a roda ou prender a *thread* com prompts de terminal interativos.
 
 ---
 
 ## Estado Atual do Desenvolvimento
 
-### ✅ Implementado, Estável e Testado (Fases 1 a 24)
+### ✅ Implementado, Estável e Testado (Fases 1 a 25)
 O core do produto alcançou o padrão de motor de orquestração industrial pesado.
 - Arquitetura Swarm Avançada com Roteamento Cognitivo (MoA), Pipelines e Coreografia.
-- Guardião Preditivo com compressão baseada no formato Quadripartite.
+- Guardião Preditivo 2.0 com 3 Motores de Compressão (Semântica, Percentual, Fixa) no formato Quadripartite.
+- Engine Virtual (Context Controls) responsivo para centralizar configurações, Fallbacks e Interatividade de UI.
 - Suporte a Squads (Esquadrões) fluindo por linguagem natural.
 - Prevenção de Token Leak com `<final_report>`.
 - Persistência de Workspace e Ressurreição de Estado (`.mctx`).
 - Injeção e motor de execução de custom skills (Plugins), incluindo a skill pesada `apply_diff`.
-- Refinamento de UI para gestão de APIs (Queue Editor).
-- **Cobertura Testes Plenary:** 79 de 79 Sucessos absolutos (0 Falhas).
+- **Cobertura Testes Plenary:** 84 de 84 Sucessos absolutos (0 Falhas / 0 Erros).
 
 ### 🔄 Próximos Passos (Fase Opcional e Comunidade)
 Com a fundação tecnológica da V1 totalmente concluída e testada:
@@ -108,4 +109,4 @@ Com a fundação tecnológica da V1 totalmente concluída e testada:
 2. **Distribuição via Lazy.nvim**: Preparar releases com *tags* (ex: `v1.0.0`) para garantir setups fluídos via gerenciadores de pacotes.
 
 ---
-*Última atualização: 23 de Abril de 2026 - Preditividade de Contexto (Watchdog), Squads e Unified Diff consolidados.*
+*Última atualização: 24 de Abril de 2026 - Fase 25: Virtual UI Engine e Watchdog 2.0 consolidados (84/84 tests).*

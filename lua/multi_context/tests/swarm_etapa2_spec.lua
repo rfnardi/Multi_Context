@@ -65,3 +65,9 @@ describe("Swarm Etapa 2 - Multi-Buffers e UI:", function()
         assert.are.same(b3, api.nvim_win_get_buf(win))
     end)
 end)
+
+
+
+
+
+

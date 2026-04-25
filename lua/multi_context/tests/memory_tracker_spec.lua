@@ -1,6 +1,6 @@
 local memory_tracker = require('multi_context.memory_tracker')
 
-describe("Fase 22 - Passo 1: O Guardião Preditivo (EMA Tracker):", function()
+describe("Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações):", function()
     before_each(function()
         memory_tracker.reset()
     end)
@@ -12,27 +12,44 @@ describe("Fase 22 - Passo 1: O Guardião Preditivo (EMA Tracker):", function()
 
     it("Deve calcular a EMA absorvendo picos sem enviesar totalmente", function()
         memory_tracker.add_turn(100)  -- O normal
-        
-        -- Simulando o turno 2 onde a IA usou uma tool e puxou um arquivo de 5000 tokens
-        memory_tracker.add_turn(5000) 
+        memory_tracker.add_turn(5000) -- O pico
         
         local ema_after_peak = memory_tracker.get_ema()
-        -- A EMA deve subir, mas o pico deve ser amortecido (não pode pular reto pra 5000)
         assert.is_true(ema_after_peak > 1000 and ema_after_peak < 2000, "EMA deveria ter amortecido o pico")
 
-        -- Simulando o turno 3 que voltou ao normal
-        memory_tracker.add_turn(150)  
+        memory_tracker.add_turn(150)  -- Voltou ao normal
         local ema_after_drop = memory_tracker.get_ema()
         
-        assert.is_true(ema_after_drop < ema_after_peak, "EMA deve começar a descer após um turno com valor menor")
+        assert.is_true(ema_after_drop < ema_after_peak, "EMA deve começar a descer")
     end)
     
-    it("Deve prever corretamente os tokens totais para o próximo disparo", function()
+    it("Deve prever os tokens ignorando a dupla contagem do prompt", function()
         memory_tracker.add_turn(100)
         
-        -- prediction = Contexto Atual (500) + Prompt a enviar (50) + Predição da IA (EMA atual, que é 100)
-        local prediction = memory_tracker.predict_next_total(500, 50)
+        -- Agora passamos APENAS o tamanho do buffer atual. 
+        -- O prompt recém-digitado já está colado nele pela UI, então não devemos somar duas vezes.
+        local prediction = memory_tracker.predict_next_total(500)
         
-        assert.are.same(650, prediction, "A predição total deve ser a soma exata dos 3 fatores")
+        -- 500 (Buffer com prompt) + 100 (EMA)
+        assert.are.same(600, prediction, "A predição deve ser apenas Buffer Atual + EMA")
+    end)
+
+    it("Deve garantir Imunidade de Primeiro Turno (Cold Start)", function()
+        -- Histórico Zerado
+        assert.is_true(memory_tracker.is_immune(), "Deve ser imune no Big Bang (0 turnos)")
+        
+        -- Após o primeiro turno
+        memory_tracker.add_turn(1500)
+        assert.is_true(memory_tracker.is_immune(), "Ainda deve ser imune antes de disparar o segundo turno")
+        
+        -- Após o segundo turno
+        memory_tracker.add_turn(200)
+        assert.is_false(memory_tracker.is_immune(), "A partir do segundo turno concluído, o Guardião passa a vigiar")
     end)
 end)
+
+
+
+
+
+

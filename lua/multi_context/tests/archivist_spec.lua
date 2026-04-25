@@ -54,3 +54,9 @@ describe("Fase 22 - Passo 3: A Persona @archivist e a Compressao", function()
         assert.is_true(send_called, "O motor de ReAct deve ter sido religado")
     end)
 end)
+
+
+
+
+
+

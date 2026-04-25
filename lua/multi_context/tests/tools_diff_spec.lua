@@ -47,3 +47,9 @@ describe("Tools Module (Unified Diff):", function()
         assert.truthy(res:match("FALHA") or res:match("ERRO"), "Deveria retornar FALHA/ERRO se o patch for rejeitado por contexto inválido")
     end)
 end)
+
+
+
+
+
+

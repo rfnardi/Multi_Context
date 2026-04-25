@@ -11,8 +11,21 @@ end
 
 M.get_ema = function() return M.state.ema end
 
-M.predict_next_total = function(current_tokens, prompt_tokens)
-    return current_tokens + prompt_tokens + M.state.ema
+-- BUG 2 CORRIGIDO: Apenas buffer + ema. O prompt colado pelo user já está no buffer.
+M.predict_next_total = function(current_tokens)
+    return current_tokens + M.state.ema
+end
+
+-- BUG 1 CORRIGIDO: Imunidade do Primeiro Turno
+M.is_immune = function()
+    -- Se o tracker tem menos de 2 turnos gravados, estamos na aurora do chat. Bloqueio total.
+    return M.state.count < 2
 end
 
 return M
+
+
+
+
+
+

@@ -70,3 +70,9 @@ describe("Tools Module (get_diagnostics):", function()
         assert.truthy(res_empty:match("OBRIGATÓRIO"))
     end)
 end)
+
+
+
+
+
+

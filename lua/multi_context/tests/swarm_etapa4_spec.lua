@@ -70,3 +70,9 @@ describe("Swarm Etapa 4 - Execucao Assincrona e Merge:", function()
         assert.truthy(final_summary:match("qa"), "O resumo deve conter a tarefa do agente qa")
     end)
 end)
+
+
+
+
+
+

@@ -52,3 +52,9 @@ describe("Fase 20 - Passo 1 (Abstraction Levels):", function()
         assert.are.same("high", api_nova_level, "Deve respeitar o valor definido na API")
     end)
 end)
+
+
+
+
+
+

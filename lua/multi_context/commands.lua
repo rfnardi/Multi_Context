@@ -47,8 +47,8 @@ M.ContextChatGit = function()
     open_with(require('multi_context.context_builders').get_git_diff())
 end
 
-M.ContextApis = function()
-    require('multi_context.api_selector').open_api_selector()
+M.ContextControls = function()
+    require('multi_context.context_controls').open_panel()
 end
 
 M.ContextBuffers  = function()
@@ -75,3 +75,9 @@ M.TogglePopup = function()
 end
 
 return M
+
+
+
+
+
+

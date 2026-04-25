@@ -52,7 +52,22 @@ end
 
 
 
-M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table)
+M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table, current_tokens)
+    if active_agent_name == "archivist" then
+        local cfg = require('multi_context.config').options
+        local wd = cfg.watchdog or { strategy = "semantic", percent = 0.3, fixed_target = 1500 }
+        local prompt = "Você é o @archivist do sistema. Sua missão é estruturar a memória do chat prolixo abaixo usando EXATAMENTE 4 tags: <genesis>, <plan>, <journey> e <now>.\n"
+        if wd.strategy == "percent" then
+            local target = math.floor((current_tokens or 5000) * (wd.percent or 0.3))
+            prompt = prompt .. "MANDATÓRIO: A compressão é baseada num teto percentual. Seu output não pode ultrapassar " .. target .. " tokens.\n"
+        elseif wd.strategy == "fixed" then
+            prompt = prompt .. "MANDATÓRIO: A compressão é agressiva. Seu output não pode ultrapassar " .. (wd.fixed_target or 1500) .. " tokens.\n"
+        else
+            prompt = prompt .. "COMPRESSÃO SEMÂNTICA: Adapte o tamanho à complexidade do conteúdo, focando na integridade da informação.\n"
+        end
+        prompt = prompt .. "Responda ESTRITAMENTE com o XML gerado."
+        return prompt
+    end
     local system_prompt = base_prompt
 
     if memory_context then
@@ -106,3 +121,9 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
 end
 
 return M
+
+
+
+
+
+

@@ -66,3 +66,9 @@ end)
         assert.are.same("user", msgs[3].role)
         assert.are.same("Segundo comando", msgs[3].content)
     end)
+
+
+
+
+
+

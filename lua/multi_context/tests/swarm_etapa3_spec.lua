@@ -77,3 +77,9 @@ describe("Swarm Etapa 3 - Manager e Fila:", function()
         assert.are.same(2, active_count)
     end)
 end)
+
+
+
+
+
+

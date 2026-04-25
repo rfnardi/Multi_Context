@@ -8,6 +8,12 @@ M.defaults = {
     default_api   = nil,
     cognitive_horizon = 4000,
     user_tolerance = 1.0,
+    watchdog      = {
+        mode         = "off",
+        strategy     = "semantic",
+        percent      = 0.3,
+        fixed_target = 1500
+    },
     appearance    = {
         border = "rounded",
         width  = 0.7,
@@ -161,3 +167,9 @@ M.get_spawn_apis = function()
 end
 
 return M
+
+
+
+
+
+

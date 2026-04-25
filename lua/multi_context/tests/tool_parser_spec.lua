@@ -32,3 +32,9 @@ describe("Tool Parser Module:", function()
         assert.are.same("local x = 1", parsed.inner)
     end)
 end)
+
+
+
+
+
+
