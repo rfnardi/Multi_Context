@@ -68,7 +68,7 @@ describe("Fase 25 - Configurações do Guardião 2.0:", function()
     -- Garante reload limpo para pegar defaults
     package.loaded['multi_context.config'] = nil
     config = require('multi_context.config')
-    config.setup()
+    config.options = vim.deepcopy(config.defaults)
     
     assert.is_not_nil(config.options.watchdog, "A tabela watchdog deve existir")
     assert.are.same("off", config.options.watchdog.mode, "O padrao deve ser off para nao assustar o usuario")

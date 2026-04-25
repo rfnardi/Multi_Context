@@ -1,7 +1,7 @@
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual de UI** e um **Ecossistema de Skills Pluggáveis** que permite aos usuários expandirem as habilidades da IA localmente.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual UI em Grid** e um **Ecossistema de Skills Pluggáveis e Editáveis** que permite aos usuários forjarem as habilidades da IA localmente.
 
 ## Arquitetura Técnica
 
@@ -30,83 +30,65 @@ lua/multi_context/
 ├── react_loop.lua        # Gerenciador de estado de sessão e Circuit Breaker
 ├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) e Imunidade de Turno Inicial
 ├── context_builders.lua  # Extratores de contexto injetando numeração de linhas estrita (1 | code)
-├── context_controls.lua  # Engine Virtual UI (Painel interativo unificado para APIs, Swarm e Watchdog)
+├── context_controls.lua  # Engine Virtual UI (Grid-Style) para Controle Mestre (API, IAM, Swarm, Watchdog)
 ├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff)
 ├── utils.lua             # Ferramentas de cálculo de token e serialização de Workspace
 ├── ui/
 │   ├── popup.lua         # Lógica da janela flutuante, carrossel de buffers e atalhos
 │   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
-│   └── highlights.lua    # Highlights sintáticos customizados
+│   └── highlights.lua    # Highlights sintáticos unificados e paleta global
 └── tests/                # Suíte de testes automatizados (TDD/Plenary) - 84/84 Passando
 ```
 
 ## Funcionalidades e Capacidades Implementadas
 
-### 1. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
-- **Delegação via Tech Lead (Lazy Delegator)**: A persona `@tech_lead` orquestra a divisão de trabalho através da tool `spawn_swarm`, passando um payload JSON com as tarefas. O Tech Lead é orientado a não programar, mas sim projetar e repassar o trabalho.
-- **Roteamento Cognitivo (Mixture of Agents - MoA)**: APIs e Agentes possuem um `abstraction_level` (high, medium, low). O `swarm_manager` distribui as tarefas priorizando APIs mais baratas (medium/low) que deem conta do recado, subindo para APIs caras (high) apenas como *Fallback Direcional*.
-- **Pipelines Declarativos (Esteiras de Produção)**: Suporte à diretiva `"chain":["coder", "qa"]`. Quando o Coder termina, a tarefa não é encerrada: ela "reencarna" na fila para o QA, acumulando o contexto do agente anterior.
-- **Coreografia (Ping-Pong Autônomo)**: Sub-agentes autorizados via `"allow_switch"` podem usar a tool `switch_agent` para transferir o controle da aba e da tarefa em tempo real para outro agente (ex: chamar o DBA). O sistema injeta o novo System Prompt *in-flight* sem fechar o motor ReAct.
-- **Carrossel de Buffers (UI)**: Sub-agentes rodam em abas invisíveis (`nofile`) dentro do mesmo *popup*. O usuário navega em tempo real com `<Tab>` e `<S-Tab>`.
+### 1. Engine Virtual UI e Identity & Access Management (IAM) - (Fase 26)
+- **Grid Declarativo (Lazy-Style)**: Interface interativa unificada acessada via `:ContextControls`. Renderiza opções alinhadas horizontalmente com pontilhados (dot-leaders), cursores ocultos (`cursorline`) e ícones de alternância (`●` / `○`).
+- **Matriz de Permissões de Agentes**: Controle fino (Drill-down) que lista cada agente e permite ligar/desligar ferramentas específicas (Skills) apenas para aquele agente, salvando no perfil isolado.
+- **Fábrica de Entidades**: Criação de novas Skills customizadas e novas Personas dinamicamente a partir do painel.
+- **Edição Expressa**: O atalho `e` no painel sobre o nome de uma Skill abre instantaneamente o seu código Lua base para debug.
 
-### 2. Prevenção Extrema de Token Leak (Fase 20)
-- **Extração Cirúrgica (`<final_report>`)**: Em vez de retornar todo o scratchpad (logs de ferramentas, raciocínios intermediários) para o Tech Lead, o Swarm extrai rigorosamente apenas o que está dentro da tag `<final_report>`. Isso salva milhares de tokens a cada turno.
+### 2. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
+- **Delegação via Tech Lead**: Orquestração via `spawn_swarm`.
+- **Roteamento Cognitivo (MoA)**: O painel visual permite ordenar quem resolve qual tarefa e marcar quem é *Fallback Direcional*.
+- **Pipelines e Coreografia**: Reencarnação de tarefas em esteiras e injeção do sistema `switch_agent` para o agente ceder o controle in-flight.
 
-### 3. Persistência de Workspace Stateful (Fase 18.5)
-- **Metadata Envelope (`<mctx_session>`)**: Cada sessão salva em disco recebe um ID e timestamps. Isso evita a duplicação de arquivos e mantém rastreabilidade.
-- **JSON-in-XML**: Todo o estado volátil das tarefas do enxame (`M.state.queue`, buffers inativos e `reports`) é empacotado e salvo em uma tag oculta `<swarm_state>`. Quando o usuário reabre o Neovim e invoca o log, todo o Swarm ressuscita perfeitamente.
+### 3. O Guardião Preditivo, Compressão Quadripartite e 3 Motores (Fase 22 a 25)
+- **Watchdog via EMA**: O rastreador calcula a média móvel, somando o peso do buffer atual. Exibe a telemetria ao vivo na UI: `Multi_Context_Chat | ~3500 tokens | WD: Ask`.
+- **3 Motores de Compressão**: Configurável via painel interativo (Semântico, Percentual e Fixo).
+- **Imunidade de Turno (Cold Start)**: O sistema detecta colagens gigantes no começo da conversa e não sequestra a requisição do usuário no turno inaugural.
 
-### 4. Sistema Pluggável de Skills (Fase 19)
-- **Extensibilidade Local**: O `skills_manager` varre a pasta `~/.config/nvim/mctx_skills/` em busca de novos scripts `.lua`.
-- **Injeção de Prompt**: O plugin gera os manuais em formato XML das funções do usuário dinamicamente e ensina a IA a utilizá-las.
-- **Roteamento Seguro**: O `tool_runner` roda a ferramenta do usuário através de um `pcall` (Proteção contra crashes por código mal formatado).
-- **Hot-Reload Automático**: A qualquer momento a ram é limpa e atualizada via `:ContextReloadSkills`.
+### 4. Esquadrões Meta-Agentes e Skills Pluggáveis (Fases 19 e 23)
+- Compilação transparente de menções a esquadrões (ex: `@squad_dev`).
+- Scripts pluggáveis via `~/.config/nvim/mctx_skills/` com validação de Gatekeeper e hot-reload autônomo.
 
-### 5. O Guardião Preditivo, Compressão Quadripartite e 3 Motores (Fase 22 a 25)
-- **Watchdog via EMA**: Um rastreador analisa o tamanho histórico de tokens por turno usando uma Média Móvel Exponencial. Antes de despachar, o plugin projeta o tamanho futuro da requisição ignorando a dupla contagem do buffer.
-- **A Persona `@archivist`**: Se a janela segura (Cognitive Horizon) estiver ameaçada, o sistema sequestra a requisição do usuário, invoca o Arquivista invisivelmente, extrai a Memória Quadripartite (`<genesis>`, `<journey>`, `<now>`, `<plan>`), destrói a prolixidade do chat em tela e injeta essa memória hiper-compacta, restaurando o contexto antes de prosseguir com a requisição original.
-- **3 Motores de Compressão (Watchdog 2.0)**: Configurável via painel interativo, permite escolher o direcionamento do System Prompt do arquivista entre: *Semântico* (Focado puramente na abstração), *Percentual* (Focado em N% de redução baseado no buffer atual) e *Fixo* (Teto rígido e restrito de tokens permitidos).
-
-### 6. Esquadrões Meta-Agentes (Squads - Fase 23)
-- **Compilação Transparente de Intents**: O usuário pode chamar equipes pré-definidas no chat (ex: `@squad_dev`). O `prompt_parser` detecta o Squad, anexa a intent do usuário e transpila isso para um Payload JSON rígido encabeçado pelo `@tech_lead`, ativando Swarms complexos com fluidez de linguagem natural.
-
-### 7. Unified Diff e Ferramentas Estritas (Fase 24)
-- **Binário Nativo `patch`**: Implementação da skill `apply_diff`, focada em edições cirúrgicas em arquivos de milhares de linhas utilizando a arquitetura Universal Diff, prevenindo a temida alucinação do *"resto do código inalterado aqui..."* das LLMs.
-- **Otimização Extrema de Prompts**: O manual do sistema base injetado na LLM foi emagrecido ao limite absoluto, garantindo a economia de centenas de tokens a cada requisição enviada.
-
-### 8. Sistema de Agentes Estritos e Resiliência
-- **Gatekeeper e Menor Privilégio**: Bloqueio de alucinações de agentes não autorizados usando ferramentas críticas (ex: Arquiteto rodando bash).
-- **Parser de Tags**: O `tool_parser.lua` força o fechamento implícito de `<tool_call>` corrompidas.
-- **Fallback Automático**: O `api_client` tenta automaticamente a próxima API da fila se a primária falhar por instabilidade ou Rate Limit.
+### 5. Unified Diff e Persistência de Workspace
+- Persistência e Ressurreição de todo o Enxame através de injeção JSON-in-XML no arquivo `.mctx`.
+- Edições cirúrgicas nativas acopladas ao Kernel UNIX via `patch --force`.
 
 ---
 
 ## Decisões Técnicas Críticas
 1. **Desacoplamento de UI e Background**: O motor Swarm distribui a carga via `curl` assíncrono e `vim.schedule()` mantendo a navegação do usuário fluida.
-2. **Injeção Dinâmica de System Prompt**: Para permitir a troca de agentes na mesma aba (Coreografia), a primeira posição do array `messages` é reescrita *on-the-fly* dentro do próprio `tool_runner`/`swarm_manager`, enganando a LLM para assumir a nova persona sem perder o fluxo de consciência da tarefa.
-3. **Delegation vs Execution (Skills)**: Isolamento das skills do usuário via `loadfile` e `pcall`.
-4. **Engine Virtual UI (`context_controls.lua`)**: Em vez de múltiplos painéis soltos para gerenciar APIs e filas, criamos uma árvore de estado único e interativo estilo React (Virtual DOM) para orquestrar opções de API, Swarm e Watchdog. Utiliza manipulação nativa do Vim (`dd`, `p`, `<Space>`, `c`) para ordenação de fallback e dispõe de garbage collection preventivo contra buffers invisíveis (`Vim:E95`).
-5. **Uso de Ferramentas UNIX Nativas**: A escolha pelo utilitário `patch --force` garante operações de Unified Diff robustas a nível de Kernel sem reinventar a roda ou prender a *thread* com prompts de terminal interativos.
+2. **Injeção Dinâmica de System Prompt**: A primeira posição do array de redes é reescrita *on-the-fly* no `tool_runner`/`swarm_manager`, emulando a persona nova sem perder o raciocínio.
+3. **Virtual DOM com Mutação Segura**: O `:ContextControls` opera lendo e manipulando uma Tabela de Estado Lua e forçando re-renderizações no buffer visual sem bloquear arquivos. A limpeza agressiva previne vazamento de buffers (`buftype=acwrite`, `bufhidden=wipe`).
 
 ---
 
 ## Estado Atual do Desenvolvimento
 
-### ✅ Implementado, Estável e Testado (Fases 1 a 25)
-O core do produto alcançou o padrão de motor de orquestração industrial pesado.
-- Arquitetura Swarm Avançada com Roteamento Cognitivo (MoA), Pipelines e Coreografia.
-- Guardião Preditivo 2.0 com 3 Motores de Compressão (Semântica, Percentual, Fixa) no formato Quadripartite.
-- Engine Virtual (Context Controls) responsivo para centralizar configurações, Fallbacks e Interatividade de UI.
-- Suporte a Squads (Esquadrões) fluindo por linguagem natural.
-- Prevenção de Token Leak com `<final_report>`.
-- Persistência de Workspace e Ressurreição de Estado (`.mctx`).
-- Injeção e motor de execução de custom skills (Plugins), incluindo a skill pesada `apply_diff`.
+### ✅ Implementado, Estável e Testado (Fases 1 a 26)
+O core do produto é um motor de orquestração industrial de ponta.
+- Interface `LazyVim-like` (Grid, Ícones, Toggles de Permissão, Drill-down).
+- Watchdog Preditivo 2.0 (Motores de Compressão Flexíveis).
+- IAM de Agentes e Skills editáveis em tempo real.
+- Swarm Avançado (MoA, Pipelines, Coreografia).
 - **Cobertura Testes Plenary:** 84 de 84 Sucessos absolutos (0 Falhas / 0 Erros).
 
 ### 🔄 Próximos Passos (Fase Opcional e Comunidade)
-Com a fundação tecnológica da V1 totalmente concluída e testada:
-1. **Catalogar Exemplos de Skills**: Criar um repositório ou pasta `examples/` contendo scripts avançados de skills prontas (ex: `read_jira.lua`, `sql_inspector.lua`, `run_pytest.lua`).
-2. **Distribuição via Lazy.nvim**: Preparar releases com *tags* (ex: `v1.0.0`) para garantir setups fluídos via gerenciadores de pacotes.
+Com a fundação tecnológica da V1.0 totalmente concluída e testada:
+1. **Catalogar Exemplos de Skills**: Criar um repositório com scripts avançados de skills prontas (ex: `read_jira.lua`, `sql_inspector.lua`, `run_pytest.lua`).
+2. **Distribuição via Lazy.nvim**: Preparar releases com *tags* (ex: `v1.0.0`) para distribuição.
 
 ---
-*Última atualização: 24 de Abril de 2026 - Fase 25: Virtual UI Engine e Watchdog 2.0 consolidados (84/84 tests).*
+*Última atualização: Abril de 2026 - Fase 26: Modernização UI/UX (Lazy-Style Grid) e Gestão IAM concluídos (84/84 tests).*

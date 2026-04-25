@@ -99,6 +99,12 @@ function M.setup(user_opts)
 
     -- Chama a auto-configuração no start do plugin
     M.bootstrap()
+    local disk_cfg = M.load_api_config()
+    if disk_cfg then
+        if disk_cfg.watchdog then M.options.watchdog = vim.deepcopy(disk_cfg.watchdog) end
+        if disk_cfg.cognitive_horizon then M.options.cognitive_horizon = disk_cfg.cognitive_horizon end
+        if disk_cfg.user_tolerance then M.options.user_tolerance = disk_cfg.user_tolerance end
+    end
 end
 
 M.load_api_config = function()
