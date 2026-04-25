@@ -1,13 +1,13 @@
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão mais recente, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual UI em Grid** e um **Ecossistema de Skills Pluggáveis e Editáveis** que permite aos usuários forjarem as habilidades da IA localmente.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão V1.0, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual UI em Grid** e um **Ecossistema de Skills Pluggáveis e Editáveis** provido de exemplos práticos comunitários.
 
 ## Arquitetura Técnica
 
 ### Tecnologias Principais
 - **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **87/87 Passando Absolutamente**.
+- **Framework de Testes**: `plenary.nvim` (busted) - **88/88 Passando Absolutamente**.
 - **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
 - **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
 - **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
@@ -37,12 +37,14 @@ lua/multi_context/
 │   ├── popup.lua         # Lógica da janela flutuante, carrossel de buffers e atalhos
 │   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
 │   └── highlights.lua    # Highlights sintáticos unificados e paleta global
-└── tests/                # Suíte de testes automatizados (TDD/Plenary) - 87/87 Passando
+├── tests/                # Suíte de testes automatizados (TDD/Plenary) - 88/88 Passando
+└── examples/
+    └── skills/           # Template Comunitário de Skills (Jira, Pytest, SQL, etc.)
 ```
 
 ## Funcionalidades e Capacidades Implementadas
 
-### 1. Engine Virtual UI e Identity & Access Management (IAM) - (Fase 26 Completa)
+### 1. Engine Virtual UI e Identity & Access Management (IAM)
 - **Grid Declarativo (Lazy-Style)**: Interface interativa unificada acessada via `:ContextControls`. Renderiza opções alinhadas horizontalmente com pontilhados (dot-leaders), cursores ocultos (`cursorline`) e ícones de alternância (`●` / `○`).
 - **Interatividade e Mutação de Estado**: Controle total via teclado. `<Space>` para ligar/desligar permissões e fallbacks; `c` para editar variáveis contínuas (limites de loops, gatilho do watchdog, identidade); `dd` e `p` para reordenar a fila de APIs.
 - **Matriz de Permissões de Agentes**: Controle fino (Drill-down via `<CR>`) que lista cada agente e permite ligar/desligar ferramentas específicas (Skills) apenas para aquele agente, salvando o Perfil de Menor Privilégio no `mctx_agents.json`.
@@ -54,15 +56,16 @@ lua/multi_context/
 - **Roteamento Cognitivo (MoA)**: O painel visual permite ordenar quem resolve qual tarefa e marcar quem é *Fallback Direcional*. O sistema checa automaticamente a compatibilidade entre a capacidade cognitiva da API e a demanda do agente.
 - **Pipelines e Coreografia**: Reencarnação de tarefas em esteiras e injeção do sistema `switch_agent` para o agente ceder o controle e reconfigurar a persona *in-flight*.
 
-### 3. O Guardião Preditivo, Compressão Quadripartite e 3 Motores (Fases 22 a 25)
-- **Watchdog via EMA**: O rastreador preditivo calcula a média móvel geométrica (EMA), somando o peso do buffer atual. Exibe a telemetria ao vivo na UI: `Multi_Context_Chat | ~3500 tokens | WD: Ask`.
+### 3. O Guardião Preditivo, Compressão Quadripartite e 3 Motores
+- **Watchdog via EMA**: O rastreador preditivo calcula a média móvel geométrica (EMA), somando o peso do buffer atual. Exibe a telemetria ao vivo na UI.
 - **3 Motores de Compressão**: Configurável via painel interativo (Semântico, Percentual e Fixo).
 - **A Persona @archivist**: Transmutações complexas do buffer inteiro num modelo estrito XML `<genesis>`, `<plan>`, `<journey>`, `<now>`.
 - **Imunidade de Turno (Cold Start)**: O sistema detecta colagens gigantes no começo da conversa e protege a requisição inicial do usuário sem disparar a compressão de imediato.
 
-### 4. Esquadrões Meta-Agentes e Skills Pluggáveis (Fases 19 e 23)
+### 4. Esquadrões Meta-Agentes e Skills Pluggáveis (Comunidade V1.0)
 - Compilação transparente de menções a esquadrões (ex: `@squad_dev`).
 - Scripts pluggáveis via `~/.config/nvim/mctx_skills/` com validação de Gatekeeper, hot-reload autônomo e isolamento de escopo.
+- **Catálogo Oficial**: Exemplos de ponta a ponta em `examples/skills/` integrando com Jira, Pytest e SQLite.
 
 ### 5. Unified Diff e Persistência de Workspace
 - Persistência e Ressurreição de todo o Enxame através de injeção JSON-in-XML no arquivo `.mctx`.
@@ -79,19 +82,20 @@ lua/multi_context/
 
 ## Estado Atual do Desenvolvimento
 
-### ✅ Implementado, Estável e Testado (Fases 1 a 26)
+### ✅ Implementado, Estável e Testado (V1.0 - Produção)
 O core do produto é um motor de orquestração industrial de ponta.
 - Interface `LazyVim-like` iterativa e mutável (Grid, Ícones, Toggles de Permissão IAM, Drill-down, Fábrica de Entidades).
 - Watchdog Preditivo 2.0 (Motores de Compressão Flexíveis).
 - IAM de Agentes e Skills editáveis em tempo real.
 - Swarm Avançado (MoA, Pipelines, Coreografia).
 - Unified Diff, Workspace Persistente e Esquadrões.
-- **Cobertura Testes Plenary:** 87 de 87 Sucessos absolutos (0 Falhas / 0 Erros).
+- Ecossistema da Comunidade e base para novas Skills.
+- **Cobertura Testes Plenary:** 88 de 88 Sucessos absolutos (0 Falhas / 0 Erros).
 
-### 🔄 Próximos Passos: Fase 27 (Comunidade e Distribuição V1.0)
-Com a fundação tecnológica da V1.0 totalmente concluída e testada sob estrito TDD, o foco atual é o ecossistema externo:
-1. **Catalogar Exemplos de Skills**: Criar o diretório `examples/skills/` com scripts avançados e bem documentados prontos para uso (ex: `read_jira.lua`, `sql_inspector.lua`, `run_pytest.lua`).
-2. **Setup do Lazy.nvim**: Ajustar os últimos assets e documentações de instalação para preparar o Release de Tags (ex: `v1.0.0`) na comunidade Lua/Neovim.
+### 🚀 Próximos Passos (Distribuição e Marketing)
+O produto está tecnicamente finalizado e robusto. As próximas etapas são extra-código:
+1. **Release v1.0.0**: Criar a tag Git do release oficial.
+2. **Registro de Plugins**: Adicionar o projeto ao [Dotfyle](https://dotfyle.com) (Diretório Oficial de Plugins do Neovim) e fóruns (Reddit r/neovim).
 
 ---
-*Última atualização: 25 de Abril de 2026 - Fase 26 Completa: Motor Virtual, Mutação de Estado e IAM consolidados (87/87 tests).*
+*Última atualização: 25 Abril de 2026 - Lançamento da V1.1: Ecossistema da Comunidade de Skills Completo (88/88 tests).*
