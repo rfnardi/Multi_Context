@@ -67,9 +67,12 @@ M.apply_controls = function(buf)
         
         -- Grid Dots
         vim.cmd("syntax match ContextUIDot '\\.\\.\\.*'")
+        vim.cmd("syntax match ContextUIDot '··*'")
         
         -- Valores Positivos / Ativos
         vim.cmd("syntax match ContextUIActive '●'")
+        vim.cmd("syntax match ContextUIActive '\\[ ON \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ ✓ \\]'")
         vim.cmd("syntax match ContextUIActive '\\[ Ask \\]'")
         vim.cmd("syntax match ContextUIActive '\\[ Auto \\]'")
         vim.cmd("syntax match ContextUIActive '\\[ Semântico \\]'")
@@ -78,6 +81,8 @@ M.apply_controls = function(buf)
         
         -- Valores Negativos / Inativos
         vim.cmd("syntax match ContextUIInactive '○'")
+        vim.cmd("syntax match ContextUIInactive '\\[ OFF \\]'")
+        vim.cmd("syntax match ContextUIInactive '\\[   \\]'")
         vim.cmd("syntax match ContextUIInactive '\\[ Off \\]'")
         
         -- Valores em destaque numérico (Tokens, tolerância, %)

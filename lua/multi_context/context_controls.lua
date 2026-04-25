@@ -5,18 +5,22 @@ local M = {}
 
 M.state = {
     sections = {
-        { id = "apis", title = "[1] PROVEDORES DE REDE E APIS", expanded = false },
-        { id = "swarm", title = "[2] ORQUESTRAÇÃO DE SWARM (MOA)", expanded = false },
-        { id = "watchdog", title = "[3] GUARDIÃO DE CONTEXTO (WATCHDOG)", expanded = false },
-        { id = "limits", title = "[4] COMPORTAMENTO E LIMITES GLOBAIS", expanded = false },
-        { id = "gatekeeper", title = "[5] PERFIS E PERMISSÕES (GATEKEEPER)", expanded = false },
-        { id = "skills", title = "[6] ECOSSISTEMA DE SKILLS LOCAIS", expanded = false }
+        { id = "apis", title = "[1] PROVEDORES DE REDE E APIS", desc = "(Gerencie chaves, modelos de IA e fallback)", expanded = false },
+        { id = "swarm", title = "[2] ORQUESTRAÇÃO DE SWARM (MOA)", desc = "(Determine quais APIs podem atuar como sub-agentes autônomos)", expanded = false },
+        { id = "watchdog", title = "[3] GUARDIÃO DE CONTEXTO (WATCHDOG)", desc = "(Regras de compressão e limites da janela de memória da IA)", expanded = false },
+        { id = "limits", title = "[4] COMPORTAMENTO E LIMITES GLOBAIS", desc = "(Identidade do usuário e limites de loops de ReAct)", expanded = false },
+        { id = "gatekeeper", title = "[5] PERFIS E PERMISSÕES (GATEKEEPER)", desc = "(Controle fino de permissões e capacidades por agente)", expanded = false },
+        { id = "skills", title = "[6] ECOSSISTEMA DE SKILLS LOCAIS", desc = "(Habilidades adicionais nativas ou criadas pelo usuário)", expanded = false },
+        { id = "injectors", title = "[7] MACROS DE CONTEXTO (INJECTORS)", desc = "(Atalhos dinâmicos invocados pela tecla '\\')", expanded = false },
+        { id = "squads", title = "[8] ESQUADRÕES META-AGENTES (SQUADS)", desc = "(Grupos pré-configurados de IA com pipelines e coreografia)", expanded = false },
+        { id = "appearance", title = "[9] ESTILIZAÇÃO E APARÊNCIA DA UI", desc = "(Controle de largura, altura e bordas do chat)", expanded = false }
     },
     apis = {}, default_api = "", fallback_mode = true,
     watchdog = {}, horizon = 4000, tolerance = 1.0,
     identity = "User", max_loops = 15,
     agents = {}, expanded_agents = {},
-    all_skills = {},
+    all_skills = {}, all_injectors = {}, squads = {},
+    appearance = {},
     clipboard_api = nil
 }
 
@@ -42,6 +46,7 @@ M.init_state = function()
     M.state.tolerance = config.options.user_tolerance or 1.0
     M.state.identity = config.options.user_name or "User"
     M.state.max_loops = 15
+    M.state.appearance = vim.deepcopy(config.options.appearance or { width = 0.8, height = 0.8, border = "rounded" })
 
     local agents = require('multi_context.agents')
     local skills_mgr = require('multi_context.skills_manager')
@@ -51,10 +56,38 @@ M.init_state = function()
     
     local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent"}
     for _, t in ipairs(native_tools) do M.state.all_skills[t] = { name = t, is_native = true } end
+    
+    local injectors_mgr = require('multi_context.injectors')
+    M.state.all_injectors = injectors_mgr.get_all_injectors() or {}
+    for _, inj in ipairs(injectors_mgr.get_native_injectors()) do
+        if M.state.all_injectors[inj.name] then M.state.all_injectors[inj.name].is_native = true end
+    end
+    
+    local squads_mgr = require('multi_context.squads')
+    pcall(function() M.state.squads = squads_mgr.load_squads() or {} end)
 end
 
 M.toggle_section = function(idx)
     if M.state.sections[idx] then M.state.sections[idx].expanded = not M.state.sections[idx].expanded end
+end
+
+M.get_footer_hint = function(action)
+    if not action then return "  Dica: Use j/k para navegar. Pressione q para sair." end
+    local t = action.type
+    if t == "section" or t == "agent_expand" then return "  Dica: Pressione <CR> para expandir/recolher." end
+    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" then
+        return "  Dica: Pressione <Space> para alternar."
+    end
+    if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" then
+        return "  Dica: Pressione 'c' para alterar este valor."
+    end
+    if t == "app_width" or t == "app_height" then return "  Dica: Pressione 'c' para alterar o valor numérico (ex: 0.8)." end
+    if t == "app_border" then return "  Dica: Pressione <Space> para alternar o tipo de borda." end
+    if t == "edit_skill" then return "  Dica: Pressione 'e' para editar o código desta skill." end
+    if t == "edit_injector" then return "  Dica: Pressione 'e' para editar o código deste injetor." end
+    if t == "edit_squad" then return "  Dica: Pressione 'e' para editar o arquivo de esquadrões (JSON)." end
+    if t == "create_agent" or t == "create_skill" or t == "create_injector" then return "  Dica: Pressione <CR> para criar." end
+    return "  Dica: Use j/k para navegar. Pressione q para sair."
 end
 
 local function format_row(label, value, total_width)
@@ -62,7 +95,7 @@ local function format_row(label, value, total_width)
     local value_len = vim.fn.strdisplaywidth(value)
     local dots_len = total_width - label_len - value_len - 2
     if dots_len < 1 then dots_len = 1 end
-    return label .. " " .. string.rep(".", dots_len) .. " " .. value
+    return label .. " " .. string.rep("·", dots_len) .. " " .. value
 end
 
 local function add_line(lines, text, action) table.insert(lines, text); if action then M.line_map[#lines] = action end end
@@ -72,25 +105,28 @@ M.render = function()
     local lines = {}
     local w = 62
 
-    add_line(lines, "  MultiContext AI 🤖                                       [v1.0]", nil)
+    add_line(lines, "  MultiContext AI 🤖[v1.0]", nil)
     add_line(lines, "", nil)
 
     for s_idx, sec in ipairs(M.state.sections) do
-        local prefix = sec.expanded and "▼ " or "▶ "
-        add_line(lines, prefix .. sec.title, { type = "section", idx = s_idx })
+        local prefix = sec.expanded and "[-] " or "[+] "
+        add_line(lines, prefix .. (sec.title or ""), { type = "section", idx = s_idx })
         
-        if sec.expanded then
+        if not sec.expanded and sec.desc then
+            add_line(lines, "    " .. sec.desc, nil)
+            add_line(lines, "", nil)
+        elseif sec.expanded then
             if sec.id == "apis" then
-                add_line(lines, format_row("    Motor Automático de Fallback", M.state.fallback_mode and "●" or "○", w), { type = "toggle_fallback" })
+                add_line(lines, format_row("    Motor Automático de Fallback", M.state.fallback_mode and "[ ON ]" or "[ OFF ]", w), { type = "toggle_fallback" })
                 add_line(lines, "    Lista de Provedores:", nil)
                 for i, a in ipairs(M.state.apis) do
-                    local mark = (a.name == M.state.default_api) and "●" or "○"
+                    local mark = (a.name == M.state.default_api) and "[ ✓ ]" or "[   ]"
                     add_line(lines, format_row("    ├─ " .. a.name, mark, w), { type = "api_select", name = a.name, idx = i })
                 end
             elseif sec.id == "swarm" then
                 add_line(lines, "    (Permissão para invocar sub-agentes e prioridade de uso)", nil)
                 for i, a in ipairs(M.state.apis) do
-                    local mark = a.allow_spawn and "●" or "○"
+                    local mark = a.allow_spawn and "[ ON ]" or "[ OFF ]"
                     add_line(lines, format_row("    " .. i .. ". " .. a.name .. " (" .. (a.abstraction_level or "medium") .. ")", mark, w), { type = "api_spawn", idx = i })
                 end
             elseif sec.id == "watchdog" then
@@ -99,6 +135,7 @@ M.render = function()
                 add_line(lines, format_row("    Status da Interceptação", "[ " .. m_disp .. " ]", w), { type = "wd_mode" })
                 add_line(lines, format_row("    Gatilho (Limiar)", M.state.horizon .. " tokens", w), { type = "wd_horizon" })
                 add_line(lines, format_row("    Tolerância do Usuário", tostring(M.state.tolerance), w), { type = "wd_tolerance" })
+                add_line(lines, "", nil)
                 local strat = "Semântico"
                 if wd.strategy == "percent" then strat = "Percentual" elseif wd.strategy == "fixed" then strat = "Fixo" end
                 add_line(lines, format_row("    Estratégia", "[ " .. strat .. " ]", w), { type = "wd_strategy" })
@@ -119,7 +156,7 @@ M.render = function()
 
                 for _, ag_name in ipairs(agent_names) do
                     local is_exp = M.state.expanded_agents[ag_name]
-                    add_line(lines, "    " .. (is_exp and "▼ " or "▶ ") .. ag_name, { type = "agent_expand", name = ag_name })
+                    add_line(lines, "    " .. (is_exp and "[-] " or "[+] ") .. ag_name, { type = "agent_expand", name = ag_name })
                     if is_exp then
                         local ag_data = M.state.agents[ag_name]
                         local ag_skills = ag_data.skills or {}
@@ -131,7 +168,7 @@ M.render = function()
                         for _, sn in ipairs(skill_names) do
                             local has_skill = false
                             for _, s in ipairs(ag_skills) do if s == sn then has_skill = true; break end end
-                            add_line(lines, format_row("      ├─ " .. sn, has_skill and "●" or "○", w), { type = "agent_skill_toggle", agent = ag_name, skill = sn })
+                            add_line(lines, format_row("      ├─ " .. sn, has_skill and "[ ✓ ]" or "[   ]", w), { type = "agent_skill_toggle", agent = ag_name, skill = sn })
                         end
                         add_line(lines, format_row("      └─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
                     end
@@ -145,9 +182,44 @@ M.render = function()
                 
                 for _, sn in ipairs(skill_names) do
                     local sk = M.state.all_skills[sn]
-                    add_line(lines, format_row("    " .. sn, sk.is_native and "[ Nativa ]" or "[ Custom ]", w), { type = "edit_skill", name = sn })
+                    add_line(lines, format_row("    ├─ " .. sn, sk.is_native and "[ Nativa ]" or "[ Custom ]", w), { type = "edit_skill", name = sn })
                 end
-                add_line(lines, "    [ + Criar Nova Skill ]", { type = "create_skill" })
+                add_line(lines, "    └─ [ + Criar Nova Skill ]", { type = "create_skill" })
+            elseif sec.id == "injectors" then
+                add_line(lines, "    (Aperte 'e' sobre um injetor para editar seu código)", nil)
+                local inj_names = {}
+                for iname, _ in pairs(M.state.all_injectors) do table.insert(inj_names, iname) end
+                table.sort(inj_names)
+                
+                for _, iname in ipairs(inj_names) do
+                    local inj = M.state.all_injectors[iname]
+                    add_line(lines, format_row("    ├─ " .. iname, inj.is_native and "[ Nativo ]" or "[ Custom ]", w), { type = "edit_injector", name = iname })
+                end
+                add_line(lines, "    └─[ + Criar Novo Injetor ]", { type = "create_injector" })
+            elseif sec.id == "squads" then
+                add_line(lines, "    (Aperte 'e' sobre um esquadrão para editar suas diretrizes)", nil)
+                local sq_names = {}
+                for sn, _ in pairs(M.state.squads) do table.insert(sq_names, sn) end
+                table.sort(sq_names)
+                
+                for _, sn in ipairs(sq_names) do
+                    local sq = M.state.squads[sn]
+                    add_line(lines, format_row("    ├─ @" .. sn, "[ Squad ]", w), { type = "edit_squad", name = sn })
+                    if sq.tasks then
+                        for _, t in ipairs(sq.tasks) do
+                            local chain_str = t.agent or "tech_lead"
+                            if type(t.chain) == "table" and #t.chain > 0 then
+                                chain_str = chain_str .. " ➔ " .. table.concat(t.chain, " ➔ ")
+                            end
+                            add_line(lines, "      └─ " .. chain_str, nil)
+                        end
+                    end
+                end
+            elseif sec.id == "appearance" then
+                local app = M.state.appearance
+                add_line(lines, format_row("    Largura %(Width%)", tostring(app.width), w), { type = "app_width" })
+                add_line(lines, format_row("    Altura %(Height%)", tostring(app.height), w), { type = "app_height" })
+                add_line(lines, format_row("    Tipo de Borda", "[ " .. (app.border or "rounded") .. " ]", w), { type = "app_border" })
             end
             add_line(lines, "", nil)
         end
@@ -155,7 +227,7 @@ M.render = function()
 
     while #lines < 22 do table.insert(lines, "") end
     table.insert(lines, string.rep("─", w + 2))
-    table.insert(lines, "  <CR> Expandir   <Space> Alternar   <c> Alterar   <e> Editar")
+    table.insert(lines, M.get_footer_hint(nil))
     return lines
 end
 
@@ -203,6 +275,28 @@ M.handle_cr = function()
             vim.notify("Skill criada! Execute :ContextReloadSkills após editar.", vim.log.levels.INFO)
             pcall(api.nvim_win_close, M.win, true)
         end)
+    elseif action.type == "create_injector" then
+        vim.ui.input({ prompt = "Nome do novo Injetor (.lua): " }, function(input)
+            if not input or input == "" then return end
+            input = input:gsub("%.lua$", "")
+            local dir = vim.fn.stdpath("config") .. "/mctx_injectors"
+            if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
+            local path = dir .. "/" .. input .. ".lua"
+            
+            local boilerplate = {
+                "return {",
+                "    name = '" .. input .. "',",
+                "    description = 'Sua descrição aqui',",
+                "    execute = function()",
+                "        return 'Texto a ser injetado'",
+                "    end",
+                "}"
+            }
+            vim.fn.writefile(boilerplate, path)
+            vim.cmd("edit " .. path)
+            vim.notify("Injetor criado!", vim.log.levels.INFO)
+            pcall(api.nvim_win_close, M.win, true)
+        end)
     elseif action.type == "create_agent" then
         vim.ui.input({ prompt = "Nome da nova Persona: @" }, function(input)
             if not input or input == "" then return end
@@ -239,6 +333,9 @@ M.handle_space = function()
         local found_idx = nil
         for i, s in ipairs(ag.skills) do if s == action.skill then found_idx = i; break end end
         if found_idx then table.remove(ag.skills, found_idx) else table.insert(ag.skills, action.skill) end
+    elseif action.type == "app_border" then
+        local borders = { rounded = "single", single = "double", double = "solid", solid = "shadow", shadow = "none", none = "rounded" }
+        M.state.appearance.border = borders[M.state.appearance.border or "rounded"] or "rounded"
     end
     M.update_buffer()
 end
@@ -268,6 +365,8 @@ M.handle_edit = function()
         local ag = M.state.agents[action.name]
         ag.abstraction_level = cycles[ag.abstraction_level or "high"] or "high"
         M.update_buffer()
+    elseif action.type == "app_width" then prompt_num("Nova Largura (ex: 0.8): ", function(n) M.state.appearance.width = n end)
+    elseif action.type == "app_height" then prompt_num("Nova Altura (ex: 0.8): ", function(n) M.state.appearance.height = n end)
     end
 end
 
@@ -279,6 +378,22 @@ M.handle_open_file = function()
             return
         end
         local path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
+        if vim.fn.filereadable(path) == 1 then
+            vim.cmd("edit " .. path)
+            pcall(api.nvim_win_close, M.win, true)
+        end
+    elseif action and action.type == "edit_injector" then
+        if M.state.all_injectors[action.name].is_native then
+            vim.notify("Este é um injetor nativo. O código não pode ser alterado por aqui.", vim.log.levels.WARN)
+            return
+        end
+        local path = vim.fn.stdpath("config") .. "/mctx_injectors/" .. action.name .. ".lua"
+        if vim.fn.filereadable(path) == 1 then
+            vim.cmd("edit " .. path)
+            pcall(api.nvim_win_close, M.win, true)
+        end
+    elseif action and action.type == "edit_squad" then
+        local path = vim.fn.stdpath("config") .. "/mctx_squads.json"
         if vim.fn.filereadable(path) == 1 then
             vim.cmd("edit " .. path)
             pcall(api.nvim_win_close, M.win, true)
@@ -313,12 +428,12 @@ M.save_config = function()
     cfg.watchdog = vim.deepcopy(M.state.watchdog)
     cfg.cognitive_horizon = M.state.horizon
     cfg.user_tolerance = M.state.tolerance
+    cfg.appearance = vim.deepcopy(M.state.appearance)
     config.save_api_config(cfg)
     
     config.options.user_name = M.state.identity
-    -- Aqui salvaríamos o max_loops no react_loop, mas manteremos no JSON de fallback no futuro se necessário
+    config.options.appearance = vim.deepcopy(M.state.appearance)
     
-    -- IAM: Salva os Agentes e Permissões!
     local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
     local raw_json = vim.fn.json_encode(M.state.agents)
     vim.fn.writefile({raw_json}, agents_file)
@@ -337,7 +452,7 @@ M.open_panel = function()
     vim.bo[M.buf].swapfile = false
     api.nvim_buf_set_name(M.buf, "MultiContext_Controls")
     
-    local w, h = 70, 25
+    local w, h = 72, 25
     M.win = api.nvim_open_win(M.buf, true, {
         relative = 'editor', width = w, height = h,
         row = math.floor((vim.o.lines - h) / 2), col = math.floor((vim.o.columns - w) / 2),
@@ -359,6 +474,19 @@ M.open_panel = function()
     api.nvim_buf_set_keymap(M.buf, "n", "q", ":q!<CR>", km)
     
     api.nvim_create_autocmd("BufWriteCmd", { buffer = M.buf, callback = M.save_config })
+    api.nvim_create_autocmd("CursorMoved", {
+        buffer = M.buf,
+        callback = function()
+            if not api.nvim_buf_is_valid(M.buf) or not api.nvim_win_is_valid(M.win) then return end
+            local cursor_line = api.nvim_win_get_cursor(M.win)[1]
+            local action = M.line_map[cursor_line]
+            local hint = M.get_footer_hint(action)
+            vim.bo[M.buf].modifiable = true
+            local last_line = api.nvim_buf_line_count(M.buf)
+            api.nvim_buf_set_lines(M.buf, last_line - 1, last_line, false, { hint })
+            vim.bo[M.buf].modifiable = false
+        end
+    })
 end
 
 return M

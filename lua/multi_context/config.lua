@@ -104,6 +104,7 @@ function M.setup(user_opts)
         if disk_cfg.watchdog then M.options.watchdog = vim.deepcopy(disk_cfg.watchdog) end
         if disk_cfg.cognitive_horizon then M.options.cognitive_horizon = disk_cfg.cognitive_horizon end
         if disk_cfg.user_tolerance then M.options.user_tolerance = disk_cfg.user_tolerance end
+        if disk_cfg.appearance then M.options.appearance = vim.deepcopy(disk_cfg.appearance) end
     end
 end
 
