@@ -1,13 +1,13 @@
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão V1.0, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual UI em Grid** e um **Ecossistema de Skills Pluggáveis e Editáveis** provido de exemplos práticos comunitários.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão V1.0, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, **Engine Virtual UI em Grid**, um **Ecossistema de Skills Pluggáveis e Editáveis** provido de exemplos práticos comunitários e **Context Injectors (\)** para composição dinâmica de prompts.
 
 ## Arquitetura Técnica
 
 ### Tecnologias Principais
 - **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **88/88 Passando Absolutamente**.
+- **Framework de Testes**: `plenary.nvim` (busted) - **92/92 Passando Absolutamente**.
 - **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
 - **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
 - **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
@@ -19,6 +19,7 @@ lua/multi_context/
 ├── init.lua              # Orquestrador principal, monitoramento live de stream e hooks
 ├── config.lua            # Configurações, Bootstrapping de Usuário e Auto-Setup
 ├── agents.lua            # Inicializador do mctx_agents.json do usuário
+├── injectors.lua         # Motor visual (Menu \) e Loader para macros dinâmicas do usuário
 ├── api_client.lua        # Roteador de filas e fallbacks de API
 ├── transport.lua         # Motor de HTTP (curl), streams e cleanup de temp files
 ├── prompt_parser.lua     # Parser de intenções e Montador Dinâmico de Prompts e Skills
@@ -34,49 +35,44 @@ lua/multi_context/
 ├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff)
 ├── utils.lua             # Ferramentas de cálculo de token e serialização de Workspace
 ├── ui/
-│   ├── popup.lua         # Lógica da janela flutuante, carrossel de buffers e atalhos
+│   ├── popup.lua         # Lógica da janela flutuante, carrossel de buffers e atalhos (\, @)
 │   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
 │   └── highlights.lua    # Highlights sintáticos unificados e paleta global
-├── tests/                # Suíte de testes automatizados (TDD/Plenary) - 88/88 Passando
+├── tests/                # Suíte de testes automatizados (TDD/Plenary) - 92/92 Passando
 └── examples/
-    └── skills/           # Template Comunitário de Skills (Jira, Pytest, SQL, etc.)
+    ├── skills/           # Template Comunitário de Skills (Jira, Pytest, SQL)
+    └── injectors/        # Template Comunitário de Injetores (Project Dump, LSP Errors, Git Log)
 ```
 
 ## Funcionalidades e Capacidades Implementadas
 
-### 1. Engine Virtual UI e Identity & Access Management (IAM)
+### 1. Canvas Dinâmico e Context Injectors (Fase 28)
+- **Macros de Contexto**: A tecla `\` em modo de inserção abre um seletor virtual (semelhante ao comando `@` para agentes), permitindo injetar dinamicamente dados do projeto diretamente onde o cursor está posicionado.
+- **Ecossistema de Injetores Locais**: Suporte para o usuário programar seus próprios conectores escrevendo um script lua simples (`~/.config/nvim/mctx_injectors/`). Exemplos já providos para leitura de Diagnósticos de LSP, Dump de Projeto e Logs de Git.
+
+### 2. Engine Virtual UI e Identity & Access Management (IAM)
 - **Grid Declarativo (Lazy-Style)**: Interface interativa unificada acessada via `:ContextControls`. Renderiza opções alinhadas horizontalmente com pontilhados (dot-leaders), cursores ocultos (`cursorline`) e ícones de alternância (`●` / `○`).
 - **Interatividade e Mutação de Estado**: Controle total via teclado. `<Space>` para ligar/desligar permissões e fallbacks; `c` para editar variáveis contínuas (limites de loops, gatilho do watchdog, identidade); `dd` e `p` para reordenar a fila de APIs.
 - **Matriz de Permissões de Agentes**: Controle fino (Drill-down via `<CR>`) que lista cada agente e permite ligar/desligar ferramentas específicas (Skills) apenas para aquele agente, salvando o Perfil de Menor Privilégio no `mctx_agents.json`.
 - **Fábrica Dinâmica de Entidades**: Criação instantânea de novas Skills customizadas (gera boilerplate Lua) e novas Personas a partir de botões `[ + ]` inseridos no Virtual DOM do painel.
-- **Edição Expressa**: O atalho `e` no painel sobre o nome de uma Skill customizada abre instantaneamente o seu código Lua base em background para modificação rápida e hot-reload.
 
-### 2. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
+### 3. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
 - **Delegação via Tech Lead**: Orquestração via `spawn_swarm`.
 - **Roteamento Cognitivo (MoA)**: O painel visual permite ordenar quem resolve qual tarefa e marcar quem é *Fallback Direcional*. O sistema checa automaticamente a compatibilidade entre a capacidade cognitiva da API e a demanda do agente.
 - **Pipelines e Coreografia**: Reencarnação de tarefas em esteiras e injeção do sistema `switch_agent` para o agente ceder o controle e reconfigurar a persona *in-flight*.
 
-### 3. O Guardião Preditivo, Compressão Quadripartite e 3 Motores
+### 4. O Guardião Preditivo, Compressão Quadripartite e 3 Motores
 - **Watchdog via EMA**: O rastreador preditivo calcula a média móvel geométrica (EMA), somando o peso do buffer atual. Exibe a telemetria ao vivo na UI.
 - **3 Motores de Compressão**: Configurável via painel interativo (Semântico, Percentual e Fixo).
 - **A Persona @archivist**: Transmutações complexas do buffer inteiro num modelo estrito XML `<genesis>`, `<plan>`, `<journey>`, `<now>`.
-- **Imunidade de Turno (Cold Start)**: O sistema detecta colagens gigantes no começo da conversa e protege a requisição inicial do usuário sem disparar a compressão de imediato.
 
-### 4. Esquadrões Meta-Agentes e Skills Pluggáveis (Comunidade V1.0)
+### 5. Esquadrões Meta-Agentes e Skills Pluggáveis (Comunidade V1.0)
 - Compilação transparente de menções a esquadrões (ex: `@squad_dev`).
 - Scripts pluggáveis via `~/.config/nvim/mctx_skills/` com validação de Gatekeeper, hot-reload autônomo e isolamento de escopo.
-- **Catálogo Oficial**: Exemplos de ponta a ponta em `examples/skills/` integrando com Jira, Pytest e SQLite.
 
-### 5. Unified Diff e Persistência de Workspace
+### 6. Unified Diff e Persistência de Workspace
 - Persistência e Ressurreição de todo o Enxame através de injeção JSON-in-XML no arquivo `.mctx`.
 - Edições cirúrgicas nativas acopladas ao Kernel UNIX via `patch --force`.
-
----
-
-## Decisões Técnicas Críticas
-1. **Desacoplamento de UI e Background**: O motor Swarm distribui a carga via `curl` assíncrono e `vim.schedule()` mantendo a navegação do usuário fluida e responsiva (Single-Threaded Non-Blocking I/O).
-2. **Injeção Dinâmica de System Prompt**: A primeira posição do array de redes é reescrita *on-the-fly* no `tool_runner`/`swarm_manager`, emulando a persona nova sem perder o raciocínio.
-3. **Virtual DOM com Mutação Segura**: O `:ContextControls` opera lendo e manipulando uma Tabela de Estado Lua e forçando re-renderizações no buffer visual sem bloquear arquivos. A limpeza agressiva previne vazamento de buffers (`buftype=acwrite`, `bufhidden=wipe`).
 
 ---
 
@@ -84,18 +80,10 @@ lua/multi_context/
 
 ### ✅ Implementado, Estável e Testado (V1.0 - Produção)
 O core do produto é um motor de orquestração industrial de ponta.
-- Interface `LazyVim-like` iterativa e mutável (Grid, Ícones, Toggles de Permissão IAM, Drill-down, Fábrica de Entidades).
+- Interface `LazyVim-like` iterativa e mutável (Grid, Ícones, Toggles IAM, Drill-down).
+- Extensibilidade dupla: Skills ativas para a IA, Injectors textuais (`\`) para o Usuário.
 - Watchdog Preditivo 2.0 (Motores de Compressão Flexíveis).
 - IAM de Agentes e Skills editáveis em tempo real.
 - Swarm Avançado (MoA, Pipelines, Coreografia).
 - Unified Diff, Workspace Persistente e Esquadrões.
-- Ecossistema da Comunidade e base para novas Skills.
-- **Cobertura Testes Plenary:** 88 de 88 Sucessos absolutos (0 Falhas / 0 Erros).
-
-### 🚀 Próximos Passos (Distribuição e Marketing)
-O produto está tecnicamente finalizado e robusto. As próximas etapas são extra-código:
-1. **Release v1.0.0**: Criar a tag Git do release oficial.
-2. **Registro de Plugins**: Adicionar o projeto ao [Dotfyle](https://dotfyle.com) (Diretório Oficial de Plugins do Neovim) e fóruns (Reddit r/neovim).
-
----
-*Última atualização: 25 Abril de 2026 - Lançamento da V1.1: Ecossistema da Comunidade de Skills Completo (88/88 tests).*
+- **Cobertura Testes Plenary:** 92 de 92 Sucessos absolutos (0 Falhas / 0 Erros).

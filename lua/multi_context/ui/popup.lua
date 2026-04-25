@@ -81,6 +81,7 @@ function M.create_popup(initial_content_or_bufnr)
     api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
 
     api.nvim_buf_set_keymap(buf, "i", "@", "@<Esc><Cmd>lua require('multi_context.agents').open_agent_selector()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "\\", "\\<Esc><Cmd>lua require('multi_context.injectors').open_selector()<CR>", km)
 
     api.nvim_buf_set_keymap(buf, "n", "<A-x>", "<Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context').ExecuteTools()<CR>", km)

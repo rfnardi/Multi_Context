@@ -19,6 +19,7 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 | Ícone | Funcionalidade | Descrição |
 |:---:|---|---|
 | 🎛️ | **Virtual UI Engine & IAM** | Painel centralizado e interativo estilo React (Virtual DOM) para orquestrar APIs, Fallbacks, Watchdog e Skills. Permite **Drill-down** para expandir agentes, **criar novas Personas/Skills dinamicamente** e gerenciar permissões (`●`/`○`) on-the-fly. Suporta reordenação nativa (`dd`, `p`, `<Space>`, `c`, `e`). |
+| 🧩 | **Context Injectors (`\`)** | Componha prompts como um lego. Digite `\` no chat para abrir um menu suspenso e injetar nativamente seus *buffers abertos*, *git diffs*, *erros de LSP* ou a *árvore de arquivos* diretamente no prompt. Totalmente extensível via scripts `.lua`. |
 | 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico de abas em background. |
 | 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. |
 | 🛡️ | **Context Watchdog 2.0** | Um rastreador preditivo (EMA) monitora a janela do chat. Se ameaçar estourar, invoca o `@archivist` usando 3 motores de compressão configuráveis (**Semântico, Percentual ou Fixo**) encapsulando a memória no formato Quadripartite. |
@@ -29,7 +30,6 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 | 💾 | **Workspace Stateful** | Feche o Neovim a qualquer momento. O plugin empacota sua fila assíncrona, respostas em andamento em disco (`.mctx`) e reabre todas as abas onde você parou. |
 | 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. Bloqueados pelo Gatekeeper nativo, IAs sem permissão não podem usar bash, invocar outros agentes ou editar o disco. Tudo controlado visualmente pela UI Virtual. |
 | 🔄 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (ex: Rate Limit da OpenAI), o plugin tenta automaticamente a próxima API da sua fila de forma invisível. |
-| 🛑 | **Job Control (Pânico)** | Pressione `<C-x>` a qualquer momento para assassinar a conexão com a API via `jobstop`. |
 
 ---
 
@@ -43,24 +43,32 @@ O plugin possui uma camada nativa de transporte HTTP (`curl`) super otimizada, c
 
 ---
 
-## 🛠️ Criando suas Próprias Skills (Extensibilidade)
-Você pode ensinar qualquer coisa à IA localmente. Basta ir ao Painel de Controle (`:ContextControls`), expandir a seção de Skills e clicar em `[ + Criar Nova Skill ]`. O plugin gera o boilerplate automaticamente. Os arquivos ficam salvos em `~/.config/nvim/mctx_skills/`
+## 🛠️ Extensibilidade Dupla: Skills e Injectors
 
-Exemplo de uma skill `banco_de_dados.lua`:
+O MultiContext divide a personalização do usuário em duas frentes: **Habilidades de Ação (Skills)** e **Macros de Contexto (Injectors)**.
+
+### 1. Criando Skills (Ferramentas para a IA)
+Acesse `:ContextControls` e crie uma nova skill. Ela será salva em `~/.config/nvim/mctx_skills/`.
 ```lua
 return {
     name = "consulta_sql",
     description = "Executa uma query no banco local do projeto",
-    parameters = {
-        { name = "query", type = "string", required = true, desc = "Comando SQL" }
-    },
-    execute = function(args)
-        -- O plugin delega esta execução silenciosamente e retorna para a IA
-        return vim.fn.system("sqlite3 database.db '" .. args.query .. "'")
+    parameters = { { name = "query", type = "string", required = true } },
+    execute = function(args) return vim.fn.system("sqlite3 db.db '" .. args.query .. "'") end
+}
+```
+
+### 2. Criando Context Injectors (Macros para você)
+Você pode criar blocos de texto dinâmicos para injetar nos seus prompts usando a tecla `\`. Crie scripts `.lua` na pasta `~/.config/nvim/mctx_injectors/`.
+```lua
+return {
+    name = "git_log",
+    description = "Injeta os últimos 10 commits na janela de chat",
+    execute = function()
+        return "=== COMMITS ===\n" .. vim.fn.system("git log -n 10 --oneline")
     end
 }
 ```
-A IA aprenderá a usar essa ferramenta instantaneamente. Use o comando `:ContextReloadSkills` se fizer alterações externas com o Neovim aberto.
 
 ---
 
@@ -68,7 +76,7 @@ A IA aprenderá a usar essa ferramenta instantaneamente. Use o comando `:Context
 
 O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará todos os arquivos base de configuração na sua pasta `~/.config/nvim/` sem tocar no código-fonte original.
 
-### 1. Instalando com `lazy.nvim`
+### Instalando com `lazy.nvim`
 
 ```lua
 {
@@ -84,39 +92,6 @@ O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará to
 }
 ```
 
-### 2. Instalando com `vim-plug`
-
-Adicione no seu `init.vim` ou gerenciador de plugins:
-```vim
-Plug 'seu-usuario/multi_context_plugin'
-```
-
-Rode `:PlugInstall` e adicione o *setup*:
-
-```lua
-require('multi_context').setup({
-  user_name = "SeuNome", -- Seu nome no chat
-})
-```
-
----
-
-## 🎮 Comandos (Modo Normal e Visual)
-
-| Comando | Descrição |
-|---|---|
-| `:ContextChatFull` | Abre o chat vazio ou retoma o workspace ativo. |
-| `:Context` | *(Normal/Visual)* Envia o buffer ou as linhas selecionadas para o chat. |
-| `:ContextFolder` | Inicia a sessão enviando os arquivos do diretório atual. |
-| `:ContextRepo` | Inicia a sessão mapeando todo o projeto do Git. |
-| `:ContextGit` | Envia as alterações não commitadas (`git diff`). |
-| `:ContextBuffers`| Envia todos os buffers de código carregados no Neovim. |
-| `:ContextControls` | ⚙️ **Abre o Painel Virtual Unificado para gerenciar APIs, Swarms, Compressão, Skills e Permissões IAM.** |
-| `:ContextTree` | Desenha a árvore do projeto no prompt. |
-| `:ContextReloadSkills`| Recarrega imediatamente sua pasta local de habilidades. |
-| `:ContextToggle` | Abre ou esconde a janela flutuante principal. |
-| `:ContextUndo` | Desfaz a última destruição/compressão do chat feita pelo `@archivist`. |
-
 ---
 
 ## ⌨️ UX e Atalhos do Chat e Painel
@@ -126,6 +101,7 @@ require('multi_context').setup({
 |---|---|---|
 | **`<CR>` / `<C-CR>` / `<S-CR>`** | Insert/Normal | Envia a mensagem e invoca a IA. |
 | **`@`** | Insert | Abre o menu flutuante para invocar um Agente (`@coder`, `@qa`) ou um Esquadrão. |
+| **`\`** *(Barra Invertida)* | Insert | Abre o menu de **Context Injectors** para colar dados vivos no seu prompt. |
 | **`<Tab>` / `<S-Tab>`** | Normal | Navega pelo carrossel dinâmico do Enxame (Swarms) rodando em background. |
 | **`<C-x>`** | Insert/Normal | 🛑 **Botão de Pânico:** Corta a conexão HTTP e interrompe o stream. |
 | **`<A-b>`** | Insert/Normal | Copia o último bloco de código para a área de transferência. |
@@ -142,9 +118,15 @@ require('multi_context').setup({
 
 ---
 
+## 🎮 Comandos Legados (Modo Normal e Visual)
+A maioria das injeções de contexto agora pode ser feita mais rápido com o atalho `\` dentro do próprio chat, mas os comandos globais antigos ainda funcionam:
+`:ContextChatFull`, `:Context`, `:ContextFolder`, `:ContextRepo`, `:ContextGit`, `:ContextBuffers`, `:ContextTree`.
+
+---
+
 ## 🧪 Testes Automatizados (TDD)
 
-O plugin é mantido sob alta confiabilidade (atualmente com **87 de 87 testes passando sem falhas**) usando `plenary.nvim`, garantindo que as lógicas de extração, rede, parser, interface virtual, permissões e resiliência de buffers funcionem perfeitamente em ambientes assíncronos.
+O plugin é mantido sob alta confiabilidade (atualmente com **92 de 92 testes passando sem falhas**) usando `plenary.nvim`.
 ```bash
 make test_agregate_results
 ```
