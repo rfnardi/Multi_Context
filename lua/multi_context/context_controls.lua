@@ -105,22 +105,35 @@ M.get_footer_hint = function(action)
     if not action then return "  Dica: Use j/k para navegar. Pressione q para sair." end
     local t = action.type
     if t == "section" or t == "agent_expand" then return "  Dica: Pressione <CR> para expandir/recolher." end
-    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" then
-        return "  Dica: Pressione <Space> para alternar."
+    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
+        return "  Dica: Pressione <Space> para alternar o valor."
     end
-    if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" then
+    if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" or t == "app_width" or t == "app_height" or t == "edit_master_prompt" then
         return "  Dica: Pressione 'c' para alterar este valor."
     end
-    if t == "app_width" or t == "app_height" then return "  Dica: Pressione 'c' para alterar o valor numérico (ex: 0.8)." end
-    if t == "app_border" then return "  Dica: Pressione <Space> para alternar o tipo de borda." end
-    if t == "edit_skill" then return "  Dica: Pressione 'e' para editar o código desta skill." end
-    if t == "edit_injector" then return "  Dica: Pressione 'e' para editar o código deste injetor." end
-    if t == "edit_squad" then return "  Dica: Pressione 'e' para editar o arquivo de esquadrões (JSON)." end
-    if t == "create_agent" or t == "create_skill" or t == "create_injector" then return "  Dica: Pressione <CR> para criar." end
-    if t == "load_history" then return "  Dica: Pressione <CR> para abrir esta conversa e restaurar o estado." end
-    if t == "edit_vault" then return "  Dica: Pressione 'e' para abrir o arquivo de chaves (api_keys.json)." end
-    if t == "edit_master_prompt" then return "  Dica: Pressione 'c' para alterar o Prompt de Sistema Base." end
+    if t == "edit_skill" or t == "edit_injector" or t == "edit_squad" or t == "edit_vault" then 
+        return "  Dica: Pressione 'e' para editar o arquivo fonte." 
+    end
+    if t == "create_agent" or t == "create_skill" or t == "create_injector" or t == "load_history" or t == "edit_agent_prompt" or t == "delete_agent" then 
+        return "  Dica: Pressione <CR> para executar a ação." 
+    end
     return "  Dica: Use j/k para navegar. Pressione q para sair."
+end
+
+M.update_footer = function(cursor_line)
+    if not M.win or not api.nvim_win_is_valid(M.win) then return end
+    local action = M.line_map[cursor_line]
+    local hint = M.get_footer_hint(action)
+    
+    if vim.fn.has("nvim-0.10") == 1 then
+        pcall(api.nvim_win_set_config, M.win, { footer = " " .. vim.trim(hint) .. " ", footer_pos = "center" })
+    else
+        -- Fallback para neovim 0.9 (Escreve na última linha preservada do buffer)
+        vim.bo[M.buf].modifiable = true
+        local last = api.nvim_buf_line_count(M.buf)
+        api.nvim_buf_set_lines(M.buf, last - 1, last, false, { hint })
+        vim.bo[M.buf].modifiable = false
+    end
 end
 
 local function format_row(label, value, total_width)
@@ -160,7 +173,8 @@ M.render = function()
                 add_line(lines, "    (Permissão para invocar sub-agentes e prioridade de uso)", nil)
                 for i, a in ipairs(M.state.apis) do
                     local mark = a.allow_spawn and "[ ON ]" or "[ OFF ]"
-                    add_line(lines, format_row("    " .. i .. ". " .. a.name .. " (" .. (a.abstraction_level or "medium") .. ")", mark, w), { type = "api_spawn", idx = i })
+                    add_line(lines, format_row("    " .. i .. ". " .. a.name, mark, w), { type = "api_spawn", idx = i })
+                    add_line(lines, format_row("      └─ Abstraction Level", "[ " .. (a.abstraction_level or "medium") .. " ]", w), { type = "api_level_swarm", idx = i })
                 end
             elseif sec.id == "watchdog" then
                 local wd = M.state.watchdog
@@ -182,7 +196,7 @@ M.render = function()
                 add_line(lines, format_row("    Identidade no Chat", "[ " .. M.state.identity .. " ]", w), { type = "limit_identity" })
                 add_line(lines, format_row("    Limite Autônomo (ReAct)", M.state.max_loops .. " turnos", w), { type = "limit_loops" })
             elseif sec.id == "gatekeeper" then
-                add_line(lines, "    (Aperte <CR> num agente para configurar suas skills)", nil)
+                add_line(lines, "    (Aperte <CR> num agente para configurar)", nil)
                 local agent_names = {}
                 for n, _ in pairs(M.state.agents) do table.insert(agent_names, n) end
                 table.sort(agent_names)
@@ -203,7 +217,9 @@ M.render = function()
                             for _, s in ipairs(ag_skills) do if s == sn then has_skill = true; break end end
                             add_line(lines, format_row("      ├─ " .. sn, has_skill and "[ ✓ ]" or "[   ]", w), { type = "agent_skill_toggle", agent = ag_name, skill = sn })
                         end
-                        add_line(lines, format_row("      └─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
+                        add_line(lines, format_row("      ├─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
+                        add_line(lines, "      ├─ [ Editar System Prompt ]", { type = "edit_agent_prompt", name = ag_name })
+                        add_line(lines, "      └─ [ Deletar Agente ]", { type = "delete_agent", name = ag_name })
                     end
                 end
                 add_line(lines, "[ + Criar Novo Agente ]", { type = "create_agent" })
@@ -278,8 +294,11 @@ M.render = function()
     end
 
     while #lines < 22 do table.insert(lines, "") end
-    table.insert(lines, string.rep("─", w + 2))
-    table.insert(lines, M.get_footer_hint(nil))
+    if vim.fn.has("nvim-0.10") == 0 then
+        -- Placeholder apenas se for nvim antigo para o update_footer ter onde escrever
+        table.insert(lines, string.rep("─", w + 2))
+        table.insert(lines, " ")
+    end
     return lines
 end
 
@@ -290,6 +309,7 @@ M.update_buffer = function()
     vim.bo[M.buf].modifiable = false
     vim.bo[M.buf].modified = false
     pcall(function() require('multi_context.ui.highlights').apply_controls(M.buf) end)
+    pcall(function() M.update_footer(api.nvim_win_get_cursor(M.win)[1]) end)
 end
 
 M.handle_cr = function()
@@ -302,6 +322,36 @@ M.handle_cr = function()
     elseif action.type == "agent_expand" then 
         M.state.expanded_agents[action.name] = not M.state.expanded_agents[action.name]
         M.update_buffer()
+    elseif action.type == "delete_agent" then
+        local choice = vim.fn.confirm("Deseja DELETAR o agente @" .. action.name .. "?", "&Sim\n&Nao", 2)
+        if choice == 1 then
+            M.state.agents[action.name] = nil
+            M.state.expanded_agents[action.name] = nil
+            M.save_config()
+            vim.notify("Agente deletado.", vim.log.levels.INFO)
+            M.update_buffer()
+        end
+    elseif action.type == "edit_agent_prompt" then
+        local ag = M.state.agents[action.name]
+        local tmp_path = vim.fn.stdpath("data") .. "/mctx_agent_" .. action.name .. "_" .. os.date("%H%M%S") .. ".md"
+        vim.fn.writefile(vim.split(ag.system_prompt or "", "\n"), tmp_path)
+        
+        pcall(api.nvim_win_close, M.win, true)
+        vim.cmd("edit " .. tmp_path)
+        
+        api.nvim_create_autocmd("BufWritePost", {
+            buffer = api.nvim_get_current_buf(),
+            callback = function()
+                local lines = vim.fn.readfile(tmp_path)
+                local agents = require('multi_context.agents').load_agents()
+                if agents[action.name] then
+                    agents[action.name].system_prompt = table.concat(lines, "\n")
+                    local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
+                    vim.fn.writefile({vim.fn.json_encode(agents)}, agents_file)
+                    vim.notify("System Prompt do agente @" .. action.name .. " atualizado!", vim.log.levels.INFO)
+                end
+            end
+        })
     elseif action.type == "create_skill" then
         vim.ui.input({ prompt = "Nome da nova Skill (.lua): " }, function(input)
             if not input or input == "" then return end
@@ -323,9 +373,9 @@ M.handle_cr = function()
                 "}"
             }
             vim.fn.writefile(boilerplate, path)
+            pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. path)
             vim.notify("Skill criada! Execute :ContextReloadSkills após editar.", vim.log.levels.INFO)
-            pcall(api.nvim_win_close, M.win, true)
         end)
     elseif action.type == "create_injector" then
         vim.ui.input({ prompt = "Nome do novo Injetor (.lua): " }, function(input)
@@ -345,9 +395,9 @@ M.handle_cr = function()
                 "}"
             }
             vim.fn.writefile(boilerplate, path)
+            pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. path)
             vim.notify("Injetor criado!", vim.log.levels.INFO)
-            pcall(api.nvim_win_close, M.win, true)
         end)
     elseif action.type == "create_agent" then
         vim.ui.input({ prompt = "Nome da nova Persona: @" }, function(input)
@@ -384,6 +434,10 @@ M.handle_space = function()
     if action.type == "api_select" then M.state.default_api = action.name
     elseif action.type == "toggle_fallback" then M.state.fallback_mode = not M.state.fallback_mode
     elseif action.type == "api_spawn" then M.state.apis[action.idx].allow_spawn = not M.state.apis[action.idx].allow_spawn
+    elseif action.type == "api_level_swarm" then
+        local cycles = { high = "medium", medium = "low", low = "high" }
+        local ap = M.state.apis[action.idx]
+        ap.abstraction_level = cycles[ap.abstraction_level or "medium"] or "medium"
     elseif action.type == "wd_mode" then
         local cycles = { off = "ask", ask = "auto", auto = "off" }
         M.state.watchdog.mode = cycles[M.state.watchdog.mode or "off"] or "off"
@@ -438,38 +492,29 @@ end
 
 M.handle_open_file = function()
     local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
+    local path = nil
+    
     if action and action.type == "edit_skill" then
         if M.state.all_skills[action.name].is_native then
             vim.notify("Essa é uma ferramenta Core. O código não pode ser alterado por aqui.", vim.log.levels.WARN)
             return
         end
-        local path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
-        if vim.fn.filereadable(path) == 1 then
-            vim.cmd("edit " .. path)
-            pcall(api.nvim_win_close, M.win, true)
-        end
+        path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
     elseif action and action.type == "edit_injector" then
         if M.state.all_injectors[action.name].is_native then
             vim.notify("Este é um injetor nativo. O código não pode ser alterado por aqui.", vim.log.levels.WARN)
             return
         end
-        local path = vim.fn.stdpath("config") .. "/mctx_injectors/" .. action.name .. ".lua"
-        if vim.fn.filereadable(path) == 1 then
-            vim.cmd("edit " .. path)
-            pcall(api.nvim_win_close, M.win, true)
-        end
+        path = vim.fn.stdpath("config") .. "/mctx_injectors/" .. action.name .. ".lua"
     elseif action and action.type == "edit_squad" then
-        local path = vim.fn.stdpath("config") .. "/mctx_squads.json"
-        if vim.fn.filereadable(path) == 1 then
-            vim.cmd("edit " .. path)
-            pcall(api.nvim_win_close, M.win, true)
-        end
+        path = vim.fn.stdpath("config") .. "/mctx_squads.json"
     elseif action and action.type == "edit_vault" then
-        local path = config.options.api_keys_path
-        if vim.fn.filereadable(path) == 1 then
-            vim.cmd("edit " .. path)
-            pcall(api.nvim_win_close, M.win, true)
-        end
+        path = config.options.api_keys_path
+    end
+    
+    if path and vim.fn.filereadable(path) == 1 then
+        pcall(api.nvim_win_close, M.win, true)
+        vim.cmd("edit " .. path)
     end
 end
 
@@ -554,13 +599,7 @@ M.open_panel = function()
         buffer = M.buf,
         callback = function()
             if not api.nvim_buf_is_valid(M.buf) or not api.nvim_win_is_valid(M.win) then return end
-            local cursor_line = api.nvim_win_get_cursor(M.win)[1]
-            local action = M.line_map[cursor_line]
-            local hint = M.get_footer_hint(action)
-            vim.bo[M.buf].modifiable = true
-            local last_line = api.nvim_buf_line_count(M.buf)
-            api.nvim_buf_set_lines(M.buf, last_line - 1, last_line, false, { hint })
-            vim.bo[M.buf].modifiable = false
+            M.update_footer(api.nvim_win_get_cursor(M.win)[1])
         end
     })
 end

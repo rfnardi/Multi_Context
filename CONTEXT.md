@@ -7,7 +7,7 @@ MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA co
 
 ### Tecnologias Principais
 - **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **Mais de 100 Testes Unitários e de Integração (100% de Sucesso Absoluto)**.
+- **Framework de Testes**: `plenary.nvim` (busted) - **105 Testes Unitários e de Integração (100% de Sucesso Absoluto)**, com isolamento severo de mocks (I/O, Kernel).
 - **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
 - **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
 - **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
@@ -52,14 +52,15 @@ lua/multi_context/
 
 ### 2. Centro de Comando Master e Identity & Access Management (IAM)
 - **Grid Declarativo de 12 Seções**: Interface interativa unificada acessada via `:ContextControls`. Renderiza opções com pontilhados (`· · ·`), expansores `[+]`/`[-]` e ícones lógicos (`[ ON ]`, `[ ✓ ]`). Suporta descrições dinâmicas de seções ocultas.
-- **Footer Dinâmico**: O rodapé do painel instrui o usuário sobre qual ação tomar (`<Space>`, `c`, `e`, `<CR>`) dependendo de onde o cursor está posicionado.
-- **Interatividade e Mutação de Estado**: Controle total via teclado. Permite ligar/desligar permissões, editar limites de loops, reordenar a fila de APIs (`dd` e `p`), editar Master Prompts e acionar a Telemetria da IDE.
+- **Footer Dinâmico Ancorado**: O rodapé do painel instrui o usuário sobre qual ação tomar (`<Space>`, `c`, `e`, `<CR>`) dependendo de onde o cursor está posicionado. Utiliza a API nativa de `footer` do Neovim 0.10+ para manter a dica sempre visível independentemente da rolagem do buffer.
+- **Interatividade e Mutação de Estado**: Controle total via teclado. Permite ligar/desligar permissões, editar limites de loops, reordenar a fila de APIs (`dd` e `p`), editar Master Prompts e acionar a Telemetria da IDE. Proteção nativa contra o erro `E37` garantindo transições suaves de janelas flutuantes para edição de arquivos.
 - **Matriz de Permissões de Agentes**: Controle fino que lista cada agente e permite ligar/desligar ferramentas específicas (Skills) apenas para aquele agente, salvando o Perfil de Menor Privilégio no `mctx_agents.json`.
+- **Gestão Avançada de Personas**: Permite criar, deletar (com confirmação) e editar o *System Prompt* de agentes. A edição abre um buffer temporário isolado na IDE, com *Auto-Save* em background transparente (`BufWritePost`) direto no arquivo de configuração do usuário.
 - **Fábrica Dinâmica de Entidades**: Criação instantânea de novas Skills, Injectors e Personas a partir de botões `[ + ]` no Virtual DOM do painel, gerando boilerplate Lua e abrindo o buffer imediatamente.
 
 ### 3. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
 - **Delegação via Tech Lead**: Orquestração via `spawn_swarm`.
-- **Roteamento Cognitivo (MoA)**: O painel visual permite ordenar quem resolve qual tarefa e marcar quem é *Fallback Direcional*. O sistema checa automaticamente a compatibilidade entre a capacidade cognitiva da API e a demanda do agente.
+- **Roteamento Cognitivo Dinâmico (MoA)**: O painel visual permite ordenar quem resolve qual tarefa, alterar visualmente o **Nível de Abstração Cognitiva** da API (`low/medium/high`) com a tecla `<Space>` e marcar quem é *Fallback Direcional*. O sistema checa automaticamente a compatibilidade entre a capacidade cognitiva da API e a demanda do agente.
 - **Pipelines e Coreografia**: Reencarnação de tarefas em esteiras e injeção do sistema `switch_agent` para o agente ceder o controle e reconfigurar a persona *in-flight*.
 
 ### 4. O Guardião Preditivo, Compressão Quadripartite e 3 Motores
@@ -92,11 +93,11 @@ lua/multi_context/
 
 ### ✅ Implementado, Estável e Testado (V1.2 - Produção)
 O core do produto é um motor de orquestração industrial de ponta.
-- Interface `LazyVim-like` com Footer Dinâmico e 12 Módulos Master (APIs, Watchdog, Estilização, Cofre, Telemetria).
+- Interface `LazyVim-like` com Footer Dinâmico Ancorado e 12 Módulos Master (APIs, Watchdog, Estilização, Cofre, Telemetria).
 - Extensibilidade dupla: Skills ativas para a IA, Injectors textuais (`\`) para o Usuário.
 - Watchdog Preditivo 2.0 (Motores de Compressão Flexíveis).
-- IAM de Agentes e Skills editáveis em tempo real.
+- IAM de Agentes e Skills editáveis em tempo real (Deleção Segura, Edição de Prompts Isolada).
 - Integração Completa: O Motor de HTTP (`transport.lua`) e a UI (`popup.lua`) consomem variáveis do Painel ao vivo.
-- Swarm Avançado (MoA, Pipelines, Coreografia).
+- Swarm Avançado (MoA, Níveis Cognitivos Mutáveis, Pipelines, Coreografia).
 - Unified Diff, Workspace Persistente e Esquadrões.
-- **Cobertura de Testes Plenary:** Mais de 100 testes de Unidade e Integração (0 Falhas / 0 Erros - 100% Passando Absolutamente).
+- **Cobertura de Testes Plenary:** 105 testes de Unidade e Integração isolados e garantidos (0 Falhas / 0 Erros - 100% Passando Absolutamente).

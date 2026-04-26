@@ -17,16 +17,16 @@ Diferente de plugins convencionais de autocompletar, o MultiContext atua como um
 
 | Ícone | Funcionalidade | Descrição |
 |:---:|---|---|
-| 🎛️ | **Centro de Comando (Virtual UI)** | Painel centralizado (`:ContextControls`) dividido em 12 seções expansíveis (`[+]`/`[-]`). Controle APIs, aparência (`width/border`), telemetria, crie Injetores ou gere Personas. Possui um *Footer Dinâmico* que ensina atalhos ao vivo baseados na posição do seu cursor. |
+| 🎛️ | **Centro de Comando (Virtual UI)** | Painel centralizado (`:ContextControls`) dividido em 12 seções expansíveis (`[+]`/`[-]`). Controle APIs, aparência (`width/border`), telemetria, crie Injetores ou gerencie Personas. Possui um *Footer Dinâmico* (ancorado na janela) que ensina atalhos ao vivo baseados na posição do seu cursor. |
 | 🧩 | **Context Injectors (`\`)** | Componha prompts como um lego. Digite `\` no chat para abrir um menu fuzzy e injetar *buffers abertos*, *git diffs*, ou a *árvore de arquivos*. Suporta criação de Injetores Polyglot (Lua, Bash, Python) em 1 clique pelo painel. |
 | 🐝 | **Swarm Architecture** | O agente `@tech_lead` invoca múltiplos sub-agentes (Coder, QA) para trabalharem paralelamente num carrossel dinâmico de abas em background. |
-| 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. |
+| 🧠 | **Cognitive Routing (MoA)** | O sistema distribui tarefas avaliando o custo/benefício (High/Medium/Low), roteando tasks simples para APIs baratas e caras para complexas. Configurável e mutável diretamente pelo painel de controle visual. |
 | 🛡️ | **Context Watchdog 2.0** | Um rastreador preditivo (EMA) monitora a janela do chat. Se ameaçar estourar, invoca o `@archivist` usando motores **Semântico, Percentual ou Fixo** encapsulando a memória em XML Quadripartite. |
 | 🎖️ | **Esquadrões (Squads)** | Invoque equipes inteiras mencionando `@squad_nome`. Configure esteiras de produção e visualize a *chain* hierárquica direto pelo painel de controle. |
 | 🔐 | **Cofre & Master Prompt** | Verifique se suas `api_keys.json` estão faltando ou configuradas (`[ ✓ ]`) sem expor os segredos, e reescreva o Prompt de Sistema Root da Inteligência Artificial em um clique. |
 | 🔌 | **Extensibilidade Pluggável** | Crie scripts Lua locais (`mctx_skills/`) e ensine habilidades customizadas (ex: Jira, SQL) com Auto-Hot-Reload na arquitetura. |
 | 💾 | **Workspace Stateful** | Feche o Neovim a qualquer momento. O painel lista os últimos `.mctx` da pasta do projeto. Dê `<CR>` para ressuscitar a fila assíncrona e todas as abas. |
-| 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. Bloqueados pelo Gatekeeper, IAs sem permissão não podem usar ferramentas que você desligou (`[ OFF ]`) na UI Virtual. |
+| 🥷 | **Arquitetura de Permissões** | Agentes seguem o Princípio do Menor Privilégio. O Gatekeeper permite ligar/desligar skills, deletar agentes e editar o System Prompt de cada persona em um buffer isolado seguro com Auto-Save. |
 | 🔄 | **Fallback de APIs Inteligente** | Se a sua API principal falhar (Rate Limit), o plugin tenta automaticamente a próxima API da sua fila visível no painel. |
 
 ---
@@ -108,10 +108,10 @@ O MultiContext possui **Auto-Setup**. Ao rodar pela primeira vez, ele criará to
 ### Centro de Comando (`:ContextControls`)
 | Atalho | Ação |
 |---|---|
-| **`<CR>`** | Expande/Recolhe `[+]`/`[-]` seções, detalha agentes, ou dá Load em Históricos de Chats. |
-| **`<Space>`**| Altera Toggles (`[ ON ]`/`[ OFF ]` ou `[ ✓ ]`/`[   ]`) ligando permissões ou fallbacks. |
+| **`<CR>`** | Expande/Recolhe `[+]`/`[-]` seções, deleta agentes, edita Prompts isoladamente ou dá Load em Históricos. |
+| **`<Space>`**| Altera Toggles (`[ ON ]`/`[ OFF ]`), níveis cognitivos (`low`/`medium`/`high`) ou fallbacks. |
 | **`c`** | Altera dados contínuos numéricos ou textuais (Master Prompt, Apperance, Identidade). |
-| **`e`** | Edição expressa. Abre no Neovim o arquivo `.lua` de uma Skill ou `.json` de Chaves/Squads. |
+| **`e`** | Edição expressa. Abre no Neovim o arquivo fonte de uma Skill, Injetor, ou Cofre `.json`. |
 | **`dd` / `p`** | Corta e cola APIs e opções para reordenar hierarquias e filas de prioridade. |
 
 ---
@@ -124,7 +124,7 @@ A maioria das injeções de contexto agora pode ser feita mais rápido com o ata
 
 ## 🧪 Testes Automatizados (TDD)
 
-O plugin é desenvolvido estritamente sob TDD e mantido sob altíssima confiabilidade (atualmente com **100% dos mais de 100 testes de unidade e integração** passando sem falhas) usando `plenary.nvim`.
+O plugin é desenvolvido estritamente sob TDD e mantido sob altíssima confiabilidade (atualmente com **105 testes de unidade e integração (100% Passing)**) garantindo resiliência total na arquitetura usando `plenary.nvim`.
 ```bash
 make test_agregate_results
 ```
