@@ -13,14 +13,19 @@ M.state = {
         { id = "skills", title = "[6] ECOSSISTEMA DE SKILLS LOCAIS", desc = "(Habilidades adicionais nativas ou criadas pelo usuário)", expanded = false },
         { id = "injectors", title = "[7] MACROS DE CONTEXTO (INJECTORS)", desc = "(Atalhos dinâmicos invocados pela tecla '\\')", expanded = false },
         { id = "squads", title = "[8] ESQUADRÕES META-AGENTES (SQUADS)", desc = "(Grupos pré-configurados de IA com pipelines e coreografia)", expanded = false },
-        { id = "appearance", title = "[9] ESTILIZAÇÃO E APARÊNCIA DA UI", desc = "(Controle de largura, altura e bordas do chat)", expanded = false }
+        { id = "appearance", title = "[9] ESTILIZAÇÃO E APARÊNCIA DA UI", desc = "(Controle de largura, altura e bordas do chat)", expanded = false },
+        { id = "history", title = "[10] HISTÓRICO E WORKSPACES", desc = "(Restaure conversas anteriores salvas no projeto)", expanded = false },
+        { id = "vault", title = "[11] COFRE E DIRETRIZ MESTRE", desc = "(Gerencie suas chaves de API e o Prompt de Sistema Base)", expanded = false },
+        { id = "telemetry", title = "[12] TELEMETRIA E MODO DEBUG", desc = "(Logs de rede e diagnósticos avançados)", expanded = false }
     },
     apis = {}, default_api = "", fallback_mode = true,
     watchdog = {}, horizon = 4000, tolerance = 1.0,
     identity = "User", max_loops = 15,
     agents = {}, expanded_agents = {},
     all_skills = {}, all_injectors = {}, squads = {},
-    appearance = {},
+    appearance = {}, history_files = {},
+    api_keys_status = {}, master_prompt = "",
+    debug_mode = false,
     clipboard_api = nil
 }
 
@@ -47,6 +52,7 @@ M.init_state = function()
     M.state.identity = config.options.user_name or "User"
     M.state.max_loops = 15
     M.state.appearance = vim.deepcopy(config.options.appearance or { width = 0.8, height = 0.8, border = "rounded" })
+    M.state.debug_mode = config.options.debug_mode == true
 
     local agents = require('multi_context.agents')
     local skills_mgr = require('multi_context.skills_manager')
@@ -65,6 +71,30 @@ M.init_state = function()
     
     local squads_mgr = require('multi_context.squads')
     pcall(function() M.state.squads = squads_mgr.load_squads() or {} end)
+    
+    local root = vim.fn.system("git rev-parse --show-toplevel")
+    if vim.v.shell_error == 0 then root = root:gsub("\n", "") else root = vim.fn.getcwd() end
+    local chat_dir = root .. "/.mctx_chats"
+    M.state.history_files = {}
+    if vim.fn.isdirectory(chat_dir) == 1 then
+        local files = vim.fn.split(vim.fn.system("ls -1t " .. vim.fn.shellescape(chat_dir)), "\n")
+        for i, f in ipairs(files) do
+            if i > 10 then break end
+            if f:match("%.mctx$") then table.insert(M.state.history_files, f) end
+        end
+    end
+
+    M.state.api_keys_status = {}
+    local keys = config.load_api_keys() or {}
+    for _, api_cfg in ipairs(M.state.apis) do
+        local k = keys[api_cfg.name]
+        if k and k ~= "" and not k:match("^sk%-%.%.%.") and not k:match("^AIzaSy%.%.%.") and not k:match("^sk%-ant%-%.%.%.") then
+            M.state.api_keys_status[api_cfg.name] = "Configurada"
+        else
+            M.state.api_keys_status[api_cfg.name] = "Faltando"
+        end
+    end
+    M.state.master_prompt = cfg.master_prompt or config.options.master_prompt or "Você é um Engenheiro de Software Autônomo no Neovim."
 end
 
 M.toggle_section = function(idx)
@@ -75,7 +105,7 @@ M.get_footer_hint = function(action)
     if not action then return "  Dica: Use j/k para navegar. Pressione q para sair." end
     local t = action.type
     if t == "section" or t == "agent_expand" then return "  Dica: Pressione <CR> para expandir/recolher." end
-    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" then
+    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" then
         return "  Dica: Pressione <Space> para alternar."
     end
     if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" then
@@ -87,6 +117,9 @@ M.get_footer_hint = function(action)
     if t == "edit_injector" then return "  Dica: Pressione 'e' para editar o código deste injetor." end
     if t == "edit_squad" then return "  Dica: Pressione 'e' para editar o arquivo de esquadrões (JSON)." end
     if t == "create_agent" or t == "create_skill" or t == "create_injector" then return "  Dica: Pressione <CR> para criar." end
+    if t == "load_history" then return "  Dica: Pressione <CR> para abrir esta conversa e restaurar o estado." end
+    if t == "edit_vault" then return "  Dica: Pressione 'e' para abrir o arquivo de chaves (api_keys.json)." end
+    if t == "edit_master_prompt" then return "  Dica: Pressione 'c' para alterar o Prompt de Sistema Base." end
     return "  Dica: Use j/k para navegar. Pressione q para sair."
 end
 
@@ -173,7 +206,7 @@ M.render = function()
                         add_line(lines, format_row("      └─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
                     end
                 end
-                add_line(lines, "    [ + Criar Novo Agente ]", { type = "create_agent" })
+                add_line(lines, "[ + Criar Novo Agente ]", { type = "create_agent" })
             elseif sec.id == "skills" then
                 add_line(lines, "    (Aperte 'e' sobre uma skill para editar seu código)", nil)
                 local skill_names = {}
@@ -217,9 +250,28 @@ M.render = function()
                 end
             elseif sec.id == "appearance" then
                 local app = M.state.appearance
-                add_line(lines, format_row("    Largura %(Width%)", tostring(app.width), w), { type = "app_width" })
-                add_line(lines, format_row("    Altura %(Height%)", tostring(app.height), w), { type = "app_height" })
+                add_line(lines, format_row("    Largura (Width)", tostring(app.width), w), { type = "app_width" })
+                add_line(lines, format_row("    Altura (Height)", tostring(app.height), w), { type = "app_height" })
                 add_line(lines, format_row("    Tipo de Borda", "[ " .. (app.border or "rounded") .. " ]", w), { type = "app_border" })
+            elseif sec.id == "history" then
+                add_line(lines, "    (Aperte <CR> para carregar um chat anterior)", nil)
+                if #M.state.history_files == 0 then
+                    add_line(lines, "    Nenhum histórico encontrado neste projeto.", nil)
+                else
+                    for _, f in ipairs(M.state.history_files) do
+                        add_line(lines, format_row("    ├─ " .. f, "[ Load ]", w), { type = "load_history", file = f })
+                    end
+                end
+            elseif sec.id == "vault" then
+                add_line(lines, "    Status do Cofre de Chaves (api_keys.json):", nil)
+                for _, a in ipairs(M.state.apis) do
+                    local st = M.state.api_keys_status[a.name] or "Faltando"
+                    add_line(lines, format_row("    ├─ " .. a.name, "[ " .. st .. " ]", w), { type = "edit_vault" })
+                end
+                add_line(lines, "", nil)
+                add_line(lines, format_row("    Diretriz Mestre (Root Prompt)", "[ Editar ]", w), { type = "edit_master_prompt" })
+            elseif sec.id == "telemetry" then
+                add_line(lines, format_row("    Log de Rede (Imprimir Requições)", M.state.debug_mode and "[ ON ]" or "[ OFF ]", w), { type = "toggle_debug" })
             end
             add_line(lines, "", nil)
         end
@@ -311,6 +363,17 @@ M.handle_cr = function()
                 M.update_buffer()
             end
         end)
+    elseif action.type == "load_history" then
+        local root = vim.fn.system("git rev-parse --show-toplevel")
+        if vim.v.shell_error == 0 then root = root:gsub("\n", "") else root = vim.fn.getcwd() end
+        local filepath = root .. "/.mctx_chats/" .. action.file
+        if vim.fn.filereadable(filepath) == 1 then
+            pcall(api.nvim_win_close, M.win, true)
+            vim.cmd("edit " .. filepath)
+            require('multi_context.utils').load_workspace_state(api.nvim_get_current_buf())
+            local ui_popup = require('multi_context.ui.popup')
+            ui_popup.create_popup(api.nvim_get_current_buf())
+        end
     end
 end
 
@@ -336,6 +399,8 @@ M.handle_space = function()
     elseif action.type == "app_border" then
         local borders = { rounded = "single", single = "double", double = "solid", solid = "shadow", shadow = "none", none = "rounded" }
         M.state.appearance.border = borders[M.state.appearance.border or "rounded"] or "rounded"
+    elseif action.type == "toggle_debug" then
+        M.state.debug_mode = not M.state.debug_mode
     end
     M.update_buffer()
 end
@@ -367,6 +432,7 @@ M.handle_edit = function()
         M.update_buffer()
     elseif action.type == "app_width" then prompt_num("Nova Largura (ex: 0.8): ", function(n) M.state.appearance.width = n end)
     elseif action.type == "app_height" then prompt_num("Nova Altura (ex: 0.8): ", function(n) M.state.appearance.height = n end)
+    elseif action.type == "edit_master_prompt" then prompt_str("Nova Diretriz Mestre: ", function(s) M.state.master_prompt = s end)
     end
 end
 
@@ -394,6 +460,12 @@ M.handle_open_file = function()
         end
     elseif action and action.type == "edit_squad" then
         local path = vim.fn.stdpath("config") .. "/mctx_squads.json"
+        if vim.fn.filereadable(path) == 1 then
+            vim.cmd("edit " .. path)
+            pcall(api.nvim_win_close, M.win, true)
+        end
+    elseif action and action.type == "edit_vault" then
+        local path = config.options.api_keys_path
         if vim.fn.filereadable(path) == 1 then
             vim.cmd("edit " .. path)
             pcall(api.nvim_win_close, M.win, true)
@@ -429,10 +501,14 @@ M.save_config = function()
     cfg.cognitive_horizon = M.state.horizon
     cfg.user_tolerance = M.state.tolerance
     cfg.appearance = vim.deepcopy(M.state.appearance)
+    cfg.master_prompt = M.state.master_prompt
+    cfg.debug_mode = M.state.debug_mode
     config.save_api_config(cfg)
     
     config.options.user_name = M.state.identity
     config.options.appearance = vim.deepcopy(M.state.appearance)
+    config.options.master_prompt = M.state.master_prompt
+    config.options.debug_mode = M.state.debug_mode
     
     local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
     local raw_json = vim.fn.json_encode(M.state.agents)

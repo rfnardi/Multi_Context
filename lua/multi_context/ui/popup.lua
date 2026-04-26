@@ -8,7 +8,6 @@ M.swarm_buffers = {}
 M.current_swarm_index = 1
 
 function M.create_popup(initial_content_or_bufnr)
-    -- RASTREAMENTO: Salva o buffer de código ativo antes do popup roubar o foco
     if not (M.popup_win and api.nvim_win_is_valid(M.popup_win)) then
         local cur = api.nvim_get_current_buf()
         if vim.bo[cur].buftype == "" then
@@ -71,7 +70,7 @@ function M.create_popup(initial_content_or_bufnr)
     api.nvim_buf_set_keymap(buf, "n", "<S-CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<A-b>", "<Cmd>lua require('multi_context.utils').copy_code_block()<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<A-b>", "<Esc><Cmd>lua require('multi_context.utils').copy_code_block()<CR>a", km)
-        api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(1)<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(-1)<CR>", km)
     
@@ -86,8 +85,9 @@ function M.create_popup(initial_content_or_bufnr)
     api.nvim_buf_set_keymap(buf, "n", "<A-x>", "<Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
 
-    local width  = math.ceil(vim.o.columns * 0.8)
-    local height = math.ceil(vim.o.lines   * 0.8)
+    local app = config.options.appearance or {}
+    local width  = math.ceil(vim.o.columns * (tonumber(app.width) or 0.8))
+    local height = math.ceil(vim.o.lines   * (tonumber(app.height) or 0.8))
     local row    = math.ceil((vim.o.lines   - height) / 2)
     local col    = math.ceil((vim.o.columns - width)  / 2)
 
@@ -98,15 +98,12 @@ function M.create_popup(initial_content_or_bufnr)
         row       = row,
         col       = col,
         style     = 'minimal',
-        border    = 'rounded',
+        border    = app.border or 'rounded',
         title     = " Multi_Context_Chat | ~0 tokens ",
         title_pos = 'center',
     })
     M.popup_win = win
 
-    -- =======================================================
-    -- ATUALIZADOR AO VIVO: Modificado pelo usuário
-    -- =======================================================
     api.nvim_create_autocmd({"TextChanged", "TextChangedI", "TextChangedP"}, {
         buffer = buf,
         callback = function()
@@ -214,9 +211,6 @@ function M.create_folds(buf)
     end)
 end
 
--- =======================================================
--- MÁGICA VISUAL: Altera o Título da Janela Dinamicamente
--- =======================================================
 function M.update_title()
     if not M.popup_win or not vim.api.nvim_win_is_valid(M.popup_win) then return end
     
@@ -224,7 +218,6 @@ function M.update_title()
     if ok and conf.relative and conf.relative ~= "" then
         local utils = require('multi_context.utils')
         
-        -- Descobre qual buffer está na tela agora
         local active_buf = M.popup_buf
         if M.swarm_buffers and #M.swarm_buffers > 0 and M.current_swarm_index then
             local sb = M.swarm_buffers[M.current_swarm_index]
@@ -233,7 +226,6 @@ function M.update_title()
             end
         end
         
-        -- Calcula os tokens do buffer que o usuário está olhando
         local tokens = utils.estimate_tokens(active_buf)
         
         local new_title = ""
@@ -251,7 +243,6 @@ function M.update_title()
         pcall(vim.api.nvim_win_set_config, M.popup_win, { title = new_title, title_pos = 'center' })
     end
 end
-
 
 function M.create_swarm_buffer(agent_name, initial_instruction, api_name)
     local buf = vim.api.nvim_create_buf(false, true)
@@ -291,9 +282,3 @@ function M.cycle_swarm_buffer(dir)
 end
 
 return M
-
-
-
-
-
-

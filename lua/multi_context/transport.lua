@@ -1,4 +1,3 @@
--- lua/multi_context/transport.lua
 local M = {}
 
 _G.MultiContextTempFiles = _G.MultiContextTempFiles or {}
@@ -58,6 +57,13 @@ local function write_payload_to_tmp(payload)
 end
 
 M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callback)
+    local config = require('multi_context.config')
+    if config.options.debug_mode then
+        local log_file = vim.fn.stdpath('data') .. '/mctx_network_debug.log'
+        local f_log = io.open(log_file, 'a')
+        if f_log then f_log:write('[MCTX DEBUG] CMD: ' .. table.concat(cmd, ' ') .. '\n'); f_log:close() end
+    end
+    
     local full_response = ""
     local context = { buffer = "", metrics = nil }
     local job_id = vim.fn.jobstart(cmd, {
@@ -81,9 +87,3 @@ M.write_payload_to_tmp = write_payload_to_tmp
 M.build_curl_cmd = build_curl_cmd
 
 return M
-
-
-
-
-
-

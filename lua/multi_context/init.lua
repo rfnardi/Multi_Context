@@ -1,4 +1,3 @@
--- lua/multi_context/init.lua
 local api = vim.api
 local utils = require('multi_context.utils')
 local popup = require('multi_context.ui.popup')
@@ -23,7 +22,6 @@ M.OnSwarmComplete = function(summary)
     local buf = p.popup_buf
     if not buf or not api.nvim_buf_is_valid(buf) then return end
 
-    -- Volta o foco pro Main Buffer na janela flutuante
     if p.swarm_buffers and #p.swarm_buffers > 0 then
         p.current_swarm_index = 1
         if p.popup_win and api.nvim_win_is_valid(p.popup_win) then
@@ -48,13 +46,11 @@ M.OnSwarmComplete = function(summary)
     require('multi_context.ui.highlights').apply_chat(buf)
     p.create_folds(buf)
 
-    -- Rola a tela para o final
     if p.popup_win and api.nvim_win_is_valid(p.popup_win) then
         api.nvim_win_set_cursor(p.popup_win, {api.nvim_buf_line_count(buf), 0})
         vim.cmd("normal! zz")
     end
 
-    -- Religa a IA automaticamente para dar a palavra final
     vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
 end
 
@@ -187,7 +183,6 @@ function M.SendFromPopup()
     local text_to_send = parsed_intent.text_to_send
     local active_agent_name = react_loop.state.active_agent
 
-    -- === INJEÇÃO DO WATCHDOG (QUADRIPARTITE) ===
     local mem_tracker = require('multi_context.memory_tracker')
     local current_tokens = utils.estimate_tokens(buf)
     local prompt_tokens = math.floor(#text_to_send / 4)
@@ -203,7 +198,6 @@ function M.SendFromPopup()
         local msg = string.format("> [Guardião do Contexto]: Limite iminente (%d > %d). Invocando @archivist...", predicted_total, horizon)
         api.nvim_buf_set_lines(buf, -1, -1, false, { "", msg, "" })
     end
-    -- ==========================================
 
     local sending_msg = "[Enviando requisição" .. (active_agent_name and (" via @" .. active_agent_name) or "") .. "...]"
     api.nvim_buf_set_lines(buf, -1, -1, false, { "", sending_msg })
@@ -211,7 +205,7 @@ function M.SendFromPopup()
     local history_lines = api.nvim_buf_get_lines(buf, 0, start_idx, false)
     local messages = require('multi_context.conversation').build_history(history_lines)
     
-    local base_sys_prompt = "Você é um Engenheiro de Software Autônomo no Neovim."
+    local base_sys_prompt = cfg.options.master_prompt or "Você é um Engenheiro de Software Autônomo no Neovim."
     local memory_context = get_context_md_content()
     local system_prompt = prompt_parser.build_system_prompt(base_sys_prompt, memory_context, active_agent_name, agents, current_tokens)
     
@@ -274,7 +268,6 @@ function M.SendFromPopup()
             end
         end,
         function(api_entry, metrics)
-            -- FASE 25: Alimenta a memória preditiva com os tokens gerados pela IA
             require('multi_context.memory_tracker').add_turn(math.floor(#accumulated_text / 4))
             scroller.stop_streaming(buf)
             react_loop.state.active_job_id = nil
@@ -498,57 +491,4 @@ M.HandleArchivistCompression = function(ia_idx)
     vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
 end
 
-M.HandleArchivistCompression = function(ia_idx)
-    local p = require('multi_context.ui.popup')
-    local buf = p.popup_buf
-    if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
-    
-    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-    local content = table.concat(lines, "\n")
-    
-    local genesis = content:match("<genesis>(.-)</genesis>") or "N/A"
-    local plan = content:match("<plan>(.-)</plan>") or "N/A"
-    local journey = content:match("<journey>(.-)</journey>") or "N/A"
-    local now = content:match("<now>(.-)</now>") or "N/A"
-    
-    local backup_file = vim.fn.stdpath("data") .. "/mctx_pre_compression_" .. os.date("%Y%m%d_%H%M%S") .. ".mctx"
-    vim.fn.writefile(lines, backup_file)
-    
-    local cfg = require('multi_context.config')
-    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
-    
-    local new_lines = { "=== MEMÓRIA CONSOLIDADA (QUADRIPARTITE) ===" }
-    
-    local function append_split(txt)
-        if not txt then return end
-        for _, l in ipairs(vim.split(txt, "\n", {plain=true})) do table.insert(new_lines, l) end
-    end
-    
-    append_split("<genesis>\n" .. vim.trim(genesis) .. "\n</genesis>\n")
-    append_split("<plan>\n" .. vim.trim(plan) .. "\n</plan>\n")
-    append_split("<journey>\n" .. vim.trim(journey) .. "\n</journey>\n")
-    append_split("<now>\n" .. vim.trim(now) .. "\n</now>\n")
-    
-    append_split(user_prefix .. " " .. (react_loop.state.pending_user_prompt or ""))
-    
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
-    
-    require('multi_context.memory_tracker').reset()
-    react_loop.state.pending_user_prompt = nil
-    react_loop.state.active_agent = nil
-    
-    require('multi_context.ui.highlights').apply_chat(buf)
-    p.create_folds(buf)
-    p.update_title()
-    
-    vim.notify("🧠 Contexto hiper-comprimido pelo @archivist. Retomando tarefa...", vim.log.levels.INFO)
-    vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
-end
-
 return M
-
-
-
-
-
-

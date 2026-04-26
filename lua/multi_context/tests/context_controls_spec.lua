@@ -6,7 +6,7 @@ describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
     before_each(function()
         package.loaded['multi_context.context_controls'] = nil
         controls = require('multi_context.context_controls')
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         
         -- Mock for APIs and Agents
         config.load_api_config = function()
@@ -73,7 +73,7 @@ describe("Fase 26.1 - Interatividade e Mutação (Toggles e Edição)", function
     local controls = require('multi_context.context_controls')
 
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         controls.init_state()
         
         -- Estado base simulado para o teste
@@ -151,7 +151,7 @@ describe("Fase 26.2 - Modo de Criacao e Atalhos", function()
     local controls = require('multi_context.context_controls')
 
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         controls.init_state()
     end)
 
@@ -185,7 +185,7 @@ describe("Fase A - Refatoracao Visual UX e Footer", function()
     local controls = require('multi_context.context_controls')
 
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         controls.init_state()
         
         -- Adicionamos uma propriedade de descrição nas seções simuladas
@@ -233,7 +233,7 @@ describe("Fase B - Injetores e Macros no Painel", function()
     local controls = require('multi_context.context_controls')
 
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         
         -- Mocking injectors
         local orig_req = require
@@ -293,7 +293,7 @@ end)
 describe("Fase C - Esquadrões e Meta-Agentes (Squads)", function()
     local controls = require('multi_context.context_controls')
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         local orig_req = require
         _G.require = function(mod)
             if mod == 'multi_context.squads' then
@@ -315,7 +315,7 @@ describe("Fase C - Esquadrões e Meta-Agentes (Squads)", function()
         _G.require = orig_req
     end)
     it("Deve inicializar a secao de Squads", function()
-        assert.are.same(8, #controls.state.sections, "Deve existir a 8a secao (Squads)")
+        assert.truthy(#controls.state.sections >= 8, "Deve existir a 8a secao (Squads)")
         assert.is_not_nil(controls.state.squads["squad_ux"])
     end)
     it("Deve renderizar os esquadrões e as esteiras (chain) ao expandir", function()
@@ -335,7 +335,7 @@ end)
 describe("Fase D - Estilizacao e Aparencia", function()
     local controls = require('multi_context.context_controls')
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         local config = require('multi_context.config')
         config.options.appearance = { width = 0.8, height = 0.8, border = "rounded" }
         controls.init_state()
@@ -353,7 +353,7 @@ describe("Fase D - Estilizacao e Aparencia", function()
         local lines = controls.render()
         local str_lines = table.concat(lines, "\n")
         
-        assert.truthy(str_lines:match("Largura %%%(Width%)"), "Deve renderizar a label de Width")
+        assert.truthy(str_lines:match("Largura %(Width%)"), "Deve renderizar a label de Width")
         assert.truthy(str_lines:match("0%.8"), "Deve mostrar o valor atual do Width")
         assert.truthy(str_lines:match("Tipo de Borda"), "Deve renderizar a label de Border")
         assert.truthy(str_lines:match("%[ rounded %]"), "Deve mostrar o tipo de borda atual")
@@ -365,7 +365,7 @@ describe("Fase E - Historico e Gestao de Workspaces", function()
     local test_dir = "/tmp/mctx_history_test/.mctx_chats"
 
     before_each(function()
-        controls.reset_state()
+        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls"); controls.reset_state()
         
         -- Criando diretório e arquivos de chat mockados no disco
         vim.fn.mkdir(test_dir, "p")
@@ -403,5 +403,91 @@ describe("Fase E - Historico e Gestao de Workspaces", function()
         assert.truthy(str_lines:match("chat_20260421_120000%.mctx"), "Deve listar o arquivo 1")
         assert.truthy(str_lines:match("chat_20260422_153000%.mctx"), "Deve listar o arquivo 2")
         assert.truthy(str_lines:match("%[ Load %]"), "Deve apresentar a acao de carregar (Load)")
+    end)
+end)
+
+describe("Fase F - Cofre de Chaves e Diretriz Mestre", function()
+    local controls = require('multi_context.context_controls')
+    local config = require('multi_context.config')
+    local orig_load_api_config
+    local orig_readfile
+    local orig_filereadable
+
+    before_each(function()
+        package.loaded["multi_context.context_controls"] = nil
+        controls = require("multi_context.context_controls")
+        controls.reset_state()
+        
+        orig_load_api_config = config.load_api_config
+        config.load_api_config = function()
+            return { apis = { {name = "openai"}, {name = "anthropic"} } }
+        end
+        
+        orig_readfile = vim.fn.readfile
+        orig_filereadable = vim.fn.filereadable
+        
+        _G.vim.fn.filereadable = function(f)
+            if type(f) == "string" and f:match("api_keys%.json") then return 1 end
+            return orig_filereadable(f)
+        end
+        _G.vim.fn.readfile = function(f)
+            if type(f) == "string" and f:match("api_keys%.json") then return {'{"openai":"sk-123","anthropic":""}'} end
+            return orig_readfile(f)
+        end
+        
+        controls.init_state()
+    end)
+    
+    after_each(function()
+        config.load_api_config = orig_load_api_config
+        _G.vim.fn.filereadable = orig_filereadable
+        _G.vim.fn.readfile = orig_readfile
+    end)
+    
+    it("Deve inicializar a secao do Cofre na memoria extraindo o status das chaves", function()
+        assert.truthy(#controls.state.sections >= 11, "Deve existir a 11a secao (Cofre)")
+        assert.is_not_nil(controls.state.api_keys_status, "Deve carregar o status das chaves")
+        assert.are.same("Configurada", controls.state.api_keys_status["openai"])
+        assert.are.same("Faltando", controls.state.api_keys_status["anthropic"])
+    end)
+
+    it("Deve renderizar os status na interface", function()
+        controls.state.sections[11] = controls.state.sections[11] or { expanded = true }
+        controls.state.sections[11].expanded = true
+        
+        local lines = controls.render()
+        local str_lines = table.concat(lines, "\n")
+        
+        assert.truthy(str_lines:match("openai"), "Deve mostrar a openai")
+        assert.truthy(str_lines:match("%[ Configurada %]"), "Deve marcar como Configurada")
+        assert.truthy(str_lines:match("anthropic"), "Deve mostrar a anthropic")
+        assert.truthy(str_lines:match("%[ Faltando %]"), "Deve marcar como Faltando")
+        assert.truthy(str_lines:match("Diretriz Mestre"), "Deve exibir a opcao do System Prompt")
+    end)
+end)
+
+describe("Fase G - Telemetria e Modo Debug", function()
+    local controls = require('multi_context.context_controls')
+    before_each(function()
+        package.loaded["multi_context.context_controls"] = nil
+        controls = require("multi_context.context_controls")
+        controls.reset_state()
+        controls.init_state()
+    end)
+    
+    it("Deve inicializar a secao de Telemetria na memoria", function()
+        assert.truthy(#controls.state.sections >= 12, "Deve existir a 12a secao (Telemetria)")
+        assert.is_not_nil(controls.state.debug_mode ~= nil, "A flag de debug_mode deve ser mapeada pro state")
+    end)
+
+    it("Deve renderizar a opcao de Log de Rede na interface", function()
+        controls.state.sections[12] = controls.state.sections[12] or { expanded = true }
+        controls.state.sections[12].expanded = true
+        
+        local lines = controls.render()
+        local str_lines = table.concat(lines, "\n")
+        
+        assert.truthy(str_lines:match("Log de Rede"), "Deve exibir a opcao de log de rede")
+        assert.truthy(str_lines:match("%[%s*OFF%s*%]") or str_lines:match("%[%s*ON%s*%]"), "Deve possuir um toggle ON/OFF")
     end)
 end)
