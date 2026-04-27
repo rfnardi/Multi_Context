@@ -1,119 +1,128 @@
-# MultiContext AI - Plugin Neovim
+# MultiContext AI - Neovim Plugin
 
-## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão V1.2, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, um **Ecossistema de Skills Pluggáveis e Editáveis** provido de exemplos práticos comunitários, **Context Injectors (\)** para composição dinâmica de prompts, pesquisa ultrarrápida com **Ripgrep**, navegação cirúrgica por código via **LSP** (Go to Definition/References), um **Agente DevOps** para automação local de Git e um **Centro de Comando Virtual** com 12 seções para gerenciamento total da IDE.
+## Overview
+MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-## Arquitetura Técnica
+In its **V1.3** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
 
-### Tecnologias Principais
-- **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **111 Testes Unitários e de Integração (100% de Sucesso Absoluto)**, com isolamento severo de mocks (I/O, Kernel).
-- **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
-- **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
-- **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
-- **Serialização de Estado**: Metadata Envelope e injeção de JSON em XML para salvar e recuperar as sessões do enxame sem perder legibilidade do arquivo original.
+## Technical Architecture
 
-### Estrutura de Diretórios
+### Core Technologies
+- **Language**: Lua (native integration with Neovim).
+- **Testing Framework**: `plenary.nvim` (busted) - **120 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises).
+- **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
+- **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
+- **State Serialization**: Metadata Envelopes and JSON-in-XML injection to save and restore Swarm sessions without losing the readability of the raw Markdown chat file.
+
+### Directory Structure
 ```text
 lua/multi_context/
-├── init.lua              # Orquestrador principal, monitoramento live de stream e hooks
-├── config.lua            # Configurações, Bootstrapping de Usuário e Auto-Setup
-├── agents.lua            # Inicializador do mctx_agents.json do usuário
-├── injectors.lua         # Motor visual (Menu \) e Loader para macros dinâmicas do usuário
-├── api_client.lua        # Roteador de filas e fallbacks de API
-├── transport.lua         # Motor de HTTP (curl), streams, telemetria (debug) e cleanup
-├── prompt_parser.lua     # Parser de intenções e Montador Dinâmico de Prompts e Skills
-├── tool_parser.lua       # Extrator funcional e sanitizador de tags XML (Auto-close)
-├── tool_runner.lua       # Gatekeeper de Permissões, executor nativo e roteador de plugins
-├── swarm_manager.lua     # Cérebro do Enxame: filas, workers, ReAct, MoA, Pipelines e Coreografia
-├── squads.lua            # Loader e resolvedor de Esquadrões Meta-Agentes (Fase 23)
-├── skills_manager.lua    # Loader assíncrono e validador de código externo (Hot-Reload)
-├── lsp_utils.lua         # Ponte silenciosa com o Neovim LSP (Go to Definition/References)
-├── react_loop.lua        # Gerenciador de estado de sessão e Circuit Breaker
-├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) e Imunidade de Turno Inicial
-├── context_builders.lua  # Extratores de contexto injetando numeração de linhas estrita (1 | code)
-├── context_controls.lua  # Centro de Comando Master (12 Seções: API, IAM, Swarm, Histórico, Vault, Apperance)
-├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff, Git, Ripgrep)
-├── utils.lua             # Ferramentas de cálculo de token e serialização de Workspace
+├── init.lua              # Main orchestrator, live stream monitoring, and hooks
+├── config.lua            # Settings, User Bootstrapping, and Auto-Setup
+├── i18n.lua              # Internationalization Engine and Language Fallback (en, pt-BR)
+├── agents.lua            # Initializer for the user's mctx_agents.json
+├── injectors.lua         # Visual engine (\ menu) and Loader for user's dynamic macros
+├── api_client.lua        # Queue router and API fallbacks
+├── transport.lua         # HTTP engine (curl), streams, telemetry (debug), and cleanup
+├── prompt_parser.lua     # Intent parser and Dynamic Prompt/Skill Assembler
+├── tool_parser.lua       # Functional extractor and XML tag sanitizer (Auto-close logic)
+├── tool_runner.lua       # Permission Gatekeeper, native executor, and plugin router
+├── swarm_manager.lua     # Swarm Brain: queues, workers, ReAct, MoA, Pipelines, and Choreography
+├── squads.lua            # Loader and resolver for Meta-Agent Squads
+├── skills_manager.lua    # Async loader and external code validator (Hot-Reload)
+├── lsp_utils.lua         # Silent bridge with Neovim LSP (Go to Definition/References)
+├── react_loop.lua        # Session state manager and Circuit Breaker
+├── memory_tracker.lua    # Predictive Watchdog with EMA calculation and Initial Turn Immunity
+├── context_builders.lua  # Context extractors injecting strict line numbering (1 | code)
+├── context_controls.lua  # Master Command Center (12 Sections: API, IAM, Swarm, History, Vault...)
+├── tools.lua             # Native tools (read, edit, bash, LSP, Unified Diff, Git, Ripgrep)
+├── utils.lua             # Token calculation and Workspace serialization tools
 ├── ui/
-│   ├── popup.lua         # Lógica da janela flutuante dinamicamente estilizada, carrossel e atalhos
-│   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
-│   └── highlights.lua    # Highlights sintáticos unificados e paleta global
-├── tests/                # Suíte de testes automatizados (TDD/Plenary) contendo mocks complexos
-│   ├── git_tools_spec.lua        # Testes de Automação Git e Gatekeeper
-│   ├── lsp_utils_spec.lua        # Testes da Ponte LSP Silenciosa
-│   ├── tool_runner_lsp_spec.lua  # Testes de Roteamento LSP
-│   └── ... (mais 34 arquivos)
+│   ├── popup.lua         # Floating window logic, dynamic styling, carousel, and keymaps
+│   ├── scroller.lua      # Smart Auto-Scroll logic and directional tracker
+│   └── highlights.lua    # Unified syntax highlights and global palette
+├── tests/                # Automated Test Suite (TDD/Plenary) with complex mocks
+│   ├── i18n_spec.lua             # Language Engine and Fallback Tests
+│   ├── git_tools_spec.lua        # Git Automation and Gatekeeper Tests
+│   ├── lsp_utils_spec.lua        # Silent LSP Bridge Tests
+│   ├── tool_runner_lsp_spec.lua  # LSP Routing Tests
+│   └── ... (plus 36 files)
 └── examples/
-    ├── skills/           # Template Comunitário de Skills (Jira, Pytest, SQL)
-    └── injectors/        # Template Comunitário de Injetores (Project Dump, LSP Errors, Git Log)
+    ├── skills/           # Community Skill Templates (Jira, Pytest, SQL)
+    └── injectors/        # Community Injector Templates (Project Dump, LSP Errors, Git Log)
 ```
 
-## Funcionalidades e Capacidades Implementadas
+## Implemented Features and Capabilities
 
-### 1. Canvas Dinâmico e Context Injectors (Fase 28)
-- **Macros de Contexto**: A tecla `\` em modo de inserção abre um seletor virtual (semelhante ao comando `@` para agentes), permitindo injetar dinamicamente dados do projeto diretamente onde o cursor está posicionado.
-- **Ecossistema de Injetores Locais**: Suporte para o usuário programar seus próprios conectores escrevendo um script lua simples (`~/.config/nvim/mctx_injectors/`). Exemplos já providos para leitura de Diagnósticos de LSP, Dump de Projeto e Logs de Git.
+### 1. Dynamic Canvas and Context Injectors (Phase 28)
+- **Context Macros**: Pressing the `\` key in Insert Mode opens a virtual fuzzy selector (similar to the `@` command for agents), allowing users to dynamically inject project data directly below the cursor, preserving prompt readability.
+- **Local Injector Ecosystem**: Users can program their own connectors by writing a simple Lua/Bash/Python script in `~/.config/nvim/mctx_injectors/`. Community templates are provided for LSP Diagnostics, Project Dumps, and Git Logs.
 
-### 2. Centro de Comando Master e Identity & Access Management (IAM)
-- **Grid Declarativo de 12 Seções**: Interface interativa unificada acessada via `:ContextControls`. Renderiza opções com pontilhados (`· · ·`), expansores `[+]`/`[-]` e ícones lógicos (`[ ON ]`, `[ ✓ ]`). Suporta descrições dinâmicas de seções ocultas.
-- **Footer Dinâmico Ancorado**: O rodapé do painel instrui o usuário sobre qual ação tomar (`<Space>`, `c`, `e`, `<CR>`) dependendo de onde o cursor está posicionado. Utiliza a API nativa de `footer` do Neovim 0.10+ para manter a dica sempre visível independentemente da rolagem do buffer.
-- **Interatividade e Mutação de Estado**: Controle total via teclado. Permite ligar/desligar permissões, editar limites de loops, reordenar a fila de APIs (`dd` e `p`), editar Master Prompts e acionar a Telemetria da IDE. Proteção nativa contra o erro `E37` garantindo transições suaves de janelas flutuantes para edição de arquivos.
-- **Matriz de Permissões de Agentes**: Controle fino que lista cada agente e permite ligar/desligar ferramentas específicas (Skills) apenas para aquele agente, salvando o Perfil de Menor Privilégio no `mctx_agents.json`.
-- **Gestão Avançada de Personas**: Permite criar, deletar (com confirmação) e editar o *System Prompt* de agentes. A edição abre um buffer temporário isolado na IDE, com *Auto-Save* em background transparente (`BufWritePost`) direto no arquivo de configuração do usuário.
-- **Fábrica Dinâmica de Entidades**: Criação instantânea de novas Skills, Injectors e Personas a partir de botões `[ + ]` no Virtual DOM do painel, gerando boilerplate Lua e abrindo o buffer imediatamente.
+### 2. Master Command Center and Identity & Access Management (IAM)
+- **12-Section Declarative Grid**: A unified interactive interface accessed via `:ContextControls`. Renders visual toggles (`[ ON ]`, `[ ✓ ]`), dots (`· · ·`), and expandable nodes (`[+]/[-]`).
+- **Dynamic Anchored Footer**: The panel's footer dynamically instructs the user on which action to take (`<Space>`, `c`, `e`, `<CR>`) depending on cursor position, using Neovim 0.10+ native `footer` API.
+- **Interactivity and State Mutation**: Total keyboard control. Allows toggling permissions, editing loop limits, ordering API fallback queues (`dd` and `p`), editing Master Prompts, and toggling telemetry. Features native protection against the `E37` error.
+- **Agent Permission Matrix**: Fine-grained control listing every agent, allowing users to toggle specific tools (Skills) individually, enforcing a Principle of Least Privilege saved in `mctx_agents.json`.
+- **Advanced Persona Management**: Create, safely delete, and edit an agent's *System Prompt* in an isolated temporary buffer with transparent background *Auto-Save* (`BufWritePost`).
+- **Dynamic Entity Factory**: Instant creation of new Skills, Injectors, and Personas via `[ + ]` buttons in the virtual DOM, generating boilerplate code and opening the buffer immediately.
 
-### 3. Swarm Architecture Avançada (MoA, Pipelines e Coreografia)
-- **Delegação via Tech Lead**: Orquestração via `spawn_swarm`.
-- **Roteamento Cognitivo Dinâmico (MoA)**: O painel visual permite ordenar quem resolve qual tarefa, alterar visualmente o **Nível de Abstração Cognitiva** da API (`low/medium/high`) com a tecla `<Space>` e marcar quem é *Fallback Direcional*. O sistema checa automaticamente a compatibilidade entre a capacidade cognitiva da API e a demanda do agente.
-- **Pipelines e Coreografia**: Reencarnação de tarefas em esteiras e injeção do sistema `switch_agent` para o agente ceder o controle e reconfigurar a persona *in-flight*.
+### 3. Advanced Swarm Architecture (MoA, Pipelines, and Choreography)
+- **Tech Lead Delegation**: Deep orchestration via the `spawn_swarm` JSON payload.
+- **Dynamic Cognitive Routing (MoA)**: The visual panel allows users to define API **Cognitive Abstraction Levels** (`low/medium/high`). The system automatically checks compatibility between an API's cognitive capacity and an agent's demand, routing tasks to the most suitable idle worker (Directional Fallback/Starvation Prevention).
+- **Pipelines and Choreography**: Task reincarnation in execution chains and injection of the `switch_agent` request, allowing an agent to yield control and reconfigure the *in-flight* persona without breaking the async loop.
 
-### 4. O Guardião Preditivo, Compressão Quadripartite e 3 Motores
-- **Watchdog via EMA**: O rastreador preditivo calcula a média móvel geométrica (EMA), somando o peso do buffer atual. Exibe a telemetria ao vivo na UI.
-- **3 Motores de Compressão**: Configurável via painel interativo (Semântico, Percentual e Fixo).
-- **A Persona @archivist**: Transmutações complexas do buffer inteiro num modelo estrito XML `<genesis>`, `<plan>`, `<journey>`, `<now>`.
+### 4. Predictive Guardian, Quadripartite Compression, and 3 Engines
+- **Watchdog via EMA**: A predictive tracker calculates the geometric Exponential Moving Average (EMA) of generated tokens, adding the weight of the current buffer. Real-time telemetry is displayed on the UI.
+- **3 Compression Engines**: Configurable via the interactive panel (Semantic, Percentage, and Fixed limits).
+- **The @archivist Persona**: When the limit is breached, the system intercepts the request and summons the Archivist to transmute the entire buffer into a strict XML model (`<genesis>`, `<plan>`, `<journey>`, `<now>`), hyper-compressing memory while retaining critical data.
 
-### 5. Esquadrões Meta-Agentes e Skills Pluggáveis (Comunidade V1.0)
-- Compilação transparente de menções a esquadrões (ex: `@squad_dev`).
-- Gestão completa de Esquadrões através do painel, permitindo visualizar a esteira (chain) de execução e editar o arquivo `.json`.
-- Scripts pluggáveis via `~/.config/nvim/mctx_skills/` com validação de Gatekeeper, hot-reload autônomo e isolamento de escopo.
+### 5. Meta-Agent Squads and Pluggable Skills (Community V1.0)
+- Transparent compilation of squad mentions (e.g., `@squad_dev`).
+- Full Squad management through the panel, visualizing the execution chain and editing the `.json` file.
+- Pluggable custom scripts via `~/.config/nvim/mctx_skills/` with Gatekeeper validation, autonomous hot-reload, and scope isolation.
 
-### 6. Unified Diff e Persistência de Workspace
-- **Ressurreição Visual**: A seção `Histórico e Workspaces` no painel lista automaticamente os últimos arquivos `.mctx` salvos no projeto, permitindo dar Load na conversa com um `<CR>`.
-- Persistência de todo o Enxame através de injeção JSON-in-XML.
-- Edições cirúrgicas nativas acopladas ao Kernel UNIX via `patch --force`.
+### 6. Unified Diff and Workspace Persistence
+- **Visual Resurrection**: The `History and Workspaces` section in the panel automatically lists the latest `.mctx` files saved in the project, allowing users to load complex conversations (and their background Swarm state) with a single `<CR>`.
+- State persistence via JSON-in-XML injection.
+- Native surgical edits coupled to the UNIX Kernel via `patch --force`.
 
-### 7. Canvas Fuzzy e UX Preditiva (Fase 29)
-- **Seletores Inteligentes (Telescope-like)**: Ao invocar `@` (Agentes) ou `\` (Injetores), o menu opera como um Fuzzy Finder ao vivo que lê o buffer no modo Insert (`TextChangedI`) e filtra os resultados instantaneamente.
-- **Smart Placement**: O motor de injeção protege o prompt do usuário, lançando os enormes blocos de contexto (dumps, logs) na linha *abaixo* do cursor, preservando a legibilidade.
+### 7. Fuzzy Canvas and Predictive UX (Phase 29)
+- **Smart Selectors (Telescope-like)**: Invoking `@` (Agents) or `\` (Injectors) operates as a live Fuzzy Finder parsing text in Insert Mode (`TextChangedI`).
+- **Smart Placement**: The injection engine protects the user's prompt by placing massive context blocks (dumps, logs) on the line *below* the cursor.
 
-### 8. Motor Polyglot (Linguagem Agnóstica)
-- **Liberdade Absoluta**: Skills e Injectors não estão mais presos a scripts `.lua`. O motor agora aceita **qualquer script executável do sistema** (`.sh`, `.fish`, `.py`, `.js`, binários Golang/Rust).
-- **Injeção de Metadados em Comentários**: O usuário documenta o script livremente usando cabeçalhos simples (`# DESC: ...` e `# PARAM: target | string | true | desc`).
-- **Ponte de Variáveis de Ambiente**: A IA interage com as linguagens do usuário exportando os parâmetros extraídos como `env` POSIX (ex: envia o parâmetro `query` como `$MCTX_QUERY` direto para o script Bash/Fish local).
+### 8. Polyglot Engine (Language Agnostic)
+- **Absolute Freedom**: Skills and Injectors are no longer restricted to `.lua` scripts. The engine now accepts **any executable system script** (`.sh`, `.fish`, `.py`, `.js`, compiled Golang/Rust binaries).
+- **Metadata Injection via Comments**: Users document their scripts freely using simple headers (`# DESC: ...` and `# PARAM: target | string | true | desc`).
+- **Environment Variable Bridge**: The AI interacts with the user's languages by exporting extracted parameters as POSIX `env` variables (e.g., sends a `query` parameter as `$MCTX_QUERY` directly to the local Bash/Fish script).
 
-### 9. Navegação Cirúrgica e Busca (LSP + Ripgrep) (Fase 30)
-- **Ripgrep Nativo**: Uso inteligente de `rg` (com fallback seguro para `git grep`) na ferramenta `search_code`, garantindo buscas globais instantâneas, respeitando `.gitignore` e indexando arquivos recém-criados.
-- **Integração LSP Avançada**: A IA atua na IDE como um humano. Através da "Ponte Silenciosa", a IA interroga o servidor LSP do Neovim (`lsp_definition`, `lsp_references`, `lsp_document_symbols`), encontrando onde classes/funções foram definidas e extraindo *apenas os blocos relevantes* de código, garantindo uma economia drástica de tokens em relação a buscas via RAG (Vector DBs).
+### 9. Surgical Navigation and Search (LSP + Ripgrep) (Phase 30)
+- **Native Ripgrep**: Intelligent use of `rg` (with safe fallback to `git grep`) via the `search_code` tool, ensuring instant global searches, respecting `.gitignore`, and indexing newly created files.
+- **Advanced LSP Integration**: The AI acts like a human inside the IDE. Through the "Silent Bridge", the AI queries Neovim's LSP server (`lsp_definition`, `lsp_references`, `lsp_document_symbols`), finding where classes/functions were defined and extracting *only the relevant code blocks*, drastically saving tokens compared to noisy RAG (Vector DBs).
 
-### 10. Automação Git e Agente DevOps (Fase 31)
-- **Agente DevOps Autônomo**: Persona nativa (`@devops`) voltada exclusivamente para controle de versão, encarregada de avaliar Diffs e realizar Commits Semânticos.
-- **Comandos Git Locais**: Ferramentas cirúrgicas (`git_status`, `git_branch`, `git_commit`) acessíveis para gerenciar o estado da árvore de trabalho e isolar implementações em branches temporárias (ex: `checkout -b`).
-- **Gatekeeper de Segurança**: Travas profundas impedem a IA de realizar `git add .` (forçando-a a comitar arquivos individualmente) e proíbem comandos destrutivos/remotos como `git push`, `reset --hard` ou `rebase` sem a confirmação manual via UI (`[Permitir/Negar]`).
+### 10. Git Automation and DevOps Agent (Phase 31)
+- **Autonomous DevOps Agent**: A native persona (`@devops`) dedicated exclusively to version control, tasked with evaluating Diffs and performing pure Semantic Commits.
+- **Local Git Tools**: Surgical tools (`git_status`, `git_branch`, `git_commit`) available to manage the working tree and isolate implementations in temporary branches.
+- **Security Gatekeeper**: Deep algorithmic locks prevent the AI from running `git add .` (forcing surgical individual file commits) and strictly forbid remote/destructive commands like `git push`, `reset --hard`, or `rebase` without manual UI confirmation.
+
+### 11. Internationalization and Cognitive Optimization (Phase 33)
+- **i18n Engine**: A reactive translation dictionary (`en` and `pt-BR`) dynamically feeds the entire interface, system messages, I/O validations, and the Command Center.
+- **Cognitive Backend**: Heavy structural rules (Swarm architecture, XML formatting, ReAct logic, Watchdog boundaries) are inherently passed to the LLM in **English**. Since foundation models are primarily trained on English datasets, this effectively reduces structural hallucinations to 0% and saves tokens.
+- **Adaptive Language Directive**: A conditional `sys_lang_directive` is injected into the prompt. The AI processes complex rules in English but is instructed to output its final thoughts, comments, and code in the user's chosen `config.language`.
 
 ---
 
-## Estado Atual do Desenvolvimento
+## Current Development State
 
-### ✅ Implementado, Estável e Testado (V1.2.1 - Produção)
-O core do produto é um motor de orquestração industrial de ponta.
-- Interface `LazyVim-like` com Footer Dinâmico Ancorado e 12 Módulos Master (APIs, Watchdog, Estilização, Cofre, Telemetria).
-- Extensibilidade dupla: Skills ativas para a IA, Injectors textuais (`\`) para o Usuário.
-- Watchdog Preditivo 2.0 (Motores de Compressão Flexíveis).
-- IAM de Agentes e Skills editáveis em tempo real (Deleção Segura, Edição de Prompts Isolada).
-- Integração Completa: O Motor de HTTP (`transport.lua`) e a UI (`popup.lua`) consomem variáveis do Painel ao vivo.
-- Swarm Avançado (MoA, Níveis Cognitivos Mutáveis, Pipelines, Coreografia).
-- Unified Diff, Workspace Persistente e Esquadrões.
-- Integração nativa com Neovim LSP e Ripgrep para navegação determinística.
-- Automação Git local via Agente DevOps com travas de segurança atômicas.
-- **Cobertura de Testes Plenary:** 115 testes de Unidade e Integração isolados e garantidos (0 Falhas / 0 Erros - 100% Passando Absolutamente).
+### ✅ Implemented, Stable, and Tested (V1.3 - Production)
+The core of the product is a cutting-edge industrial orchestration engine.
+- 100% Internationalized System (i18n) and Cognitive Backend.
+- `LazyVim`-like interface with Anchored Dynamic Footer and 12 Master Modules.
+- Dual Extensibility: Active Polyglot Skills for the AI, Textual Injectors (`\`) for the User.
+- Predictive Watchdog 2.0 (Flexible Compression Engines).
+- Real-time IAM for Agents and Skills (Safe Deletion, Isolated Prompt Editing).
+- Advanced Swarm (MoA, Mutable Cognitive Levels, Pipelines, Choreography).
+- Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
+- Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
+- Local Git automation via DevOps Agent with atomic security locks.
+- **Plenary Test Coverage:** 120 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).

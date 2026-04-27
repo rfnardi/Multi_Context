@@ -5,6 +5,7 @@ local tools = require('multi_context.tools')
 local agents = require('multi_context.agents')
 local tool_parser = require('multi_context.tool_parser')
 local tool_runner = require('multi_context.tool_runner')
+local i18n = require('multi_context.i18n')
 
 local M = {}
 M.state = { queue = {}, workers = {}, reports = {} }
@@ -17,7 +18,6 @@ M.init_swarm = function(json_payload)
     local ok, decoded = pcall(vim.fn.json_decode, vim.trim(json_payload))
     if not ok or type(decoded) ~= "table" or type(decoded.tasks) ~= "table" then return false end
     
-    -- Pré-processamento de Tarefas Avançadas (Fase 21)
     for _, task in ipairs(decoded.tasks) do
         if not task.agent and type(task.chain) == "table" and #task.chain > 0 then
             task.agent = task.chain[1]
@@ -33,27 +33,24 @@ M.init_swarm = function(json_payload)
 end
 
 M.dispatch_next = function()
-    -- FINALIZADOR (REDUCE)
     if #M.state.queue == 0 then
         local any_busy = false
         for _, w in ipairs(M.state.workers) do if w.busy then any_busy = true; break end end
         if not any_busy and M.on_swarm_complete then
-            local summary = "=== RELATÓRIO DO ENXAME (SWARM) ===\n"
+            local summary = i18n.t("swarm_final_report") .. "\n"
             for _, rep in ipairs(M.state.reports) do
-                summary = summary .. "\nAgente: @" .. rep.agent .. "\nResultado Final:\n" .. rep.result .. "\n------------------------"
+                summary = summary .. "\n" .. i18n.t("swarm_agent_res", rep.agent, rep.result)
             end
             M.on_swarm_complete(summary)
         end
         return
     end
 
-    -- DESPACHANTE (MAP)
-        local level_val = { low = 1, medium = 2, high = 3 }
+    local level_val = { low = 1, medium = 2, high = 3 }
     local loaded_agents = require('multi_context.agents').load_agents()
 
-    -- Processa a fila inteira procurando match para cada tarefa
     local i = 1
-        local max_attempts = #M.state.queue
+    local max_attempts = #M.state.queue
     local attempts = 0
     while i <= #M.state.queue and attempts < max_attempts do
         attempts = attempts + 1
@@ -67,11 +64,8 @@ M.dispatch_next = function()
         for _, worker in ipairs(M.state.workers) do
             if not worker.busy then
                 local api_level = worker.api.abstraction_level and level_val[worker.api.abstraction_level] or 2
-                
-                -- Se a API é forte o suficiente para a tarefa
                 if api_level >= req_level then
                     local diff = api_level - req_level
-                    -- Preferimos o Match perfeito (diff 0). Se nao houver, pegamos o proximo mais barato
                     if diff < best_diff then
                         best_diff = diff
                         selected_worker = worker
@@ -85,38 +79,37 @@ M.dispatch_next = function()
             local worker = selected_worker
             worker.busy = true
             worker.current_task = task
-
-            worker.busy = true
-            worker.current_task = task
             local buf_id = popup.create_swarm_buffer(task.agent, task.instruction, worker.api.name)
             
-            local loaded_agents = agents.load_agents()
-            local system_prompt = "Você é um sub-agente operando em modo SWARM. Sua tarefa estrita é: " .. (task.instruction or "")
+            local system_prompt = "You are a sub-agent operating in SWARM mode. Your strict task is: " .. (task.instruction or "")
             if loaded_agents[task.agent] then
-                system_prompt = system_prompt .. "\n\n=== SUAS DIRETRIZES ===\n" .. loaded_agents[task.agent].system_prompt
+                system_prompt = system_prompt .. "\n\n=== YOUR GUIDELINES ===\n" .. loaded_agents[task.agent].system_prompt
             end
             
             local context_text = ""
             if type(task.context) == "table" then
                 for _, path in ipairs(task.context) do
                     if path ~= "*" and path ~= "" then
-                        context_text = context_text .. "\n== Arquivo: " .. path .. " ==\n" .. tools.read_file(path)
+                        context_text = context_text .. "\n== File: " .. path .. " ==\n" .. tools.read_file(path)
                     end
                 end
             end
-            system_prompt = system_prompt .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text            
-            system_prompt = system_prompt .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. O relatório DEVE incluir um resumo claro do que foi feito, os arquivos editados e listar de forma estruturada as operações Git executadas (se houver). Esta tag encerra a sua execução e sem ela o mestre não lerá sua resposta."
+            system_prompt = system_prompt .. "\n\n=== INITIAL CONTEXT PROVIDED ===\n" .. context_text            
+            system_prompt = system_prompt .. "\n\n=== DELIVERY RULES (MANDATORY) ===\nWhen you finish the task and no longer need to use any tools, you MUST deliver your final report inside the <final_report>...</final_report> tags. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any). This tag ends your execution, and without it, the master will not read your response."
 
-            
+            local cfg = require('multi_context.config').options
+            if cfg.language == "pt-BR" then
+                system_prompt = system_prompt .. i18n.t("sys_lang_directive")
+            end
+
             local messages = {
                 { role = "system", content = system_prompt },
-                { role = "user", content = "Inicie a execução da sua tarefa. Se precisar de mais informações, use as ferramentas disponíveis. Quando finalizar todo o trabalho, dê um resumo." }
+                { role = "user", content = "Start executing your task. If you need more information, use the available tools. When you finish all the work, provide a summary." }
             }
             
             local visual_history = ""
             local final_report_text = ""
 
-            -- O MOTOR REACT RECURSIVO DO SUB-AGENTE
             local function execute_turn()
                 local current_chunk = ""
                 api_client.execute(messages,
@@ -132,22 +125,20 @@ M.dispatch_next = function()
                     function(api_entry, metrics)
                         visual_history = visual_history .. "\n\n## IA >>\n" .. current_chunk
                         table.insert(messages, { role = "assistant", content = current_chunk })
-                                                -- FASE 20: Extrai APENAS o bloco estruturado, evitando Token Leak
+                        
                         local extracted_report = current_chunk:match("<final_report>(.-)</final_report>")
                         if extracted_report then
                             final_report_text = vim.trim(extracted_report)
                         else
-                            final_report_text = "" -- Forçará o retry logo abaixo
+                            final_report_text = ""
                         end
 
-                        
                         local sanitized = tool_parser.sanitize_payload(current_chunk)
                         
-                        -- SE A IA USOU FERRAMENTAS, EXECUTA E CHAMA O PRÓXIMO TURNO
                         if sanitized:match("<tool_call") then
                             local new_content = ""
                             local cursor = 1
-                            local approve_ref = { value = true } -- Auto Approve SILENCIOSO
+                            local approve_ref = { value = true }
                             
                             while cursor <= #sanitized do
                                 local parsed = tool_parser.parse_next_tool(sanitized, cursor)
@@ -174,15 +165,20 @@ M.dispatch_next = function()
                                     if is_allowed then
                                         task.agent = switch_target
                                         local loaded_agents = require('multi_context.agents').load_agents()
-                                        local new_system = "Você é um sub-agente operando em modo SWARM. Sua tarefa estrita é: " .. (task.instruction or "")
+                                        local new_system = "You are a sub-agent operating in SWARM mode. Your strict task is: " .. (task.instruction or "")
                                         if loaded_agents[switch_target] then
-                                            new_system = new_system .. "\n\n=== SUAS DIRETRIZES ===\n" .. loaded_agents[switch_target].system_prompt
+                                            new_system = new_system .. "\n\n=== YOUR GUIDELINES ===\n" .. loaded_agents[switch_target].system_prompt
                                         end
-                                        new_system = new_system .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text
-                                        new_system = new_system .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. O relatório DEVE incluir um resumo claro do que foi feito, os arquivos editados e listar de forma estruturada as operações Git executadas (se houver). Esta tag encerra a sua execução e sem ela o mestre não lerá sua resposta."
+                                        new_system = new_system .. "\n\n=== INITIAL CONTEXT PROVIDED ===\n" .. context_text
+                                        new_system = new_system .. "\n\n=== DELIVERY RULES (MANDATORY) ===\nWhen you finish the task and no longer need to use any tools, you MUST deliver your final report inside the <final_report>...</final_report> tags. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any). This tag ends your execution, and without it, the master will not read your response."
+                                        
+                                        local cfg = require('multi_context.config').options
+                                        if cfg.language == "pt-BR" then
+                                            new_system = new_system .. i18n.t("sys_lang_directive")
+                                        end
                                         
                                         messages[1].content = new_system
-                                        new_content = "SUCESSO: Controle transferido para @" .. switch_target .. ". O sistema foi reconfigurado com suas diretrizes."
+                                        new_content = i18n.t("swarm_success_switch", switch_target)
                                         
                                         if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
                                             local popup = require('multi_context.ui.popup')
@@ -197,27 +193,25 @@ M.dispatch_next = function()
                                             pcall(popup.update_title)
                                         end
                                     else
-                                        new_content = "ERRO: O agente @" .. task.agent .. " não tem permissão para transferir o controle para @" .. switch_target .. " (Verifique allow_switch)."
+                                        new_content = i18n.t("swarm_err_switch", task.agent, switch_target)
                                     end
                                 end
 
                                 visual_history = visual_history .. "\n\n## Sistema >>\n" .. new_content
                                 table.insert(messages, { role = "user", content = new_content })
-                                -- Recursão! O agente chama a API novamente para ler o output da ferramenta
                                 execute_turn() 
                                 return
                             end
                         end
                         
-                        -- SE CHEGOU AQUI, ELE NÃO USOU FERRAMENTAS. A TAREFA ACABOU!
                         if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
                             local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
                             table.insert(lines, "")
-                            table.insert(lines, "✅ TAREFA CONCLUÍDA")
+                            table.insert(lines, i18n.t("swarm_task_done"))
                             vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
                         end
                         
-                                                worker.busy = false
+                        worker.busy = false
                         local clean_res = final_report_text:gsub("%s+", "")
                         
                         task.retries = task.retries or 0
@@ -225,19 +219,19 @@ M.dispatch_next = function()
                             task.retries = task.retries + 1
                             if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
                                 local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
-                                table.insert(lines, "⚠️ API retornou vazio. Devolvendo tarefa para a fila (Tentativa " .. task.retries .. "/2)...")
+                                table.insert(lines, i18n.t("swarm_api_empty", task.retries))
                                 vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
                             end
                             table.insert(M.state.queue, task)
                         else
-                            if clean_res == "" then final_report_text = "FALHA: A API falhou repetidas vezes em processar esta tarefa." end
+                            if clean_res == "" then final_report_text = i18n.t("swarm_fail_repeated") end
                             local has_next = false
                             if type(task.chain) == 'table' then
                                 local c_idx = 0
                                 for idx, a in ipairs(task.chain) do if a == task.agent then c_idx = idx; break end end
                                 if c_idx > 0 and c_idx < #task.chain then
                                     task.agent = task.chain[c_idx + 1]
-                                    task.instruction = (task.instruction or '') .. '\n\n=== RELATÓRIO DO AGENTE ANTERIOR ===\n' .. final_report_text
+                                    task.instruction = (task.instruction or '') .. '\n\n' .. i18n.t("swarm_prev_report") .. '\n' .. final_report_text
                                     task.retries = 0
                                     table.insert(M.state.queue, task)
                                     has_next = true
@@ -247,31 +241,29 @@ M.dispatch_next = function()
                             table.insert(M.state.reports, { agent = task.agent, result = final_report_text })
                             end
                         end
-                        vim.schedule(M.dispatch_next) -- Chama o próximo da fila
-
+                        vim.schedule(M.dispatch_next)
                     end,
                     function(err)
                         if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
                             local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
                             table.insert(lines, "")
-                            table.insert(lines, "❌ ERRO NA API: " .. tostring(err))
+                            table.insert(lines, i18n.t("swarm_api_err", tostring(err)))
                             vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
                         end
-                                                worker.busy = false
+                        worker.busy = false
                         task.retries = task.retries or 0
                         if task.retries < 2 then
                             task.retries = task.retries + 1
                             if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
                                 local lines = vim.api.nvim_buf_get_lines(buf_id, 0, -1, false)
-                                table.insert(lines, "⚠️ Falha na API (".. worker.api.name .. "). Devolvendo para a fila (Tentativa " .. task.retries .. "/2)...")
+                                table.insert(lines, i18n.t("swarm_api_fail", worker.api.name, task.retries))
                                 vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
                             end
                             table.insert(M.state.queue, task)
                         else
-                            table.insert(M.state.reports, { agent = task.agent, result = "ERRO FATAL APÓS TENTATIVAS: " .. tostring(err) })
+                            table.insert(M.state.reports, { agent = task.agent, result = i18n.t("swarm_fatal_err", tostring(err)) })
                         end
                         vim.schedule(M.dispatch_next)
-
                     end,
                     worker.api
                 )
@@ -285,9 +277,3 @@ M.dispatch_next = function()
 end
 
 return M
-
-
-
-
-
-

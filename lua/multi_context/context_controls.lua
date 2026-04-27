@@ -1,23 +1,11 @@
 local config = require('multi_context.config')
+local i18n = require('multi_context.i18n')
 local api = vim.api
 
 local M = {}
 
 M.state = {
-    sections = {
-        { id = "apis", title = "[1] PROVEDORES DE REDE E APIS", desc = "(Gerencie chaves, modelos de IA e fallback)", expanded = false },
-        { id = "swarm", title = "[2] ORQUESTRAÇÃO DE SWARM (MOA)", desc = "(Determine quais APIs podem atuar como sub-agentes autônomos)", expanded = false },
-        { id = "watchdog", title = "[3] GUARDIÃO DE CONTEXTO (WATCHDOG)", desc = "(Regras de compressão e limites da janela de memória da IA)", expanded = false },
-        { id = "limits", title = "[4] COMPORTAMENTO E LIMITES GLOBAIS", desc = "(Identidade do usuário e limites de loops de ReAct)", expanded = false },
-        { id = "gatekeeper", title = "[5] PERFIS E PERMISSÕES (GATEKEEPER)", desc = "(Controle fino de permissões e capacidades por agente)", expanded = false },
-        { id = "skills", title = "[6] ECOSSISTEMA DE SKILLS LOCAIS", desc = "(Habilidades adicionais nativas ou criadas pelo usuário)", expanded = false },
-        { id = "injectors", title = "[7] MACROS DE CONTEXTO (INJECTORS)", desc = "(Atalhos dinâmicos invocados pela tecla '\\')", expanded = false },
-        { id = "squads", title = "[8] ESQUADRÕES META-AGENTES (SQUADS)", desc = "(Grupos pré-configurados de IA com pipelines e coreografia)", expanded = false },
-        { id = "appearance", title = "[9] ESTILIZAÇÃO E APARÊNCIA DA UI", desc = "(Controle de largura, altura e bordas do chat)", expanded = false },
-        { id = "history", title = "[10] HISTÓRICO E WORKSPACES", desc = "(Restaure conversas anteriores salvas no projeto)", expanded = false },
-        { id = "vault", title = "[11] COFRE E DIRETRIZ MESTRE", desc = "(Gerencie suas chaves de API e o Prompt de Sistema Base)", expanded = false },
-        { id = "telemetry", title = "[12] TELEMETRIA E MODO DEBUG", desc = "(Logs de rede e diagnósticos avançados)", expanded = false }
-    },
+    sections = {},
     apis = {}, default_api = "", fallback_mode = true,
     watchdog = {}, horizon = 4000, tolerance = 1.0,
     identity = "User", max_loops = 15,
@@ -41,6 +29,21 @@ end
 
 M.init_state = function()
     M.reset_state()
+    M.state.sections = {
+        { id = "apis", title = i18n.t("cc_apis_title"), desc = i18n.t("cc_apis_desc"), expanded = false },
+        { id = "swarm", title = i18n.t("cc_swarm_title"), desc = i18n.t("cc_swarm_desc"), expanded = false },
+        { id = "watchdog", title = i18n.t("cc_watchdog_title"), desc = i18n.t("cc_watchdog_desc"), expanded = false },
+        { id = "limits", title = i18n.t("cc_limits_title"), desc = i18n.t("cc_limits_desc"), expanded = false },
+        { id = "gatekeeper", title = i18n.t("cc_gatekeeper_title"), desc = i18n.t("cc_gatekeeper_desc"), expanded = false },
+        { id = "skills", title = i18n.t("cc_skills_title"), desc = i18n.t("cc_skills_desc"), expanded = false },
+        { id = "injectors", title = i18n.t("cc_injectors_title"), desc = i18n.t("cc_injectors_desc"), expanded = false },
+        { id = "squads", title = i18n.t("cc_squads_title"), desc = i18n.t("cc_squads_desc"), expanded = false },
+        { id = "appearance", title = i18n.t("cc_app_title"), desc = i18n.t("cc_app_desc"), expanded = false },
+        { id = "history", title = i18n.t("cc_history_title"), desc = i18n.t("cc_history_desc"), expanded = false },
+        { id = "vault", title = i18n.t("cc_vault_title"), desc = i18n.t("cc_vault_desc"), expanded = false },
+        { id = "telemetry", title = i18n.t("cc_telemetry_title"), desc = i18n.t("cc_telemetry_desc"), expanded = false }
+    }
+    
     local cfg = config.load_api_config() or { apis = {} }
     M.state.apis = vim.deepcopy(cfg.apis)
     M.state.default_api = cfg.default_api or ""
@@ -60,7 +63,7 @@ M.init_state = function()
     pcall(skills_mgr.load_skills)
     M.state.all_skills = skills_mgr.get_skills() or {}
     
-    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent"}
+    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"}
     for _, t in ipairs(native_tools) do M.state.all_skills[t] = { name = t, is_native = true } end
     
     local injectors_mgr = require('multi_context.injectors')
@@ -89,9 +92,9 @@ M.init_state = function()
     for _, api_cfg in ipairs(M.state.apis) do
         local k = keys[api_cfg.name]
         if k and k ~= "" and not k:match("^sk%-%.%.%.") and not k:match("^AIzaSy%.%.%.") and not k:match("^sk%-ant%-%.%.%.") then
-            M.state.api_keys_status[api_cfg.name] = "Configurada"
+            M.state.api_keys_status[api_cfg.name] = i18n.t("cc_configured")
         else
-            M.state.api_keys_status[api_cfg.name] = "Faltando"
+            M.state.api_keys_status[api_cfg.name] = i18n.t("cc_missing")
         end
     end
     M.state.master_prompt = cfg.master_prompt or config.options.master_prompt or "Você é um Engenheiro de Software Autônomo no Neovim."
@@ -102,22 +105,22 @@ M.toggle_section = function(idx)
 end
 
 M.get_footer_hint = function(action)
-    if not action then return "  Dica: Use j/k para navegar. Pressione q para sair." end
+    if not action then return i18n.t("cc_hint_default") end
     local t = action.type
-    if t == "section" or t == "agent_expand" then return "  Dica: Pressione <CR> para expandir/recolher." end
+    if t == "section" or t == "agent_expand" then return i18n.t("cc_hint_expand") end
     if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
-        return "  Dica: Pressione <Space> para alternar o valor."
+        return i18n.t("cc_hint_toggle")
     end
     if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" or t == "app_width" or t == "app_height" or t == "edit_master_prompt" then
-        return "  Dica: Pressione 'c' para alterar este valor."
+        return i18n.t("cc_hint_edit_val")
     end
     if t == "edit_skill" or t == "edit_injector" or t == "edit_squad" or t == "edit_vault" then 
-        return "  Dica: Pressione 'e' para editar o arquivo fonte." 
+        return i18n.t("cc_hint_edit_src") 
     end
     if t == "create_agent" or t == "create_skill" or t == "create_injector" or t == "load_history" or t == "edit_agent_prompt" or t == "delete_agent" then 
-        return "  Dica: Pressione <CR> para executar a ação." 
+        return i18n.t("cc_hint_cr") 
     end
-    return "  Dica: Use j/k para navegar. Pressione q para sair."
+    return i18n.t("cc_hint_default")
 end
 
 M.update_footer = function(cursor_line)
@@ -128,7 +131,6 @@ M.update_footer = function(cursor_line)
     if vim.fn.has("nvim-0.10") == 1 then
         pcall(api.nvim_win_set_config, M.win, { footer = " " .. vim.trim(hint) .. " ", footer_pos = "center" })
     else
-        -- Fallback para neovim 0.9 (Escreve na última linha preservada do buffer)
         vim.bo[M.buf].modifiable = true
         local last = api.nvim_buf_line_count(M.buf)
         api.nvim_buf_set_lines(M.buf, last - 1, last, false, { hint })
@@ -163,14 +165,14 @@ M.render = function()
             add_line(lines, "", nil)
         elseif sec.expanded then
             if sec.id == "apis" then
-                add_line(lines, format_row("    Motor Automático de Fallback", M.state.fallback_mode and "[ ON ]" or "[ OFF ]", w), { type = "toggle_fallback" })
-                add_line(lines, "    Lista de Provedores:", nil)
+                add_line(lines, format_row(i18n.t("cc_fallback_motor"), M.state.fallback_mode and "[ ON ]" or "[ OFF ]", w), { type = "toggle_fallback" })
+                add_line(lines, i18n.t("cc_providers_list"), nil)
                 for i, a in ipairs(M.state.apis) do
                     local mark = (a.name == M.state.default_api) and "[ ✓ ]" or "[   ]"
                     add_line(lines, format_row("    ├─ " .. a.name, mark, w), { type = "api_select", name = a.name, idx = i })
                 end
             elseif sec.id == "swarm" then
-                add_line(lines, "    (Permissão para invocar sub-agentes e prioridade de uso)", nil)
+                add_line(lines, i18n.t("cc_swarm_perm"), nil)
                 for i, a in ipairs(M.state.apis) do
                     local mark = a.allow_spawn and "[ ON ]" or "[ OFF ]"
                     add_line(lines, format_row("    " .. i .. ". " .. a.name, mark, w), { type = "api_spawn", idx = i })
@@ -179,24 +181,24 @@ M.render = function()
             elseif sec.id == "watchdog" then
                 local wd = M.state.watchdog
                 local m_disp = wd.mode and (wd.mode:sub(1,1):upper() .. wd.mode:sub(2)) or "Off"
-                add_line(lines, format_row("    Status da Interceptação", "[ " .. m_disp .. " ]", w), { type = "wd_mode" })
-                add_line(lines, format_row("    Gatilho (Limiar)", M.state.horizon .. " tokens", w), { type = "wd_horizon" })
-                add_line(lines, format_row("    Tolerância do Usuário", tostring(M.state.tolerance), w), { type = "wd_tolerance" })
+                add_line(lines, format_row(i18n.t("cc_wd_status"), "[ " .. m_disp .. " ]", w), { type = "wd_mode" })
+                add_line(lines, format_row(i18n.t("cc_wd_trigger"), M.state.horizon .. " tokens", w), { type = "wd_horizon" })
+                add_line(lines, format_row(i18n.t("cc_wd_tolerance"), tostring(M.state.tolerance), w), { type = "wd_tolerance" })
                 add_line(lines, "", nil)
                 local strat = "Semântico"
                 if wd.strategy == "percent" then strat = "Percentual" elseif wd.strategy == "fixed" then strat = "Fixo" end
-                add_line(lines, format_row("    Estratégia", "[ " .. strat .. " ]", w), { type = "wd_strategy" })
+                add_line(lines, format_row(i18n.t("cc_wd_strategy"), "[ " .. strat .. " ]", w), { type = "wd_strategy" })
                 
                 if wd.strategy == "percent" then
-                    add_line(lines, format_row("    Alvo Percentual", math.floor((wd.percent or 0.3) * 100) .. "%", w), { type = "wd_percent" })
+                    add_line(lines, format_row(i18n.t("cc_wd_percent"), math.floor((wd.percent or 0.3) * 100) .. "%", w), { type = "wd_percent" })
                 elseif wd.strategy == "fixed" then
-                    add_line(lines, format_row("    Alvo Fixo", (wd.fixed_target or 1500) .. " tokens", w), { type = "wd_fixed" })
+                    add_line(lines, format_row(i18n.t("cc_wd_fixed"), (wd.fixed_target or 1500) .. " tokens", w), { type = "wd_fixed" })
                 end
             elseif sec.id == "limits" then
-                add_line(lines, format_row("    Identidade no Chat", "[ " .. M.state.identity .. " ]", w), { type = "limit_identity" })
-                add_line(lines, format_row("    Limite Autônomo (ReAct)", M.state.max_loops .. " turnos", w), { type = "limit_loops" })
+                add_line(lines, format_row(i18n.t("cc_limit_id"), "[ " .. M.state.identity .. " ]", w), { type = "limit_identity" })
+                add_line(lines, format_row(i18n.t("cc_limit_loops"), M.state.max_loops, w), { type = "limit_loops" })
             elseif sec.id == "gatekeeper" then
-                add_line(lines, "    (Aperte <CR> num agente para configurar)", nil)
+                add_line(lines, i18n.t("cc_gk_hint"), nil)
                 local agent_names = {}
                 for n, _ in pairs(M.state.agents) do table.insert(agent_names, n) end
                 table.sort(agent_names)
@@ -218,42 +220,42 @@ M.render = function()
                             add_line(lines, format_row("      ├─ " .. sn, has_skill and "[ ✓ ]" or "[   ]", w), { type = "agent_skill_toggle", agent = ag_name, skill = sn })
                         end
                         add_line(lines, format_row("      ├─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
-                        add_line(lines, "      ├─ [ Editar System Prompt ]", { type = "edit_agent_prompt", name = ag_name })
-                        add_line(lines, "      └─ [ Deletar Agente ]", { type = "delete_agent", name = ag_name })
+                        add_line(lines, i18n.t("cc_edit_sys_prompt"), { type = "edit_agent_prompt", name = ag_name })
+                        add_line(lines, i18n.t("cc_delete_agent"), { type = "delete_agent", name = ag_name })
                     end
                 end
-                add_line(lines, "[ + Criar Novo Agente ]", { type = "create_agent" })
+                add_line(lines, i18n.t("cc_create_agent"), { type = "create_agent" })
             elseif sec.id == "skills" then
-                add_line(lines, "    (Aperte 'e' sobre uma skill para editar seu código)", nil)
+                add_line(lines, i18n.t("cc_skills_hint"), nil)
                 local skill_names = {}
                 for sn, _ in pairs(M.state.all_skills) do table.insert(skill_names, sn) end
                 table.sort(skill_names)
                 
                 for _, sn in ipairs(skill_names) do
                     local sk = M.state.all_skills[sn]
-                    add_line(lines, format_row("    ├─ " .. sn, sk.is_native and "[ Nativa ]" or "[ Custom ]", w), { type = "edit_skill", name = sn })
+                    add_line(lines, format_row("    ├─ " .. sn, sk.is_native and "[ " .. i18n.t("cc_native_f") .. " ]" or "[ " .. i18n.t("cc_custom") .. " ]", w), { type = "edit_skill", name = sn })
                 end
-                add_line(lines, "    └─ [ + Criar Nova Skill ]", { type = "create_skill" })
+                add_line(lines, i18n.t("cc_create_skill"), { type = "create_skill" })
             elseif sec.id == "injectors" then
-                add_line(lines, "    (Aperte 'e' sobre um injetor para editar seu código)", nil)
+                add_line(lines, i18n.t("cc_inj_hint"), nil)
                 local inj_names = {}
                 for iname, _ in pairs(M.state.all_injectors) do table.insert(inj_names, iname) end
                 table.sort(inj_names)
                 
                 for _, iname in ipairs(inj_names) do
                     local inj = M.state.all_injectors[iname]
-                    add_line(lines, format_row("    ├─ " .. iname, inj.is_native and "[ Nativo ]" or "[ Custom ]", w), { type = "edit_injector", name = iname })
+                    add_line(lines, format_row("    ├─ " .. iname, inj.is_native and "[ " .. i18n.t("cc_native_m") .. " ]" or "[ " .. i18n.t("cc_custom") .. " ]", w), { type = "edit_injector", name = iname })
                 end
-                add_line(lines, "    └─[ + Criar Novo Injetor ]", { type = "create_injector" })
+                add_line(lines, i18n.t("cc_create_inj"), { type = "create_injector" })
             elseif sec.id == "squads" then
-                add_line(lines, "    (Aperte 'e' sobre um esquadrão para editar suas diretrizes)", nil)
+                add_line(lines, i18n.t("cc_sq_hint"), nil)
                 local sq_names = {}
                 for sn, _ in pairs(M.state.squads) do table.insert(sq_names, sn) end
                 table.sort(sq_names)
                 
                 for _, sn in ipairs(sq_names) do
                     local sq = M.state.squads[sn]
-                    add_line(lines, format_row("    ├─ @" .. sn, "[ Squad ]", w), { type = "edit_squad", name = sn })
+                    add_line(lines, format_row("    ├─ @" .. sn, "[ " .. i18n.t("cc_squad") .. " ]", w), { type = "edit_squad", name = sn })
                     if sq.tasks then
                         for _, t in ipairs(sq.tasks) do
                             local chain_str = t.agent or "tech_lead"
@@ -266,28 +268,28 @@ M.render = function()
                 end
             elseif sec.id == "appearance" then
                 local app = M.state.appearance
-                add_line(lines, format_row("    Largura (Width)", tostring(app.width), w), { type = "app_width" })
-                add_line(lines, format_row("    Altura (Height)", tostring(app.height), w), { type = "app_height" })
-                add_line(lines, format_row("    Tipo de Borda", "[ " .. (app.border or "rounded") .. " ]", w), { type = "app_border" })
+                add_line(lines, format_row(i18n.t("cc_app_width"), tostring(app.width), w), { type = "app_width" })
+                add_line(lines, format_row(i18n.t("cc_app_height"), tostring(app.height), w), { type = "app_height" })
+                add_line(lines, format_row(i18n.t("cc_app_border"), "[ " .. (app.border or "rounded") .. " ]", w), { type = "app_border" })
             elseif sec.id == "history" then
-                add_line(lines, "    (Aperte <CR> para carregar um chat anterior)", nil)
+                add_line(lines, i18n.t("cc_hist_hint"), nil)
                 if #M.state.history_files == 0 then
-                    add_line(lines, "    Nenhum histórico encontrado neste projeto.", nil)
+                    add_line(lines, i18n.t("cc_hist_none"), nil)
                 else
                     for _, f in ipairs(M.state.history_files) do
-                        add_line(lines, format_row("    ├─ " .. f, "[ Load ]", w), { type = "load_history", file = f })
+                        add_line(lines, format_row("    ├─ " .. f, "[ " .. i18n.t("cc_load") .. " ]", w), { type = "load_history", file = f })
                     end
                 end
             elseif sec.id == "vault" then
-                add_line(lines, "    Status do Cofre de Chaves (api_keys.json):", nil)
+                add_line(lines, i18n.t("cc_vault_hint"), nil)
                 for _, a in ipairs(M.state.apis) do
-                    local st = M.state.api_keys_status[a.name] or "Faltando"
+                    local st = M.state.api_keys_status[a.name] or i18n.t("cc_missing")
                     add_line(lines, format_row("    ├─ " .. a.name, "[ " .. st .. " ]", w), { type = "edit_vault" })
                 end
                 add_line(lines, "", nil)
-                add_line(lines, format_row("    Diretriz Mestre (Root Prompt)", "[ Editar ]", w), { type = "edit_master_prompt" })
+                add_line(lines, format_row(i18n.t("cc_master_prompt"), "[ " .. i18n.t("cc_edit") .. " ]", w), { type = "edit_master_prompt" })
             elseif sec.id == "telemetry" then
-                add_line(lines, format_row("    Log de Rede (Imprimir Requições)", M.state.debug_mode and "[ ON ]" or "[ OFF ]", w), { type = "toggle_debug" })
+                add_line(lines, format_row(i18n.t("cc_telemetry_log"), M.state.debug_mode and "[ ON ]" or "[ OFF ]", w), { type = "toggle_debug" })
             end
             add_line(lines, "", nil)
         end
@@ -295,7 +297,6 @@ M.render = function()
 
     while #lines < 22 do table.insert(lines, "") end
     if vim.fn.has("nvim-0.10") == 0 then
-        -- Placeholder apenas se for nvim antigo para o update_footer ter onde escrever
         table.insert(lines, string.rep("─", w + 2))
         table.insert(lines, " ")
     end
@@ -323,12 +324,12 @@ M.handle_cr = function()
         M.state.expanded_agents[action.name] = not M.state.expanded_agents[action.name]
         M.update_buffer()
     elseif action.type == "delete_agent" then
-        local choice = vim.fn.confirm("Deseja DELETAR o agente @" .. action.name .. "?", "&Sim\n&Nao", 2)
+        local choice = vim.fn.confirm(i18n.t("cc_delete_agent_prompt", action.name), i18n.t("cc_yes") .. "\n" .. i18n.t("cc_no"), 2)
         if choice == 1 then
             M.state.agents[action.name] = nil
             M.state.expanded_agents[action.name] = nil
             M.save_config()
-            vim.notify("Agente deletado.", vim.log.levels.INFO)
+            vim.notify(i18n.t("cc_deleted"), vim.log.levels.INFO)
             M.update_buffer()
         end
     elseif action.type == "edit_agent_prompt" then
@@ -348,12 +349,12 @@ M.handle_cr = function()
                     agents[action.name].system_prompt = table.concat(lines, "\n")
                     local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
                     vim.fn.writefile({vim.fn.json_encode(agents)}, agents_file)
-                    vim.notify("System Prompt do agente @" .. action.name .. " atualizado!", vim.log.levels.INFO)
+                    vim.notify(i18n.t("cc_sys_prompt_updated", action.name), vim.log.levels.INFO)
                 end
             end
         })
     elseif action.type == "create_skill" then
-        vim.ui.input({ prompt = "Nome da nova Skill (.lua): " }, function(input)
+        vim.ui.input({ prompt = i18n.t("cc_create_skill_pmpt") }, function(input)
             if not input or input == "" then return end
             input = input:gsub("%.lua$", "")
             local dir = vim.fn.stdpath("config") .. "/mctx_skills"
@@ -363,22 +364,22 @@ M.handle_cr = function()
             local boilerplate = {
                 "return {",
                 "    name = '" .. input .. "',",
-                "    description = 'Sua descrição aqui',",
+                "    description = '" .. i18n.t("cc_skill_desc_ph") .. "',",
                 "    parameters = {",
-                "        { name = 'arg1', type = 'string', required = true, desc = 'Descrição do argumento' }",
+                "        { name = 'arg1', type = 'string', required = true, desc = '" .. i18n.t("cc_skill_arg_ph") .. "' }",
                 "    },",
                 "    execute = function(args)",
-                "        return 'Resultado da skill'",
+                "        return '" .. i18n.t("cc_skill_res_ph") .. "'",
                 "    end",
                 "}"
             }
             vim.fn.writefile(boilerplate, path)
             pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. path)
-            vim.notify("Skill criada! Execute :ContextReloadSkills após editar.", vim.log.levels.INFO)
+            vim.notify(i18n.t("cc_skill_created"), vim.log.levels.INFO)
         end)
     elseif action.type == "create_injector" then
-        vim.ui.input({ prompt = "Nome do novo Injetor (.lua): " }, function(input)
+        vim.ui.input({ prompt = i18n.t("cc_create_inj_pmpt") }, function(input)
             if not input or input == "" then return end
             input = input:gsub("%.lua$", "")
             local dir = vim.fn.stdpath("config") .. "/mctx_injectors"
@@ -388,28 +389,28 @@ M.handle_cr = function()
             local boilerplate = {
                 "return {",
                 "    name = '" .. input .. "',",
-                "    description = 'Sua descrição aqui',",
+                "    description = '" .. i18n.t("cc_inj_desc_ph") .. "',",
                 "    execute = function()",
-                "        return 'Texto a ser injetado'",
+                "        return '" .. i18n.t("cc_inj_res_ph") .. "'",
                 "    end",
                 "}"
             }
             vim.fn.writefile(boilerplate, path)
             pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. path)
-            vim.notify("Injetor criado!", vim.log.levels.INFO)
+            vim.notify(i18n.t("cc_inj_created"), vim.log.levels.INFO)
         end)
     elseif action.type == "create_agent" then
-        vim.ui.input({ prompt = "Nome da nova Persona: @" }, function(input)
+        vim.ui.input({ prompt = i18n.t("cc_create_agent_pmpt") }, function(input)
             if not input or input == "" then return end
             if not M.state.agents[input] then
                 M.state.agents[input] = {
-                    system_prompt = "Você é um especialista em...",
+                    system_prompt = i18n.t("cc_agent_sys_ph"),
                     abstraction_level = "high",
                     skills = {}
                 }
                 M.save_config()
-                vim.notify("Agente @" .. input .. " criado! Expanda-o para dar permissões.", vim.log.levels.INFO)
+                vim.notify(i18n.t("cc_create_agent_notify", input), vim.log.levels.INFO)
                 M.update_buffer()
             end
         end)
@@ -473,20 +474,20 @@ M.handle_edit = function()
         prompt_str(msg, function(i) local n = tonumber(i); if n then callback(n) end end)
     end
 
-    if action.type == "wd_horizon" then prompt_num("Novo Gatilho (tokens): ", function(n) M.state.horizon = n end)
-    elseif action.type == "wd_tolerance" then prompt_num("Nova Tolerância (ex: 1.0): ", function(n) M.state.tolerance = n end)
-    elseif action.type == "wd_percent" then prompt_num("Novo Percentual (ex: 30 para 30%): ", function(n) M.state.watchdog.percent = n / 100 end)
-    elseif action.type == "wd_fixed" then prompt_num("Novo Alvo Fixo (tokens): ", function(n) M.state.watchdog.fixed_target = n end)
-    elseif action.type == "limit_identity" then prompt_str("Seu Nome: ", function(s) M.state.identity = s end)
-    elseif action.type == "limit_loops" then prompt_num("Máximo de Turnos Autônomos: ", function(n) M.state.max_loops = n end)
+    if action.type == "wd_horizon" then prompt_num(i18n.t("cc_prompt_wd_horizon"), function(n) M.state.horizon = n end)
+    elseif action.type == "wd_tolerance" then prompt_num(i18n.t("cc_prompt_wd_tolerance"), function(n) M.state.tolerance = n end)
+    elseif action.type == "wd_percent" then prompt_num(i18n.t("cc_prompt_wd_percent"), function(n) M.state.watchdog.percent = n / 100 end)
+    elseif action.type == "wd_fixed" then prompt_num(i18n.t("cc_prompt_wd_fixed"), function(n) M.state.watchdog.fixed_target = n end)
+    elseif action.type == "limit_identity" then prompt_str(i18n.t("cc_prompt_identity"), function(s) M.state.identity = s end)
+    elseif action.type == "limit_loops" then prompt_num(i18n.t("cc_prompt_loops"), function(n) M.state.max_loops = n end)
     elseif action.type == "agent_level" then
         local cycles = { high = "medium", medium = "low", low = "high" }
         local ag = M.state.agents[action.name]
         ag.abstraction_level = cycles[ag.abstraction_level or "high"] or "high"
         M.update_buffer()
-    elseif action.type == "app_width" then prompt_num("Nova Largura (ex: 0.8): ", function(n) M.state.appearance.width = n end)
-    elseif action.type == "app_height" then prompt_num("Nova Altura (ex: 0.8): ", function(n) M.state.appearance.height = n end)
-    elseif action.type == "edit_master_prompt" then prompt_str("Nova Diretriz Mestre: ", function(s) M.state.master_prompt = s end)
+    elseif action.type == "app_width" then prompt_num(i18n.t("cc_prompt_width"), function(n) M.state.appearance.width = n end)
+    elseif action.type == "app_height" then prompt_num(i18n.t("cc_prompt_height"), function(n) M.state.appearance.height = n end)
+    elseif action.type == "edit_master_prompt" then prompt_str(i18n.t("cc_prompt_master"), function(s) M.state.master_prompt = s end)
     end
 end
 
@@ -496,13 +497,13 @@ M.handle_open_file = function()
     
     if action and action.type == "edit_skill" then
         if M.state.all_skills[action.name].is_native then
-            vim.notify("Essa é uma ferramenta Core. O código não pode ser alterado por aqui.", vim.log.levels.WARN)
+            vim.notify(i18n.t("cc_core_tool_warn"), vim.log.levels.WARN)
             return
         end
         path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
     elseif action and action.type == "edit_injector" then
         if M.state.all_injectors[action.name].is_native then
-            vim.notify("Este é um injetor nativo. O código não pode ser alterado por aqui.", vim.log.levels.WARN)
+            vim.notify(i18n.t("cc_core_inj_warn"), vim.log.levels.WARN)
             return
         end
         path = vim.fn.stdpath("config") .. "/mctx_injectors/" .. action.name .. ".lua"
@@ -561,7 +562,7 @@ M.save_config = function()
     pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw_json), agents_file)) end)
 
     M._last_saved_cfg = cfg
-    vim.notify("Configurações e Permissões salvas!", vim.log.levels.INFO)
+    vim.notify(i18n.t("cc_saved"), vim.log.levels.INFO)
 end
 
 M.open_panel = function()

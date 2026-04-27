@@ -1,7 +1,7 @@
--- lua/multi_context/tool_runner.lua
 local M = {}
 local tools = require('multi_context.tools')
 local react_loop = require('multi_context.react_loop')
+local i18n = require('multi_context.i18n')
 
 local valid_tools = {
     list_files = true, read_file = true, search_code = true,
@@ -10,7 +10,7 @@ local valid_tools = {
     lsp_definition = true, lsp_references = true, lsp_document_symbols = true, git_status = true, git_branch = true, git_commit = true
 }
 
-local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown ", "git push", "git reset", "git rebase"}
+local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
 local function is_dangerous(cmd)
     if not cmd then return false end
     for _, pat in ipairs(dangerous_commands) do if cmd:match(pat) then return true end end
@@ -21,19 +21,26 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     local name = tool_data.name
     local clean_inner = tool_data.inner
 
+    -- ==========================================
+    -- HARD BLOCK: Segurança Git (Gatekeeper Autônomo)
+    -- ==========================================
+    if name == "git_push" or name == "git_reset" or name == "git_rebase" or
+       (name == "run_shell" and (clean_inner:match("git push") or clean_inner:match("git reset") or clean_inner:match("git rebase"))) then
+        local err_msg = i18n.t("err_git_destructive")
+        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
+        return out, false, false, nil, nil
+    end
+
     local skills_manager = require('multi_context.skills_manager')
     local custom_skills = skills_manager.get_skills()
     local is_custom_skill = custom_skills[name] ~= nil
 
     if not valid_tools[name] and not is_custom_skill then
-        local err_msg = string.format("Ferramenta '%s' não existe.", tostring(name))
+        local err_msg = i18n.t("tool_not_found", tostring(name))
         local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, err_msg)
         return out, false, false, nil, nil
     end
 
-    -- ==========================================
-    -- GATEKEEPER DE SKILLS (Autorização)
-    -- ==========================================
     local agents = require('multi_context.agents').load_agents()
     local active_agent = react_loop.state.active_agent
     local is_authorized = false
@@ -43,27 +50,26 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
             if skill == name then is_authorized = true; break end
         end
     else
-        is_authorized = true -- Sem agente ativo (Modo Root/Manual), permite tudo
+        is_authorized = true 
     end
 
     if not is_authorized then
-        local err_msg = string.format("Operação negada. O agente @%s não possui a Skill '%s'.", tostring(active_agent), tostring(name))
+        local err_msg = i18n.t("op_denied", tostring(active_agent), tostring(name))
         local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
         return out, false, false, nil, nil
     end
-    -- ==========================================
 
     local choice = 1
     if not approve_all_ref.value then
         if is_autonomous then
             if name == "run_shell" and is_dangerous(clean_inner) then
-                vim.notify("🛡️ Comando PERIGOSO detectado.", vim.log.levels.ERROR)
-                choice = vim.fn.confirm("Permitir execução PERIGOSA: " .. clean_inner, "&Sim\n&Nao\n&Todos\n&Cancelar", 2)
+                vim.notify(i18n.t("danger_cmd"), vim.log.levels.ERROR)
+                choice = vim.fn.confirm(i18n.t("allow_danger") .. clean_inner, i18n.t("confirm_opts"), 2)
             elseif name == "rewrite_chat_buffer" then
-                choice = vim.fn.confirm("Agente solicitou DESTRUIR E COMPRIMIR o chat. Permitir?", "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
+                choice = vim.fn.confirm(i18n.t("allow_rewrite"), i18n.t("confirm_opts"), 1)
             else choice = 3; approve_all_ref.value = true end
         else
-            choice = vim.fn.confirm(string.format("Agente requisitou [%s]. Permitir?", tostring(name)), "&Sim\n&Nao\n&Todos\n&Cancelar", 1)
+            choice = vim.fn.confirm(i18n.t("allow_tool", tostring(name)), i18n.t("confirm_opts"), 1)
         end
     end
 
@@ -79,7 +85,7 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     local backup_made = nil
 
     if choice == 2 then
-        result = "Acesso NEGADO pelo usuario."
+        result = i18n.t("denied_user")
         local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, result)
         return out, false, false, nil, nil
     end
@@ -96,14 +102,14 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
             result = tostring(skill_res)
             should_continue_loop = true
         else
-            result = "ERRO NA EXECUCAO DA SKILL: " .. tostring(skill_res)
+            result = i18n.t("skill_err") .. tostring(skill_res)
         end
     elseif name == "rewrite_chat_buffer" then
         backup_made = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
         local backup_file = vim.fn.stdpath("data") .. "/mctx_backup_" .. os.date("%Y%m%d_%H%M%S") .. ".mctx"
         vim.fn.writefile(backup_made, backup_file)
         pending_rewrite_content = clean_inner
-        result = "Buffer reescrito."
+        result = i18n.t("buf_rewritten")
     elseif name == "list_files" then 
         should_continue_loop = true; result = tools.list_files()
     elseif name == "read_file" then 
@@ -112,21 +118,15 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         should_continue_loop = true; result = tools.search_code(tool_data.query)
     elseif name == "edit_file" then 
         result = tools.edit_file(tool_data.path, clean_inner)
-        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
+        if is_autonomous and result:match("SUCESSO") or result:match("SUCCESS") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
     elseif name == "run_shell" then 
         result = tools.run_shell(clean_inner)
     elseif name == "replace_lines" then 
         result = tools.replace_lines(tool_data.path, tool_data.start_line, tool_data.end_line, clean_inner)
-        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
+        if is_autonomous and result:match("SUCESSO") or result:match("SUCCESS") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
     elseif name == "apply_diff" then
         result = tools.apply_diff(tool_data.path, clean_inner)
-        if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
-    elseif name == "lsp_definition" then
-        should_continue_loop = true; result = require('multi_context.lsp_utils').get_definition(tool_data.path, tool_data.start_line, clean_inner)
-    elseif name == "lsp_references" then
-        should_continue_loop = true; result = require('multi_context.lsp_utils').get_references(tool_data.path, tool_data.start_line, clean_inner)
-    elseif name == "lsp_document_symbols" then
-        should_continue_loop = true; result = require('multi_context.lsp_utils').get_document_symbols(tool_data.path)
+        if is_autonomous and result:match("SUCESSO") or result:match("SUCCESS") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
     elseif name == "git_status" then
         should_continue_loop = true; result = tools.git_status()
     elseif name == "git_branch" then
@@ -137,17 +137,23 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         local files_str = tool_data.inner and tool_data.inner:match("<files>(.-)</files>") or ""
         local msg = tool_data.inner and tool_data.inner:match("<message>(.-)</message>") or clean_inner
         should_continue_loop = true; result = tools.git_commit(files_str, msg)
-    elseif name == "get_diagnostics" then
+    elseif name == "lsp_definition" then
+        should_continue_loop = true; result = require('multi_context.lsp_utils').get_definition(tool_data.path, tool_data.start_line, clean_inner)
+    elseif name == "lsp_references" then
+        should_continue_loop = true; result = require('multi_context.lsp_utils').get_references(tool_data.path, tool_data.start_line, clean_inner)
+    elseif name == "lsp_document_symbols" then
+        should_continue_loop = true; result = require('multi_context.lsp_utils').get_document_symbols(tool_data.path)
+    elseif name == "get_diagnostics" then 
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
     elseif name == "spawn_swarm" then
         local swarm = require('multi_context.swarm_manager')
         if swarm.init_swarm(clean_inner) then
             swarm.on_swarm_complete = require('multi_context').OnSwarmComplete
             vim.defer_fn(function() swarm.dispatch_next() end, 100)
-            result = "SWARM INICIADO. O trabalho foi delegado aos sub-agentes e está rodando em background."
+            result = i18n.t("swarm_started")
             should_continue_loop = false
         else
-            result = "ERRO: O payload JSON fornecido para spawn_swarm é inválido."
+            result = i18n.t("swarm_err_json")
         end
     elseif name == "switch_agent" then
         local target = clean_inner:match("<target_agent>(.-)</target_agent>")
@@ -166,9 +172,3 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
 end
 
 return M
-
-
-
-
-
-

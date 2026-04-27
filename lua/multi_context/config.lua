@@ -3,6 +3,7 @@ local M = {}
 
 M.defaults = {
     user_name     = "User",
+    language      = "pt-BR",
     config_path   = vim.fn.stdpath("config") .. "/context_apis.json",
     api_keys_path = vim.fn.stdpath("config") .. "/api_keys.json",
     default_api   = nil,

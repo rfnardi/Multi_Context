@@ -30,11 +30,10 @@ end
 
 M.build_manual_for_skills = function(skills_array)
     if not skills_array or #skills_array == 0 then return "" end
-    -- Cabeçalho Hiper-Sintético
-    local manual = [[=== FERRAMENTAS DO SISTEMA ===
-Use ESTRITAMENTE tags XML para invocar ferramentas. JSON PROIBIDO.
-Auto-LSP ativo: edições injetam erros. NÃO CHAME get_diagnostics após editar.
-=== SKILLS ATIVAS ===]]
+    local manual = [[=== SYSTEM TOOLS ===
+Use STRICTLY XML tags to invoke tools. JSON is FORBIDDEN.
+Auto-LSP is active: edits inject errors. DO NOT call get_diagnostics after editing.
+=== ACTIVE SKILLS ===]]
 
     for _, skill in ipairs(skills_array) do
         local doc = M.get_skill_doc(skill)
@@ -46,9 +45,3 @@ Auto-LSP ativo: edições injetam erros. NÃO CHAME get_diagnostics após editar
 end
 
 return M
-
-
-
-
-
-

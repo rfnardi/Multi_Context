@@ -99,7 +99,7 @@ function M.create_popup(initial_content_or_bufnr)
         col       = col,
         style     = 'minimal',
         border    = app.border or 'rounded',
-        title     = " Multi_Context_Chat | ~0 tokens ",
+        title     = require("multi_context.i18n").t("chat_title", 0),
         title_pos = 'center',
     })
     M.popup_win = win
@@ -139,7 +139,7 @@ function M.fold_text()
             break
         end
     end
-    return "    ↳ ⋯ [" .. lines_count .. " linhas ocultas] ⋯  " .. preview
+    return require("multi_context.i18n").t("hidden_lines", lines_count, preview)
 end
 
 function M.create_folds(buf)
@@ -237,7 +237,7 @@ function M.update_title()
             end
             new_title = " " .. table.concat(parts, " | ") .. string.format(" | ~%d tokens ", tokens) .. " "
         else
-            new_title = string.format(" Multi_Context_Chat | ~%d tokens ", tokens)
+            new_title = require("multi_context.i18n").t("chat_title", tokens)
         end
         
         pcall(vim.api.nvim_win_set_config, M.popup_win, { title = new_title, title_pos = 'center' })
@@ -251,7 +251,7 @@ function M.create_swarm_buffer(agent_name, initial_instruction, api_name)
     vim.bo[buf].swapfile  = false
     vim.bo[buf].filetype  = 'multicontext_chat'
 
-    local lines = { "=== SWARM WORKER ===", "Agente: @" .. agent_name, "API: " .. (api_name or "Desconhecida"), "", initial_instruction or "", "" }
+    local lines = { require("multi_context.i18n").t("swarm_worker_title"), require("multi_context.i18n").t("agent_label") .. agent_name, require("multi_context.i18n").t("api_label") .. (api_name or require("multi_context.i18n").t("unknown")), "", initial_instruction or "", "" }
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
     if not M.swarm_buffers then M.swarm_buffers = {} end

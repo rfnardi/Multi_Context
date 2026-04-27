@@ -1,5 +1,6 @@
 local M = {}
 local registry = require('multi_context.skills.registry')
+local i18n = require('multi_context.i18n')
 
 M.parse_user_input = function(raw_text, agents_table)
     local parsed = {
@@ -23,7 +24,7 @@ M.parse_user_input = function(raw_text, agents_table)
             
             local main_task = vim.deepcopy(squad_def.tasks[1] or {})
             if parsed.text_to_send ~= "" then
-                main_task.instruction = (main_task.instruction or "") .. "\n\nSolicitação do Usuário:\n" .. parsed.text_to_send
+                main_task.instruction = (main_task.instruction or "") .. "\n\nUser Request:\n" .. parsed.text_to_send
             end
             
             local payload = { tasks = { main_task } }
@@ -50,35 +51,32 @@ M.parse_user_input = function(raw_text, agents_table)
     return parsed
 end
 
-
-
 M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table, current_tokens)
     if active_agent_name == "archivist" then
         local cfg = require('multi_context.config').options
         local wd = cfg.watchdog or { strategy = "semantic", percent = 0.3, fixed_target = 1500 }
-        local prompt = "Você é o @archivist do sistema. Sua missão é estruturar a memória do chat prolixo abaixo usando EXATAMENTE 4 tags: <genesis>, <plan>, <journey> e <now>.\n"
+        local prompt = "You are the system's @archivist. Your mission is to structure the verbose chat memory below using EXACTLY 4 tags: <genesis>, <plan>, <journey>, and <now>.\n"
         if wd.strategy == "percent" then
             local target = math.floor((current_tokens or 5000) * (wd.percent or 0.3))
-            prompt = prompt .. "MANDATÓRIO: A compressão é baseada num teto percentual. Seu output não pode ultrapassar " .. target .. " tokens.\n"
+            prompt = prompt .. "MANDATORY: Compression is based on a percentage ceiling. Your output must not exceed " .. target .. " tokens.\n"
         elseif wd.strategy == "fixed" then
-            prompt = prompt .. "MANDATÓRIO: A compressão é agressiva. Seu output não pode ultrapassar " .. (wd.fixed_target or 1500) .. " tokens.\n"
+            prompt = prompt .. "MANDATORY: Aggressive compression. Your output must not exceed " .. (wd.fixed_target or 1500) .. " tokens.\n"
         else
-            prompt = prompt .. "COMPRESSÃO SEMÂNTICA: Adapte o tamanho à complexidade do conteúdo, focando na integridade da informação.\n"
+            prompt = prompt .. "SEMANTIC COMPRESSION: Adapt the size to the complexity of the content, focusing on information integrity.\n"
         end
-        prompt = prompt .. "Responda ESTRITAMENTE com o XML gerado."
+        prompt = prompt .. "Reply STRICTLY with the generated XML."
         return prompt
     end
     local system_prompt = base_prompt
 
     if memory_context then
-        system_prompt = system_prompt .. "\n\n=== ESTADO ATUAL DO PROJETO (MEMÓRIA) ===\n" .. memory_context .. "\n- Atualize o CONTEXT.md ao concluir tarefas."
+        system_prompt = system_prompt .. "\n\n=== CURRENT PROJECT STATE (MEMORY) ===\n" .. memory_context .. "\n- Update CONTEXT.md when finishing tasks."
     end
 
     if active_agent_name and active_agent_name ~= "reset" and agents_table and agents_table[active_agent_name] then
         local agent_data = agents_table[active_agent_name]
-        local active_agent_prompt = "\n\n=== INSTRUÇÕES DO AGENTE: " .. string.upper(active_agent_name) .. " ===\n" .. agent_data.system_prompt
+        local active_agent_prompt = "\n\n=== AGENT INSTRUCTIONS: " .. string.upper(active_agent_name) .. " ===\n" .. agent_data.system_prompt
         
-        -- Montador Dinâmico de Skills
         if agent_data.skills and #agent_data.skills > 0 then
             active_agent_prompt = active_agent_prompt .. "\n\n" .. registry.build_manual_for_skills(agent_data.skills)
         end
@@ -86,12 +84,11 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         system_prompt = system_prompt .. active_agent_prompt
     end
 
-    -- INJEÇÃO FASE 19: SKILLS CUSTOMIZADAS DO USUÁRIO
     local ok, skills_manager = pcall(require, 'multi_context.skills_manager')
     if ok and skills_manager and skills_manager.get_skills then
         local user_skills = skills_manager.get_skills()
         local has_user_skills = false
-        local user_skills_xml = "\n\n=== FERRAMENTAS CUSTOMIZADAS ===\nVocê tem acesso a ferramentas customizadas pelo usuário. Você pode invocá-las retornando um bloco XML no formato <tool_call name=\"nome\">\n<tools>\n"
+        local user_skills_xml = "\n\n=== CUSTOM TOOLS ===\nYou have access to user-customized tools. You can invoke them by returning an XML block in the format <tool_call name=\"name\">\n<tools>\n"
         
         for _, skill in pairs(user_skills) do
             has_user_skills = true
@@ -117,13 +114,12 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         end
     end
 
+    local cfg = require('multi_context.config').options
+    if cfg.language == "pt-BR" then
+        system_prompt = system_prompt .. i18n.t("sys_lang_directive")
+    end
+
     return system_prompt
 end
 
 return M
-
-
-
-
-
-

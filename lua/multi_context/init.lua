@@ -75,9 +75,9 @@ M.ContextUndo = function()
         require('multi_context.ui.highlights').apply_chat(buf)
         p.create_folds(buf)
         p.update_title()
-        vim.notify("✅ Chat restaurado do último backup com sucesso!", vim.log.levels.INFO)
+        vim.notify(require("multi_context.i18n").t("chat_restored"), vim.log.levels.INFO)
     else
-        vim.notify("Nenhum backup de compressão encontrado nesta sessão.", vim.log.levels.WARN)
+        vim.notify(require("multi_context.i18n").t("no_backup"), vim.log.levels.WARN)
     end
 end
 
@@ -95,7 +95,7 @@ M.ToggleWorkspaceView = function()
             utils.load_workspace_state(cur_buf)
             ui_popup.create_popup(cur_buf)
         else
-            vim.notify("Você não está em um arquivo de workspace (.mctx).", vim.log.levels.WARN)
+            vim.notify(require("multi_context.i18n").t("not_workspace"), vim.log.levels.WARN)
         end
     end
 end
@@ -121,7 +121,7 @@ M.TerminateTurn = function()
     local next_prompt_lines = { "", "## API atual: " .. current_api, user_prefix .. " " }
     
     if react_loop.state.queued_tasks and react_loop.state.queued_tasks ~= "" then
-        table.insert(next_prompt_lines, "> [Checkpoint] Avalie a resposta acima. Pressione <CR> para continuar a fila:")
+        table.insert(next_prompt_lines, require("multi_context.i18n").t("checkpoint"))
         for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
         react_loop.state.queued_tasks = nil
     end
@@ -170,7 +170,7 @@ function M.SendFromPopup()
 
     local raw_user_text = table.concat(current_task_lines, "\n"):gsub("^%s*", ""):gsub("%s*$", "")
     if #queued_tasks_lines > 0 then react_loop.state.queued_tasks = table.concat(queued_tasks_lines, "\n") end
-    if raw_user_text == "" then vim.notify("Digite algo antes de enviar.", vim.log.levels.WARN); return end
+    if raw_user_text == "" then vim.notify(require("multi_context.i18n").t("type_something"), vim.log.levels.WARN); return end
 
     local parsed_intent = prompt_parser.parse_user_input(raw_user_text, agents)
     
@@ -193,13 +193,13 @@ function M.SendFromPopup()
         react_loop.state.pending_user_prompt = text_to_send
         react_loop.state.active_agent = "archivist"
         active_agent_name = "archivist"
-        text_to_send = "O contexto atingiu o limite crítico. Analise o histórico e comprima o estado usando EXATAMENTE o modelo Quadripartite (<genesis>, <plan>, <journey>, <now>). Responda APENAS com o XML."
+        text_to_send = require("multi_context.i18n").t("archivist_sys_prompt")
         
-        local msg = string.format("> [Guardião do Contexto]: Limite iminente (%d > %d). Invocando @archivist...", predicted_total, horizon)
+        local msg = require("multi_context.i18n").t("guard_limit", predicted_total, horizon)
         api.nvim_buf_set_lines(buf, -1, -1, false, { "", msg, "" })
     end
 
-    local sending_msg = "[Enviando requisição" .. (active_agent_name and (" via @" .. active_agent_name) or "") .. "...]"
+    local sending_msg = require("multi_context.i18n").t("sending_req", active_agent_name and require("multi_context.i18n").t("sending_via", active_agent_name) or "")
     api.nvim_buf_set_lines(buf, -1, -1, false, { "", sending_msg })
 
     local history_lines = api.nvim_buf_get_lines(buf, 0, start_idx, false)
@@ -273,14 +273,14 @@ function M.SendFromPopup()
             react_loop.state.active_job_id = nil
             
             if react_loop.state.user_aborted then
-                api.nvim_buf_set_lines(buf, -1, -1, false, { "", ">[Sistema]: 🛑 Geração interrompida pelo usuário." })
+                api.nvim_buf_set_lines(buf, -1, -1, false, { "", require("multi_context.i18n").t("gen_aborted") })
                 M.TerminateTurn()
                 return
             end
             
             if not response_started then remove_sending_msg() end
             if metrics and (metrics.cache_read_input_tokens or 0) > 0 then
-                vim.notify(string.format("⚡ Prompt Caching: %d tokens economizados!", metrics.cache_read_input_tokens), vim.log.levels.INFO)
+                vim.notify(require("multi_context.i18n").t("prompt_caching", metrics.cache_read_input_tokens), vim.log.levels.INFO)
             end
             
             local b_lines = api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -411,9 +411,9 @@ function M.ExecuteTools(ia_idx)
     local cfg = require('multi_context.config')
     local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
     
-    local sys_msg = "[Sistema]: Informação coletada. Analise o resultado e continue."
+    local sys_msg = require("multi_context.i18n").t("sys_info_collected")
     if not should_continue_loop and react_loop.state.is_autonomous then
-        sys_msg = "[Sistema]: Ação executada. Verifique se o passo foi concluído ou prossiga para a próxima ação."
+        sys_msg = require("multi_context.i18n").t("sys_action_executed")
     end
 
     local b_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -463,7 +463,7 @@ M.HandleArchivistCompression = function(ia_idx)
     local cfg = require('multi_context.config')
     local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
     
-    local new_lines = { "=== MEMÓRIA CONSOLIDADA (QUADRIPARTITE) ===" }
+    local new_lines = { require("multi_context.i18n").t("quad_memory") }
     
     local function append_split(txt)
         if not txt then return end
@@ -487,7 +487,7 @@ M.HandleArchivistCompression = function(ia_idx)
     p.create_folds(buf)
     p.update_title()
     
-    vim.notify("🧠 Contexto hiper-comprimido pelo @archivist. Retomando tarefa...", vim.log.levels.INFO)
+    vim.notify(require("multi_context.i18n").t("archivist_compressed"), vim.log.levels.INFO)
     vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
 end
 
