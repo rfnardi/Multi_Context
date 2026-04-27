@@ -1,0 +1,65 @@
+*multicontext.txt*    MultiContext AI - Engenheiro de Software Autônomo
+
+Autor: Nardi <seu-email@exemplo.com>
+Licença: MIT
+
+==============================================================================
+SUMÁRIO                                                *multicontext-contents*
+
+1. Introdução ...................................... |multicontext-intro|
+2. Comandos Principais ............................. |multicontext-commands|
+3. Navegação (LSP & Ripgrep) ....................... |multicontext-navigation|
+4. O Agente DevOps (Git Automation) ................ |multicontext-devops|
+5. Centro de Comando ............................... |multicontext-controls|
+
+==============================================================================
+1. INTRODUÇÃO                                             *multicontext-intro*
+
+O MultiContext AI não é um mero auto-completar. É um plugin nativo de Neovim 
+focado em delegar a orquestração do projeto a enxames de inteligência
+artificial (Swarm). A IA usa ferramentas locais (LSP, Ripgrep, shell, diffs)
+para criar, testar e salvar o código na sua máquina sem sair do editor.
+
+==============================================================================
+2. COMANDOS PRINCIPAIS                                 *multicontext-commands*
+
+*`:ContextControls`*
+    Abre o Centro de Comando Virtual (12 módulos). Daqui, configure sua API, 
+    Ligue/Desligue permissões, adicione Skills, Injectors ou gerencie Esquadrões.
+
+*`:ContextToggle`*
+    Abre/esconde a janela de Chat Dinâmica no painel principal.
+
+*`:ContextUndo`*
+    Restaura o chat para o exato momento antes do Watchdog engatilhar a compressão.
+
+Atalhos no Chat:
+    *`@`* (Modo Inserção)  Abre o Fuzzy Finder de Agentes (ex: @coder, @qa).
+    *`\`* (Modo Inserção)  Abre o seletor de Injectors (cole Git Log, LSP Erros).
+    *`<Tab>` / `<S-Tab>`*  No Modo Normal, cicla entre os buffers paralelos do Swarm.
+
+==============================================================================
+3. NAVEGAÇÃO CIRÚRGICA (LSP & RIPGREP)               *multicontext-navigation*
+
+Diferente de sistemas RAG complexos, o MultiContext atua como um humano:
+- *Ripgrep*: A IA busca palavras-chave globalmente usando `rg`.
+- *LSP Nativo*: A IA dá "Go to Definition" ou busca Referências consumindo
+  o Language Server ativo no Neovim, o que gera uma economia colossal de tokens.
+
+==============================================================================
+4. O AGENTE DEVOPS E GIT                                *multicontext-devops*
+
+Ao invocar o `@devops`, o Agente assume responsabilidades de versionamento.
+Ele pode usar as ferramentas `git_status`, `git_branch` e `git_commit`. 
+Por segurança, a IA está travada localmente e não pode invocar "git add ."
+(sendo obrigada a citar os arquivos explicitamente), garantindo commits puros.
+
+==============================================================================
+5. CENTRO DE COMANDO (CONTROLS)                        *multicontext-controls*
+
+Use `j` / `k` para navegar no painel `:ContextControls`.
+Pressione `<Space>` para alternar estados `[ON / OFF]` e ferramentas de 
+cada Agente (Gatekeeper IAM). Use `e` para editar um script (Skill) ou `c` 
+para alterar valores limitadores.
+
+vim:tw=78:ts=8:ft=help:norl:

@@ -9,3 +9,9 @@ test_agregate_results:
 	@echo "🧪 Executando Suíte Completa (Summary Agregado)..."
 	@echo "======================================================================"
 	@./run_tests.sh
+
+.PHONY: doc
+doc:
+	@echo "📚 Gerando as Help Tags nativas do Vimdoc..."
+	nvim --headless -c "helptags doc/" -c "q"
+	@echo "✅ Help Tags geradas!"
