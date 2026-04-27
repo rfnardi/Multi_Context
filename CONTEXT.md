@@ -1,13 +1,13 @@
 # MultiContext AI - Plugin Neovim
 
 ## Visão Geral
-MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão V1.2, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, um **Ecossistema de Skills Pluggáveis e Editáveis** provido de exemplos práticos comunitários, **Context Injectors (\)** para composição dinâmica de prompts e um **Centro de Comando Virtual** com 12 seções para gerenciamento total da IDE.
+MultiContext AI é um plugin nativo para Neovim que integra assistentes de IA com capacidades autônomas (estilo Devin/Claude Code). O plugin permite interação com múltiplos agentes especializados através de uma interface de chat, com acesso direto ao sistema de arquivos, execução de terminal, loops autônomos de raciocínio (ReAct) e gerenciamento ativo de janela de contexto. Na sua versão V1.2, suporta **Swarm Architecture** (Enxames de IA com MoA - Mixture of Agents), persistência assíncrona de estado (Stateful Workspace), **Meta-Agentes (Squads)**, **Memória Quadripartite (Watchdog Preditivo)**, um **Ecossistema de Skills Pluggáveis e Editáveis** provido de exemplos práticos comunitários, **Context Injectors (\)** para composição dinâmica de prompts, pesquisa ultrarrápida com **Ripgrep**, navegação cirúrgica por código via **LSP** (Go to Definition/References), um **Agente DevOps** para automação local de Git e um **Centro de Comando Virtual** com 12 seções para gerenciamento total da IDE.
 
 ## Arquitetura Técnica
 
 ### Tecnologias Principais
 - **Linguagem**: Lua (integração nativa com Neovim)
-- **Framework de Testes**: `plenary.nvim` (busted) - **105 Testes Unitários e de Integração (100% de Sucesso Absoluto)**, com isolamento severo de mocks (I/O, Kernel).
+- **Framework de Testes**: `plenary.nvim` (busted) - **111 Testes Unitários e de Integração (100% de Sucesso Absoluto)**, com isolamento severo de mocks (I/O, Kernel).
 - **Operações Assíncronas e Rede**: `vim.fn.jobstart` / `vim.fn.jobstop` abstraídos via módulo de transporte customizado (`curl` não-bloqueante).
 - **Processamento de XML**: Parser funcional tolerante a falhas, com auto-fechamento implícito de tags contra alucinações.
 - **Concorrência**: Implementação de *Worker Pool* nativo gerenciando Promises assíncronas do `curl` sem travar a thread principal de UI do Neovim.
@@ -28,17 +28,22 @@ lua/multi_context/
 ├── swarm_manager.lua     # Cérebro do Enxame: filas, workers, ReAct, MoA, Pipelines e Coreografia
 ├── squads.lua            # Loader e resolvedor de Esquadrões Meta-Agentes (Fase 23)
 ├── skills_manager.lua    # Loader assíncrono e validador de código externo (Hot-Reload)
+├── lsp_utils.lua         # Ponte silenciosa com o Neovim LSP (Go to Definition/References)
 ├── react_loop.lua        # Gerenciador de estado de sessão e Circuit Breaker
 ├── memory_tracker.lua    # Watchdog Preditivo com cálculo de Média Móvel (EMA) e Imunidade de Turno Inicial
 ├── context_builders.lua  # Extratores de contexto injetando numeração de linhas estrita (1 | code)
 ├── context_controls.lua  # Centro de Comando Master (12 Seções: API, IAM, Swarm, Histórico, Vault, Apperance)
-├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff)
+├── tools.lua             # Ferramentas nativas (leitura, edição, bash, LSP, Unified Diff, Git, Ripgrep)
 ├── utils.lua             # Ferramentas de cálculo de token e serialização de Workspace
 ├── ui/
 │   ├── popup.lua         # Lógica da janela flutuante dinamicamente estilizada, carrossel e atalhos
 │   ├── scroller.lua      # Smart Auto-Scroll silencioso e rastreador direcional
 │   └── highlights.lua    # Highlights sintáticos unificados e paleta global
 ├── tests/                # Suíte de testes automatizados (TDD/Plenary) contendo mocks complexos
+│   ├── git_tools_spec.lua        # Testes de Automação Git e Gatekeeper
+│   ├── lsp_utils_spec.lua        # Testes da Ponte LSP Silenciosa
+│   ├── tool_runner_lsp_spec.lua  # Testes de Roteamento LSP
+│   └── ... (mais 34 arquivos)
 └── examples/
     ├── skills/           # Template Comunitário de Skills (Jira, Pytest, SQL)
     └── injectors/        # Template Comunitário de Injetores (Project Dump, LSP Errors, Git Log)
@@ -87,11 +92,20 @@ lua/multi_context/
 - **Injeção de Metadados em Comentários**: O usuário documenta o script livremente usando cabeçalhos simples (`# DESC: ...` e `# PARAM: target | string | true | desc`).
 - **Ponte de Variáveis de Ambiente**: A IA interage com as linguagens do usuário exportando os parâmetros extraídos como `env` POSIX (ex: envia o parâmetro `query` como `$MCTX_QUERY` direto para o script Bash/Fish local).
 
+### 9. Navegação Cirúrgica e Busca (LSP + Ripgrep) (Fase 30)
+- **Ripgrep Nativo**: Uso inteligente de `rg` (com fallback seguro para `git grep`) na ferramenta `search_code`, garantindo buscas globais instantâneas, respeitando `.gitignore` e indexando arquivos recém-criados.
+- **Integração LSP Avançada**: A IA atua na IDE como um humano. Através da "Ponte Silenciosa", a IA interroga o servidor LSP do Neovim (`lsp_definition`, `lsp_references`, `lsp_document_symbols`), encontrando onde classes/funções foram definidas e extraindo *apenas os blocos relevantes* de código, garantindo uma economia drástica de tokens em relação a buscas via RAG (Vector DBs).
+
+### 10. Automação Git e Agente DevOps (Fase 31)
+- **Agente DevOps Autônomo**: Persona nativa (`@devops`) voltada exclusivamente para controle de versão, encarregada de avaliar Diffs e realizar Commits Semânticos.
+- **Comandos Git Locais**: Ferramentas cirúrgicas (`git_status`, `git_branch`, `git_commit`) acessíveis para gerenciar o estado da árvore de trabalho e isolar implementações em branches temporárias (ex: `checkout -b`).
+- **Gatekeeper de Segurança**: Travas profundas impedem a IA de realizar `git add .` (forçando-a a comitar arquivos individualmente) e proíbem comandos destrutivos/remotos como `git push`, `reset --hard` ou `rebase` sem a confirmação manual via UI (`[Permitir/Negar]`).
+
 ---
 
 ## Estado Atual do Desenvolvimento
 
-### ✅ Implementado, Estável e Testado (V1.2 - Produção)
+### ✅ Implementado, Estável e Testado (V1.2.1 - Produção)
 O core do produto é um motor de orquestração industrial de ponta.
 - Interface `LazyVim-like` com Footer Dinâmico Ancorado e 12 Módulos Master (APIs, Watchdog, Estilização, Cofre, Telemetria).
 - Extensibilidade dupla: Skills ativas para a IA, Injectors textuais (`\`) para o Usuário.
@@ -100,4 +114,6 @@ O core do produto é um motor de orquestração industrial de ponta.
 - Integração Completa: O Motor de HTTP (`transport.lua`) e a UI (`popup.lua`) consomem variáveis do Painel ao vivo.
 - Swarm Avançado (MoA, Níveis Cognitivos Mutáveis, Pipelines, Coreografia).
 - Unified Diff, Workspace Persistente e Esquadrões.
-- **Cobertura de Testes Plenary:** 105 testes de Unidade e Integração isolados e garantidos (0 Falhas / 0 Erros - 100% Passando Absolutamente).
+- Integração nativa com Neovim LSP e Ripgrep para navegação determinística.
+- Automação Git local via Agente DevOps com travas de segurança atômicas.
+- **Cobertura de Testes Plenary:** 115 testes de Unidade e Integração isolados e garantidos (0 Falhas / 0 Erros - 100% Passando Absolutamente).
