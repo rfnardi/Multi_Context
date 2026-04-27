@@ -10,20 +10,24 @@ local function fuzzy_match(str, pattern)
 end
 
 M.load_agents = function()
-    if vim.fn.filereadable(M.agents_file) == 0 then vim.fn.writefile({"{}"}, M.agents_file) end
-    local file = io.open(M.agents_file, 'r')
+    local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
+    M.agents_file = agents_file
+    if vim.fn.filereadable(agents_file) == 0 then vim.fn.writefile({"{}"}, agents_file) end
+    local file = io.open(agents_file, "r")
     if not file then return {} end
-    local content = file:read('*a')
+    local content = file:read("*a")
     file:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
-    if ok and parsed then
-        for _, agent in pairs(parsed) do
-            if not agent.abstraction_level then agent.abstraction_level = "high" end
-        end
-    end
-    return ok and parsed or {}
+    if not ok or type(parsed) ~= "table" then parsed = {} end
+    local changed = false
+    if not parsed["tech_lead"] then parsed["tech_lead"] = { system_prompt = "Você é o Tech Lead do projeto. Sua missão é orquestrar o desenvolvimento, delegando tarefas aos sub-agentes.", abstraction_level = "high", skills = {"spawn_swarm"} }; changed = true end
+    if not parsed["coder"] then parsed["coder"] = { system_prompt = "Você é um Desenvolvedor Sênior. Escreva código limpo e siga as boas práticas.", abstraction_level = "high", skills = {"read_file", "edit_file", "replace_lines", "apply_diff", "search_code"} }; changed = true end
+    if not parsed["qa"] then parsed["qa"] = { system_prompt = "Você é um Analista de Qualidade. Revise o código e garanta que não há bugs.", abstraction_level = "high", skills = {"read_file", "run_shell", "get_diagnostics"} }; changed = true end
+    if not parsed["devops"] then parsed["devops"] = { system_prompt = "Você é o Engenheiro DevOps do projeto.\nSua missão é realizar o versionamento cirúrgico e garantir um fluxo limpo no repositório local.\nVocê avalia modificações, cria branches e assina Commits Semânticos puros.\nTrabalhe de forma atômica e descreva as operações Git de forma estruturada no <final_report>.", abstraction_level = "high", skills = {"git_status", "git_branch", "git_commit", "run_shell", "read_file"} }; changed = true end
+    if changed then vim.fn.writefile({vim.fn.json_encode(parsed)}, agents_file) end
+    for _, agent in pairs(parsed) do if not agent.abstraction_level then agent.abstraction_level = "high" end end
+    return parsed
 end
-
 M.get_agent_names = function()
     local agents = M.load_agents()
     local names = {}

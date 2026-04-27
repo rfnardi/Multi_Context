@@ -108,7 +108,7 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
     it("Deve confirmar a presença do agente @qa no acervo", function()
         local loaded = agents.load_agents()
         assert.is_not_nil(loaded["qa"], "O agente QA deve existir")
-        assert.truthy(loaded["qa"].description:match("Qualidade"), "A descrição deve corresponder a um QA")
+        assert.truthy(loaded["qa"].system_prompt:match("Qualidade"), "A descrição deve corresponder a um QA")
     end)
 
 end)

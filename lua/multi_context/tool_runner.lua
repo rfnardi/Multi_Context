@@ -6,10 +6,11 @@ local react_loop = require('multi_context.react_loop')
 local valid_tools = {
     list_files = true, read_file = true, search_code = true,
     edit_file = true, run_shell = true, replace_lines = true, apply_diff = true,
-    rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true, switch_agent = true
+    rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true, switch_agent = true,
+    lsp_definition = true, lsp_references = true, lsp_document_symbols = true, git_status = true, git_branch = true, git_commit = true
 }
 
-local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
+local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown ", "git push", "git reset", "git rebase"}
 local function is_dangerous(cmd)
     if not cmd then return false end
     for _, pat in ipairs(dangerous_commands) do if cmd:match(pat) then return true end end
@@ -120,7 +121,23 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     elseif name == "apply_diff" then
         result = tools.apply_diff(tool_data.path, clean_inner)
         if is_autonomous and result:match("SUCESSO") then result = result .. "\n\n[Auto-LSP]:\n" .. tools.get_diagnostics(tool_data.path) end
-    elseif name == "get_diagnostics" then 
+    elseif name == "lsp_definition" then
+        should_continue_loop = true; result = require('multi_context.lsp_utils').get_definition(tool_data.path, tool_data.start_line, clean_inner)
+    elseif name == "lsp_references" then
+        should_continue_loop = true; result = require('multi_context.lsp_utils').get_references(tool_data.path, tool_data.start_line, clean_inner)
+    elseif name == "lsp_document_symbols" then
+        should_continue_loop = true; result = require('multi_context.lsp_utils').get_document_symbols(tool_data.path)
+    elseif name == "git_status" then
+        should_continue_loop = true; result = tools.git_status()
+    elseif name == "git_branch" then
+        local new_branch = (tool_data.inner and tool_data.inner:match("<create_new>true</create_new>")) and true or false
+        local branch_name = tool_data.inner and tool_data.inner:match("<branch_name>(.-)</branch_name>") or clean_inner
+        should_continue_loop = true; result = tools.git_branch(branch_name, new_branch)
+    elseif name == "git_commit" then
+        local files_str = tool_data.inner and tool_data.inner:match("<files>(.-)</files>") or ""
+        local msg = tool_data.inner and tool_data.inner:match("<message>(.-)</message>") or clean_inner
+        should_continue_loop = true; result = tools.git_commit(files_str, msg)
+    elseif name == "get_diagnostics" then
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
     elseif name == "spawn_swarm" then
         local swarm = require('multi_context.swarm_manager')

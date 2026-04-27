@@ -105,7 +105,7 @@ M.dispatch_next = function()
                 end
             end
             system_prompt = system_prompt .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text            
-            system_prompt = system_prompt .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. Esta tag encerra a sua execução. Sem ela, o mestre não lerá sua resposta."
+            system_prompt = system_prompt .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. O relatório DEVE incluir um resumo claro do que foi feito, os arquivos editados e listar de forma estruturada as operações Git executadas (se houver). Esta tag encerra a sua execução e sem ela o mestre não lerá sua resposta."
 
             
             local messages = {
@@ -179,7 +179,7 @@ M.dispatch_next = function()
                                             new_system = new_system .. "\n\n=== SUAS DIRETRIZES ===\n" .. loaded_agents[switch_target].system_prompt
                                         end
                                         new_system = new_system .. "\n\n=== CONTEXTO INICIAL FORNECIDO ===\n" .. context_text
-                                        new_system = new_system .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. Esta tag encerra a sua execução. Sem ela, o mestre não lerá sua resposta."
+                                        new_system = new_system .. "\n\n=== REGRAS DE ENTREGA (MANDATÓRIO) ===\nQuando terminar a tarefa e não precisar usar mais nenhuma ferramenta, você DEVE entregar o seu relatório final dentro das tags <final_report>...</final_report>. O relatório DEVE incluir um resumo claro do que foi feito, os arquivos editados e listar de forma estruturada as operações Git executadas (se houver). Esta tag encerra a sua execução e sem ela o mestre não lerá sua resposta."
                                         
                                         messages[1].content = new_system
                                         new_content = "SUCESSO: Controle transferido para @" .. switch_target .. ". O sistema foi reconfigurado com suas diretrizes."

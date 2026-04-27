@@ -77,3 +77,64 @@ end)
 
 
 
+
+describe("Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep)", function()
+    local tools = require('multi_context.tools')
+    local orig_executable
+    local orig_system
+
+    before_each(function()
+        orig_executable = vim.fn.executable
+        orig_system = vim.fn.system
+        vim.fn.system("true")
+    end)
+
+    after_each(function()
+        vim.fn.executable = orig_executable
+        vim.fn.system = orig_system
+    end)
+
+    it("Deve usar ripgrep se 'rg' estiver disponivel no sistema", function()
+        local captured_cmd = ""
+        vim.fn.executable = function(cmd)
+            if cmd == "rg" then return 1 end
+            return orig_executable(cmd)
+        end
+        vim.fn.system = function(cmd)
+            if type(cmd) == "string" and cmd:match("^rg ") then
+                captured_cmd = cmd
+                return "mocked_rg_result\n"
+            end
+            if type(cmd) == "string" and cmd:match("git rev%-parse") then
+                return "/mock/repo/root\n"
+            end
+            return orig_system(cmd)
+        end
+
+        local res = tools.search_code("frete")
+        assert.truthy(captured_cmd:match("rg %-n %-i"), "Deveria ter invocado o rg com flags -n -i")
+        assert.truthy(res:match("mocked_rg_result"), "Deveria retornar o resultado do rg")
+    end)
+
+    it("Deve usar git grep como fallback se 'rg' nao existir", function()
+        local captured_cmd = ""
+        vim.fn.executable = function(cmd)
+            if cmd == "rg" then return 0 end
+            return orig_executable(cmd)
+        end
+        vim.fn.system = function(cmd)
+            if type(cmd) == "string" and cmd:match("git %-C.*grep") then
+                captured_cmd = cmd
+                return "mocked_git_grep_result\n"
+            end
+            if type(cmd) == "string" and cmd:match("git rev%-parse") then
+                return "/mock/repo/root\n"
+            end
+            return orig_system(cmd)
+        end
+
+        local res = tools.search_code("login")
+        assert.truthy(captured_cmd:match("git %-C.*grep"), "Deveria ter invocado o fallback do git grep")
+        assert.truthy(res:match("mocked_git_grep_result"), "Deveria retornar o resultado do git grep")
+    end)
+end)

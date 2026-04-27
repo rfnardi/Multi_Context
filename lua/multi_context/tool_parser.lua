@@ -3,7 +3,8 @@ local M = {}
 
 local valid_tools_list = {
     "list_files", "read_file", "search_code", "edit_file", 
-    "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent"
+    "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent",
+    "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"
 }
 
 -- 1. SANITIZADOR ANTI-ALUCINAÇÃO DE SINTAXE
@@ -92,7 +93,7 @@ M.parse_next_tool = function(content_to_process, cursor)
     local name = get_attr(tag_str, "name")
     local path = get_attr(tag_str, "path")
     local query = get_attr(tag_str, "query")
-    local start_line = get_attr(tag_str, "start")
+    local start_line = get_attr(tag_str, "start") or get_attr(tag_str, "line")
     local end_line = get_attr(tag_str, "end")
 
     -- Fallback se a IA mandou como JSON dentro do XML

@@ -85,7 +85,7 @@ function M.setup(user_opts)
             for _, v in pairs(parsed) do
                 if v.use_tools ~= nil then
                     if v.use_tools == true then
-                        v.skills = {"list_files", "search_code", "read_file", "replace_lines", "apply_diff", "edit_file", "run_shell", "rewrite_chat_buffer", "get_diagnostics"}
+                        v.skills = {"list_files", "search_code", "read_file", "replace_lines", "apply_diff", "edit_file", "run_shell", "rewrite_chat_buffer", "get_diagnostics", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"}
                     else
                         v.skills = {}
                     end

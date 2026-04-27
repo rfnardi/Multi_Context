@@ -76,10 +76,15 @@ M.search_code = function(query)
     local root = get_repo_root()
     if not root then return "ERRO: Fora de repositório Git." end
     if not query or query == "" then return "ERRO: 'query' obrigatória." end
-    local cmd = string.format("git -C %s grep -n -i -I %s", vim.fn.shellescape(root), vim.fn.shellescape(query))
+    local cmd
+    if vim.fn.executable("rg") == 1 then
+        cmd = string.format("rg -n -i -- %s %s", vim.fn.shellescape(query), vim.fn.shellescape(root))
+    else
+        cmd = string.format("git -C %s grep -n -i -I -- %s", vim.fn.shellescape(root), vim.fn.shellescape(query))
+    end
     local out = vim.fn.system(cmd)
-    if vim.v.shell_error ~= 0 or out == "" then return "Nenhum resultado para: " .. query end
-    if #out > 3000 then out = out:sub(1, 3000) .. "\n\n... [AVISO: TRUNCADO] ..." end
+    if out == "" then return "Nenhum resultado para: " .. query end
+    if #out > 3000 then out = out:sub(1, 3000) .. "\n\n...[AVISO: TRUNCADO] ..." end
     return "Resultados da busca:\n" .. out
 end
 
@@ -150,8 +155,8 @@ M.get_diagnostics = function(path)
 
     if has_lsp then
         -- Aguarda o LSP recalcular diagnósticos (até 2s)
-        vim.wait(2000, function() return false end, 50)
-        vim.wait(300)
+        vim.wait(100, function() return false end, 10)
+        vim.wait(10)
     end
 
     -- 4. Coleta diagnósticos
@@ -239,10 +244,62 @@ M.apply_diff = function(path, diff_content)
     return "SUCESSO: Diff aplicado no arquivo " .. full_path
 end
 
+
+
+
+
+
+
+
+M.git_status = function()
+    local root = get_repo_root()
+    if not root then return "ERRO: Fora de repositório Git." end
+    local out = vim.fn.system("git -C " .. vim.fn.shellescape(root) .. " status -s")
+    if vim.v.shell_error ~= 0 then return "ERRO ao obter git status:\n" .. out end
+    if out == "" then return "A árvore de trabalho está limpa." end
+    return "=== STATUS DO GIT ===\n" .. out
+end
+
+M.git_branch = function(branch_name, create_new)
+    local root = get_repo_root()
+    if not root then return "ERRO: Fora de repositório Git." end
+    if not branch_name or branch_name == "" then return "ERRO: Nome da branch obrigatório." end
+    local flag = ""
+    if create_new == true or create_new == "true" then flag = "-b " end
+    local cmd = string.format("git -C %s checkout %s%s", vim.fn.shellescape(root), flag, vim.fn.shellescape(branch_name))
+    local out = vim.fn.system(cmd)
+    if vim.v.shell_error ~= 0 then return "FALHA ao trocar de branch:\n" .. out end
+    return "SUCESSO: " .. out
+end
+
+M.git_commit = function(files_str, message)
+    local root = get_repo_root()
+    if not root then return "ERRO: Fora de repositório Git." end
+    if not files_str or files_str == "" then return "ERRO: Lista de arquivos obrigatória." end
+    if not message or message == "" then return "ERRO: Mensagem de commit obrigatória." end
+    
+    -- TRAVA DE SEGURANÇA CONTRA COMMITS GENÉRICOS DE LIXO
+    if files_str:match("^%s*%.%s*$") or files_str:match("%*") or files_str:match("%-A") or files_str:match("%-%-all") then
+        return "ERRO: O uso de 'git add .' ou '*' é proibido. Você DEVE ser cirúrgico e especificar os nomes exatos dos arquivos alterados separados por vírgula."
+    end
+    
+    local files = vim.split(files_str, ",", {trimempty=true})
+    if #files == 0 then return "ERRO: Nenhum arquivo válido fornecido." end
+    
+    local escaped_files = {}
+    for _, f in ipairs(files) do
+        table.insert(escaped_files, vim.fn.shellescape(vim.trim(f)))
+    end
+    
+    local add_cmd = string.format("git -C %s add %s", vim.fn.shellescape(root), table.concat(escaped_files, " "))
+    local add_out = vim.fn.system(add_cmd)
+    if vim.v.shell_error ~= 0 then return "ERRO no git add:\n" .. add_out end
+    
+    local commit_cmd = string.format("git -C %s commit -m %s", vim.fn.shellescape(root), vim.fn.shellescape(message))
+    local commit_out = vim.fn.system(commit_cmd)
+    if vim.v.shell_error ~= 0 then return "ERRO no git commit:\n" .. commit_out end
+    
+    return "SUCESSO: Arquivos comitados.\n" .. commit_out
+end
+
 return M
-
-
-
-
-
-

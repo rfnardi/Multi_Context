@@ -38,3 +38,19 @@ end)
 
 
 
+
+describe("Fase 30 - Passo 3: Parser de Novas Ferramentas LSP", function()
+    local tool_parser = require('multi_context.tool_parser')
+
+    it("Deve extrair os parametros da ferramenta lsp_definition (inclusive line)", function()
+        local payload = '<tool_call name="lsp_definition" path="meu_arquivo.lua" line="10">\ncalcular\n</tool_call>'
+        local parsed = tool_parser.parse_next_tool(payload, 1)
+        
+        assert.is_not_nil(parsed)
+        assert.are.same("lsp_definition", parsed.name)
+        assert.are.same("meu_arquivo.lua", parsed.path)
+        -- A propriedade 'line' da tag XML deve ser capturada no parser
+        assert.are.same("10", parsed.start_line) 
+        assert.are.same("\ncalcular\n", parsed.inner)
+    end)
+end)
