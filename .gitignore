@@ -8,3 +8,7 @@ mctx_backup_*.mctx
 ./*.sh
 !./run_tests.sh
 ./*.mctx
+./collect_info.sh 
+./get_context_human_written.fish 
+./create_tests.sh 
+./refactorate.sh

@@ -107,7 +107,7 @@ lua/multi_context/
 
 ### 11. Internationalization and Cognitive Optimization (Phase 33)
 - **i18n Engine**: A reactive translation dictionary (`en` and `pt-BR`) dynamically feeds the entire interface, system messages, I/O validations, and the Command Center.
-- **Cognitive Backend**: Heavy structural rules (Swarm architecture, XML formatting, ReAct logic, Watchdog boundaries) are inherently passed to the LLM in **English**. Since foundation models are primarily trained on English datasets, this effectively reduces structural hallucinations to 0% and saves tokens.
+- **Cognitive Backend**: Heavy structural rules (Swarm architecture, XML formatting, ReAct logic, Watchdog boundaries) are inherently passed to the LLM in **English**. Since foundation models are primarily trained on English datasets, this effectively reduces structural hallucinations and saves tokens.
 - **Adaptive Language Directive**: A conditional `sys_lang_directive` is injected into the prompt. The AI processes complex rules in English but is instructed to output its final thoughts, comments, and code in the user's chosen `config.language`.
 
 ---
