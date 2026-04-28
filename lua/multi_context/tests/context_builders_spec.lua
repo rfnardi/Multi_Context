@@ -7,9 +7,19 @@ describe("Context Builders Module:", function()
         vim.api.nvim_set_current_buf(buf)
         
         local res = ctx.get_current_buffer()
-        assert.truthy(res:match("=== BUFFER ATUAL ==="))
+        -- CORREÇÃO: O novo header é "=== BUFFER: Nome ==="
+        assert.truthy(res:match("=== BUFFER:"))
         assert.truthy(res:match("linhaA"))
         assert.truthy(res:match("linhaB"))
+    end)
+
+    it("Deve incluir o nome do arquivo no cabecalho do get_current_buffer", function()
+        local buf = vim.api.nvim_create_buf(true, false)
+        vim.api.nvim_buf_set_name(buf, "meu_script_falso.lua")
+        vim.api.nvim_set_current_buf(buf)
+        
+        local res = ctx.get_current_buffer()
+        assert.truthy(res:match("meu_script_falso%.lua"), "O nome do arquivo deve ser extraído e aparecer no header")
     end)
 
     it("Deve extrair apenas as linhas da selecao visual (com range)", function()
@@ -30,14 +40,7 @@ describe("Context Builders Module:", function()
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"A", "B", "C"})
         vim.api.nvim_set_current_buf(buf)
         
-        -- Selecionou da linha 3 até a 1
         local res = ctx.get_visual_selection(3, 1)
         assert.truthy(res:match("SELEÇÃO %(linhas 1%-3%)"))
     end)
 end)
-
-
-
-
-
-

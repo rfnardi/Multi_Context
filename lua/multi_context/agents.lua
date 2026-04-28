@@ -20,14 +20,57 @@ M.load_agents = function()
     local ok, parsed = pcall(vim.fn.json_decode, content)
     if not ok or type(parsed) ~= "table" then parsed = {} end
     local changed = false
-    if not parsed["tech_lead"] then parsed["tech_lead"] = { system_prompt = "Você é o Tech Lead do projeto. Sua missão é orquestrar o desenvolvimento, delegando tarefas aos sub-agentes.", abstraction_level = "high", skills = {"spawn_swarm"} }; changed = true end
-    if not parsed["coder"] then parsed["coder"] = { system_prompt = "Você é um Desenvolvedor Sênior. Escreva código limpo e siga as boas práticas.", abstraction_level = "high", skills = {"read_file", "edit_file", "replace_lines", "apply_diff", "search_code"} }; changed = true end
-    if not parsed["qa"] then parsed["qa"] = { system_prompt = "Você é um Analista de Qualidade. Revise o código e garanta que não há bugs.", abstraction_level = "high", skills = {"read_file", "run_shell", "get_diagnostics"} }; changed = true end
-    if not parsed["devops"] then parsed["devops"] = { system_prompt = "Você é o Engenheiro DevOps do projeto.\nSua missão é realizar o versionamento cirúrgico e garantir um fluxo limpo no repositório local.\nVocê avalia modificações, cria branches e assina Commits Semânticos puros.\nTrabalhe de forma atômica e descreva as operações Git de forma estruturada no <final_report>.", abstraction_level = "high", skills = {"git_status", "git_branch", "git_commit", "run_shell", "read_file"} }; changed = true end
+    
+    if not parsed["tech_lead"] then 
+        parsed["tech_lead"] = { 
+            system_prompt = "You are the Tech Lead. Your mission is to orchestrate the development process, break down complex requirements into smaller actionable tasks, and delegate them to specialized sub-agents using the Swarm. Do not write production code directly. Review plans and ensure architectural alignment.", 
+            abstraction_level = "high", 
+            skills = {"spawn_swarm", "read_file", "search_code"} 
+        }
+        changed = true 
+    end
+    
+    if not parsed["architect"] then 
+        parsed["architect"] = { 
+            system_prompt = "You are the Software Architect. Focus on system design, ensuring SOLID principles, DRY, modularity, and high cohesion/low coupling. Your main task is to analyze requirements and output strictly structured, step-by-step implementation plans heavily oriented towards Test-Driven Development (TDD). Do not write production code yourself; write the architectural blueprints and test specifications.", 
+            abstraction_level = "high", 
+            skills = {"read_file", "search_code", "list_files"} 
+        }
+        changed = true 
+    end
+
+    if not parsed["coder"] then 
+        parsed["coder"] = { 
+            system_prompt = "You are a Senior Software Engineer. Implement features and fix bugs based on architectural blueprints or direct requests. Write clean, efficient, and well-documented code. Follow TDD practices strictly when specified. Use your tools to apply surgical edits to the codebase.", 
+            abstraction_level = "high", 
+            skills = {"read_file", "edit_file", "replace_lines", "apply_diff", "search_code"} 
+        }
+        changed = true 
+    end
+
+    if not parsed["qa"] then 
+        parsed["qa"] = { 
+            system_prompt = "You are a Quality Assurance Engineer and Code Reviewer. Critically review code for edge cases, security vulnerabilities, and performance bottlenecks. Run tests, verify LSP diagnostics, and ensure the code meets the highest quality standards before concluding your task.", 
+            abstraction_level = "high", 
+            skills = {"read_file", "run_shell", "get_diagnostics", "search_code"} 
+        }
+        changed = true 
+    end
+
+    if not parsed["devops"] then 
+        parsed["devops"] = { 
+            system_prompt = "You are the DevOps and Git Automation Engineer. Handle version control cleanly and surgically. Evaluate diffs, create logical branches, and craft pure Semantic Commits. Work atomically and document all Git operations structurally in your final report.", 
+            abstraction_level = "high", 
+            skills = {"git_status", "git_branch", "git_commit", "run_shell", "read_file"} 
+        }
+        changed = true 
+    end
+
     if changed then vim.fn.writefile({vim.fn.json_encode(parsed)}, agents_file) end
     for _, agent in pairs(parsed) do if not agent.abstraction_level then agent.abstraction_level = "high" end end
     return parsed
 end
+
 M.get_agent_names = function()
     local agents = M.load_agents()
     local names = {}
@@ -142,4 +185,5 @@ M._close = function()
         api.nvim_feedkeys("a", "n", true) 
     end
 end
+
 return M

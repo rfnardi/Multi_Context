@@ -10,6 +10,7 @@ end
 M.get_native_injectors = function()
     local ctx = require('multi_context.context_builders')
     return {
+        { name = "current_buffer", description = "Código do buffer/arquivo ativo", execute = ctx.get_current_buffer },
         { name = "buffers", description = "Código de todos os buffers abertos", execute = ctx.get_all_buffers_content },
         { name = "git_diff", description = "Alterações não commitadas", execute = ctx.get_git_diff },
         { name = "tree", description = "Árvore do diretório atual", execute = ctx.get_tree_context },
@@ -33,7 +34,6 @@ M.get_custom_injectors = function()
                     end
                 end
             elseif vim.fn.executable(file) == 1 then
-                -- POLYGLOT INJECTOR
                 local name = vim.fn.fnamemodify(file, ":t:r")
                 table.insert(custom, {
                     name = name,
@@ -110,7 +110,6 @@ end
 M._keymaps = function()
     if not M.selector_buf or not api.nvim_buf_is_valid(M.selector_buf) then return end
     
-    -- Autocmd para atualizar a busca ao digitar
     api.nvim_create_autocmd("TextChangedI", {
         buffer = M.selector_buf,
         callback = function()
@@ -156,20 +155,16 @@ M._select = function()
         local row, col = unpack(api.nvim_win_get_cursor(0))
         local line = api.nvim_get_current_line()
         
-        -- Removemos a barra \ do trigger na linha original
         local prefix = string.sub(line, 1, col + 1)
         local suffix = string.sub(line, col + 2)
         if prefix:sub(-1) == "\\" then prefix = prefix:sub(1, -2) end
         
         api.nvim_set_current_line(prefix .. suffix)
         
-        -- INJEÇÃO INTELIGENTE (NA LINHA ABAIXO)
         api.nvim_buf_set_lines(api.nvim_win_get_buf(M.parent_win), row, row, false, content_lines)
         
-        -- Posiciona o cursor no final do conteúdo recém injetado
         api.nvim_win_set_cursor(0, {row + #content_lines, #(content_lines[#content_lines])})
         
-        -- Volta pro Insert Mode
         api.nvim_feedkeys("a", "n", true)
     end
 end

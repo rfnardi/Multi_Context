@@ -1,4 +1,3 @@
--- lua/multi_context/config.lua
 local M = {}
 
 M.defaults = {
@@ -26,7 +25,6 @@ M.defaults = {
 M.options = vim.deepcopy(M.defaults)
 
 M.bootstrap = function()
-    -- 1. Cria chaves padrão se não existir
     if vim.fn.filereadable(M.options.api_keys_path) == 0 then
         local default_keys = {
             openai = "sk-...",
@@ -41,7 +39,6 @@ M.bootstrap = function()
         end
     end
 
-    -- 2. Cria config de provedores padrão se não existir
     if vim.fn.filereadable(M.options.config_path) == 0 then
         local default_apis = {
             default_api = "openai",
@@ -56,7 +53,10 @@ M.bootstrap = function()
                         ["Content-Type"] = "application/json",
                         Authorization = "Bearer {API_KEY}"
                     },
-                    num_tries = 3,["include_in_fall-back_mode"] = true
+                    num_tries = 3,
+                    ["include_in_fall-back_mode"] = true,
+                    allow_spawn = true,
+                    abstraction_level = "high"
                 }
             }
         }
@@ -76,7 +76,6 @@ function M.setup(user_opts)
     if M.options.config_path then M.options.config_path = vim.fn.expand(M.options.config_path) end
     if M.options.api_keys_path then M.options.api_keys_path = vim.fn.expand(M.options.api_keys_path) end
     
-    -- 3. MIGRAÇÃO DE AGENTES (Personas -> Skills)
     local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
     if vim.fn.filereadable(agents_file) == 1 then
         local lines = vim.fn.readfile(agents_file)
@@ -98,7 +97,6 @@ function M.setup(user_opts)
         end
     end
 
-    -- Chama a auto-configuração no start do plugin
     M.bootstrap()
     local disk_cfg = M.load_api_config()
     if disk_cfg then
@@ -114,7 +112,7 @@ M.load_api_config = function()
     if not f then return nil end
     local content = f:read('*a'); f:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
-        if ok and parsed and parsed.apis then
+    if ok and parsed and parsed.apis then
         for _, api in ipairs(parsed.apis) do
             if not api.abstraction_level then
                 api.abstraction_level = "medium"
@@ -122,7 +120,6 @@ M.load_api_config = function()
         end
     end
     return ok and parsed or nil
-
 end
 
 M.load_api_keys = function()
@@ -175,9 +172,3 @@ M.get_spawn_apis = function()
 end
 
 return M
-
-
-
-
-
-

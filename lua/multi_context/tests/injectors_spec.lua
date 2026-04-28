@@ -33,12 +33,10 @@ describe("Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement", function()
         injectors.api_list = {"teste_injetor", "outro_comando"}
         injectors.filtered_list = {"teste_injetor", "outro_comando"}
         
-        -- Busca "out"
         injectors._update_filter("out")
         assert.are.same(1, #injectors.filtered_list)
         assert.are.same("outro_comando", injectors.filtered_list[1])
         
-        -- Busca com typo parcial "tst" (t-s-t deve dar match em teste_injetor)
         injectors._update_filter("tst")
         assert.are.same(1, #injectors.filtered_list)
         assert.are.same("teste_injetor", injectors.filtered_list[1])
@@ -55,10 +53,7 @@ describe("Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement", function()
         injectors._select()
         
         local final_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-        
-        -- A primeira linha mantém o prompt intacto (removendo apenas o '\' que acionou)
         assert.are.same("Meu prompt inicial: ", final_lines[1])
-        -- O conteudo cai na linha de baixo
         assert.are.same("TEXTO_INJETADO", final_lines[2])
     end)
 end)
@@ -70,6 +65,15 @@ describe("Testes Restaurados da Fase 28 - Integridade de Extensoes", function()
         local list = injectors.get_all_injectors()
         assert.is_not_nil(list["buffers"], "A lista deve conter injetores nativos (ex: buffers)")
         assert.is_not_nil(list["git_diff"], "A lista deve conter injetores nativos (ex: git_diff)")
+    end)
+
+    it("Deve disponibilizar o novo injetor 'current_buffer' nativamente", function()
+        local native = injectors.get_native_injectors()
+        local found = false
+        for _, inj in ipairs(native) do
+            if inj.name == "current_buffer" then found = true end
+        end
+        assert.is_true(found, "O injetor current_buffer deve estar registrado")
     end)
 
     it("Deve carregar um injetor customizado valido a partir do diretorio local", function()

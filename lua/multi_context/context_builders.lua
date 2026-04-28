@@ -56,7 +56,8 @@ end
 M.get_all_buffers_content = function()
     local result = {}
     for _, bufnr in ipairs(api.nvim_list_bufs()) do
-        if api.nvim_buf_is_loaded(bufnr) then
+        -- Proteção: Ignorar o buffer do próprio chat para evitar recursão
+        if api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype ~= 'multicontext_chat' then
             local name = api.nvim_buf_get_name(bufnr)
             local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
             if #lines > 0 and name ~= "" then
@@ -73,16 +74,37 @@ end
 
 M.get_current_buffer = function()
     local buf = api.nvim_get_current_buf()
+    
+    -- Se quem invocou isso foi o Injetor por dentro do chat, nós pegamos o buffer de código subjacente!
+    if vim.bo[buf].filetype == 'multicontext_chat' then
+        local pcall_ok, popup = pcall(require, 'multi_context.ui.popup')
+        if pcall_ok and popup.code_buf_before_popup and api.nvim_buf_is_valid(popup.code_buf_before_popup) then
+            buf = popup.code_buf_before_popup
+        end
+    end
+    
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
     local numbered = {}
     for i, l in ipairs(lines) do 
         table.insert(numbered, string.format("%d | %s", i, l)) 
     end
-    return "=== BUFFER ATUAL ===\n" .. table.concat(numbered, "\n")
+    
+    local name = vim.fn.fnamemodify(api.nvim_buf_get_name(buf), ":t")
+    if name == "" then name = "Buffer_Sem_Nome" end
+    
+    return "=== BUFFER: " .. name .. " ===\n" .. table.concat(numbered, "\n")
 end
 
 M.get_visual_selection = function(line1, line2)
     local buf = api.nvim_get_current_buf()
+    
+    if vim.bo[buf].filetype == 'multicontext_chat' then
+        local pcall_ok, popup = pcall(require, 'multi_context.ui.popup')
+        if pcall_ok and popup.code_buf_before_popup and api.nvim_buf_is_valid(popup.code_buf_before_popup) then
+            buf = popup.code_buf_before_popup
+        end
+    end
+    
     local s = tonumber(line1) or vim.fn.getpos("'<")[2]
     local e = tonumber(line2) or vim.fn.getpos("'>")[2]
     if s > e then s, e = e, s end
@@ -128,9 +150,3 @@ M.get_repo_context = function()
 end
 
 return M
-
-
-
-
-
-

@@ -117,7 +117,7 @@ M.get_footer_hint = function(action)
     if t == "edit_skill" or t == "edit_injector" or t == "edit_squad" or t == "edit_vault" then 
         return i18n.t("cc_hint_edit_src") 
     end
-    if t == "create_agent" or t == "create_skill" or t == "create_injector" or t == "load_history" or t == "edit_agent_prompt" or t == "delete_agent" then 
+    if t == "create_agent" or t == "create_skill" or t == "create_injector" or t == "create_squad" or t == "load_history" or t == "edit_agent_prompt" or t == "delete_agent" then 
         return i18n.t("cc_hint_cr") 
     end
     return i18n.t("cc_hint_default")
@@ -153,7 +153,7 @@ M.render = function()
     local lines = {}
     local w = 62
 
-    add_line(lines, "  MultiContext AI 🤖[v1.0]", nil)
+    -- Removido o titulo nativo daqui pois passou para a borda da janela
     add_line(lines, "", nil)
 
     for s_idx, sec in ipairs(M.state.sections) do
@@ -266,6 +266,7 @@ M.render = function()
                         end
                     end
                 end
+                add_line(lines, i18n.t("cc_create_squad"), { type = "create_squad" })
             elseif sec.id == "appearance" then
                 local app = M.state.appearance
                 add_line(lines, format_row(i18n.t("cc_app_width"), tostring(app.width), w), { type = "app_width" })
@@ -411,6 +412,22 @@ M.handle_cr = function()
                 }
                 M.save_config()
                 vim.notify(i18n.t("cc_create_agent_notify", input), vim.log.levels.INFO)
+                M.update_buffer()
+            end
+        end)
+    elseif action.type == "create_squad" then
+        vim.ui.input({ prompt = i18n.t("cc_create_squad_pmpt") }, function(input)
+            if not input or input == "" then return end
+            if not M.state.squads[input] then
+                M.state.squads[input] = {
+                    description = "Novo esquadrão / New squad",
+                    tasks = {
+                        { agent = "tech_lead", instruction = "Instrução inicial", chain = {"coder"} }
+                    }
+                }
+                local squads_file = vim.fn.stdpath("config") .. "/mctx_squads.json"
+                vim.fn.writefile({vim.fn.json_encode(M.state.squads)}, squads_file)
+                vim.notify(i18n.t("cc_squad_created", input), vim.log.levels.INFO)
                 M.update_buffer()
             end
         end)
@@ -575,11 +592,21 @@ M.open_panel = function()
     api.nvim_buf_set_name(M.buf, "MultiContext_Controls")
     
     local w, h = 72, 25
-    M.win = api.nvim_open_win(M.buf, true, {
+    
+    -- O TÍTULO AGORA VAI AQUI, NA BORDA DA JANELA
+    local win_opts = {
         relative = 'editor', width = w, height = h,
         row = math.floor((vim.o.lines - h) / 2), col = math.floor((vim.o.columns - w) / 2),
         border = 'rounded', style = 'minimal'
-    })
+    }
+    
+    -- title e title_pos dependem do Neovim 0.9+. 
+    if vim.fn.has("nvim-0.9") == 1 then
+        win_opts.title = " MultiContext AI 🤖[v1.3] "
+        win_opts.title_pos = "center"
+    end
+    
+    M.win = api.nvim_open_win(M.buf, true, win_opts)
     
     vim.wo[M.win].cursorline = true; vim.wo[M.win].wrap = false; vim.wo[M.win].number = true; vim.wo[M.win].relativenumber = true
     M.update_buffer()
