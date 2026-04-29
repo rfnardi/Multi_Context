@@ -9,6 +9,14 @@ M.parse_user_input = function(raw_text, agents_table)
         is_autonomous = false
     }
     
+    local react_loop = require('multi_context.react_loop')
+    if react_loop.state.is_moa_mode then
+        parsed.agent_name = "tech_lead"
+        parsed.text_to_send = "O usuário solicitou uma orquestração semântica (Modo MOA). Analise a demanda abaixo e use a ferramenta spawn_swarm para instanciar e coordenar os agentes mencionados para que resolvam o problema:\n\n" .. parsed.text_to_send
+        parsed.is_autonomous = true
+        return parsed
+    end
+
     local ok_sq, squads_manager = pcall(require, 'multi_context.squads')
     local squads = ok_sq and squads_manager.load_squads() or {}
     

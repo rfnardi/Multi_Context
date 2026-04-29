@@ -315,3 +315,27 @@ describe("Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e 
         vim.api.nvim_win_get_cursor = orig_cursor
     end)
 end)
+
+describe("Fase 34 - Sincronização de Memória do Watchdog (Bug 1)", function()
+    before_each(function()
+        isolate_environment()
+        package.loaded["multi_context.context_controls"] = nil
+        controls = require("multi_context.context_controls")
+        controls.reset_state()
+        controls.init_state()
+    end)
+    after_each(restore_environment)
+
+    it("Deve espelhar o limite do watchdog em memória (config.options) ao salvar o painel", function()
+        -- 1. Mudamos no UI state (Simulando interação do usuário)
+        controls.state.horizon = 150000
+        controls.state.watchdog.mode = "auto"
+        
+        -- 2. Acionamos o salvamento (Aperta <CR> no painel)
+        controls.save_config()
+        
+        -- 3. As opções em RAM do motor principal devem refletir a mudança
+        assert.are.same(150000, config.options.cognitive_horizon, "A memória global (config.options.cognitive_horizon) não foi atualizada!")
+        assert.are.same("auto", config.options.watchdog.mode, "A memória global (config.options.watchdog.mode) não foi atualizada!")
+    end)
+end)

@@ -9,7 +9,7 @@ In its **V1.3** release, it features an advanced **Swarm Architecture** (Mixture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **123 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **127 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises).
 - **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -68,6 +68,9 @@ lua/multi_context/
 - **Dynamic Entity Factory**: Instant creation of new Skills, Injectors, and Personas via `[ + ]` buttons in the virtual DOM, generating boilerplate code and opening the buffer immediately.
 
 ### 3. Advanced Swarm Architecture (MoA, Pipelines, and Choreography)
+- **On-the-Fly Choreography (Global Flags)**: Instantly define execution flows directly in your prompt without pre-configuring JSONs:
+  - **`--queue`**: Transforms your prompt into an automated Assembly Line. When one agent finishes, the next is automatically invoked without waiting for manual checkpoints.
+  - **`--moa`**: Triggers a Semantic Swarm. It groups all mentioned agents and delegates the entire block to the `@tech_lead`, who autonomously reads the intent, generates the `spawn_swarm` JSON, and orchestrates the agents in parallel or pipelines.
 - **Tech Lead Delegation**: Deep orchestration via the `spawn_swarm` JSON payload.
 - **Dynamic Cognitive Routing (MoA)**: The visual panel allows users to define API **Cognitive Abstraction Levels** (`low/medium/high`). The system automatically checks compatibility between an API's cognitive capacity and an agent's demand, routing tasks to the most suitable idle worker (Directional Fallback/Starvation Prevention).
 - **Pipelines and Choreography**: Task reincarnation in execution chains and injection of the `switch_agent` request, allowing an agent to yield control and reconfigure the *in-flight* persona without breaking the async loop.
@@ -125,4 +128,4 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
 - Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
 - Local Git automation via DevOps Agent with atomic security locks.
-- **Plenary Test Coverage:** 123 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 127 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).

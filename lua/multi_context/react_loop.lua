@@ -9,6 +9,8 @@ M.state = {
     last_backup = nil,
     active_job_id = nil,
     user_aborted = false,
+    is_queue_mode = false,
+    is_moa_mode = false,
 }
 
 M.reset_turn = function()
@@ -16,6 +18,7 @@ M.reset_turn = function()
     M.state.auto_loop_count = 0
     M.state.active_job_id = nil
     M.state.user_aborted = false
+    M.state.is_moa_mode = false
 end
 
 M.check_circuit_breaker = function()

@@ -573,6 +573,11 @@ M.save_config = function()
     config.options.master_prompt = M.state.master_prompt
     config.options.debug_mode = M.state.debug_mode
     
+    -- FIX BUG 1: Sincronização do Watchdog com a memória RAM
+    config.options.watchdog = vim.deepcopy(M.state.watchdog)
+    config.options.cognitive_horizon = M.state.horizon
+    config.options.user_tolerance = M.state.tolerance
+    
     local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
     local raw_json = vim.fn.json_encode(M.state.agents)
     vim.fn.writefile({raw_json}, agents_file)

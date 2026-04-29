@@ -120,10 +120,18 @@ M.TerminateTurn = function()
     
     local next_prompt_lines = { "", "## API atual: " .. current_api, user_prefix .. " " }
     
+    local auto_trigger_queue = false
     if react_loop.state.queued_tasks and react_loop.state.queued_tasks ~= "" then
-        table.insert(next_prompt_lines, require("multi_context.i18n").t("checkpoint"))
-        for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
+        if react_loop.state.is_queue_mode then
+            auto_trigger_queue = true
+            for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
+        else
+            table.insert(next_prompt_lines, require("multi_context.i18n").t("checkpoint"))
+            for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
+        end
         react_loop.state.queued_tasks = nil
+    else
+        react_loop.state.is_queue_mode = false
     end
     
     vim.api.nvim_buf_set_lines(buf, -1, -1, false, next_prompt_lines)
@@ -134,6 +142,11 @@ M.TerminateTurn = function()
     if p.popup_win and vim.api.nvim_win_is_valid(p.popup_win) then
         pcall(vim.api.nvim_win_set_cursor, p.popup_win, { vim.api.nvim_buf_line_count(buf), 0 })
         vim.cmd("normal! zz"); vim.cmd("startinsert!")
+    end
+
+    if auto_trigger_queue then
+        vim.cmd("stopinsert")
+        vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
     end
 end
 
@@ -160,11 +173,24 @@ function M.SendFromPopup()
     local agents = require('multi_context.agents').load_agents()
     local current_task_lines = {}; local queued_tasks_lines = {}; local found_agent_count = 0
 
+    local raw_full_text = table.concat(lines, "\n")
+    if raw_full_text:match("%-%-queue") then react_loop.state.is_queue_mode = true end
+    if raw_full_text:match("%-%-moa") then react_loop.state.is_moa_mode = true end
+
+    for i, line in ipairs(lines) do
+        lines[i] = line:gsub("%s*%-%-queue", ""):gsub("%s*%-%-moa", "")
+    end
+
     for _, line in ipairs(lines) do
         if not line:match("^> %[Checkpoint%]") then
             local possible_agent = line:match("@([%w_]+)")
             if possible_agent and agents[possible_agent] then found_agent_count = found_agent_count + 1 end
-            if found_agent_count <= 1 then table.insert(current_task_lines, line) else table.insert(queued_tasks_lines, line) end
+            
+            if react_loop.state.is_moa_mode then
+                table.insert(current_task_lines, line)
+            else
+                if found_agent_count <= 1 then table.insert(current_task_lines, line) else table.insert(queued_tasks_lines, line) end
+            end
         end
     end
 
