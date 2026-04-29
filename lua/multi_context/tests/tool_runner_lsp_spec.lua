@@ -1,5 +1,5 @@
-local tool_runner = require('multi_context.tool_runner')
-local lsp_utils = require('multi_context.lsp_utils')
+local tool_runner = require('multi_context.ecosystem.tool_runner')
+local lsp_utils = require('multi_context.ecosystem.lsp_utils')
 
 describe("Fase 30 - Passo 3: Roteamento de Ferramentas LSP no Runner", function()
     local orig_get_def

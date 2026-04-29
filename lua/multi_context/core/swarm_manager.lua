@@ -1,10 +1,10 @@
 local config = require('multi_context.config')
-local api_client = require('multi_context.api_client')
+local api_client = require('multi_context.llm.api_client')
 local popup = require('multi_context.ui.popup')
-local tools = require('multi_context.tools')
+local tools = require('multi_context.ecosystem.tools')
 local agents = require('multi_context.agents')
-local tool_parser = require('multi_context.tool_parser')
-local tool_runner = require('multi_context.tool_runner')
+local tool_parser = require('multi_context.ecosystem.tool_parser')
+local tool_runner = require('multi_context.ecosystem.tool_runner')
 local i18n = require('multi_context.i18n')
 
 local M = {}

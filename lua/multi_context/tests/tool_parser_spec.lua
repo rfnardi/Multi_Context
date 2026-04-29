@@ -1,5 +1,5 @@
 -- lua/multi_context/tests/tool_parser_spec.lua
-local tool_parser = require('multi_context.tool_parser')
+local tool_parser = require('multi_context.ecosystem.tool_parser')
 
 describe("Tool Parser Module:", function()
     it("Deve sanitizar tags de fechamento corrompidas", function()
@@ -40,7 +40,7 @@ end)
 
 
 describe("Fase 30 - Passo 3: Parser de Novas Ferramentas LSP", function()
-    local tool_parser = require('multi_context.tool_parser')
+    local tool_parser = require('multi_context.ecosystem.tool_parser')
 
     it("Deve extrair os parametros da ferramenta lsp_definition (inclusive line)", function()
         local payload = '<tool_call name="lsp_definition" path="meu_arquivo.lua" line="10">\ncalcular\n</tool_call>'

@@ -1,5 +1,5 @@
-local utils = require('multi_context.utils')
-local swarm = require('multi_context.swarm_manager')
+local utils = require('multi_context.utils.utils')
+local swarm = require('multi_context.core.swarm_manager')
 local popup = require('multi_context.ui.popup')
 
 describe("Fase 18.5 - Session & State Management:", function()
@@ -50,7 +50,7 @@ end)
 
     it("Deve orquestrar o load pelo comando ToggleWorkspaceView (init.lua)", function()
         local init = require('multi_context.init')
-        local utils = require('multi_context.utils')
+        local utils = require('multi_context.utils.utils')
         
         -- Configura um buffer simulando um arquivo aberto em disco
         local buf = vim.api.nvim_create_buf(true, false)

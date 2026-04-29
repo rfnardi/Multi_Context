@@ -1,4 +1,4 @@
-local utils = require('multi_context.utils')
+local utils = require('multi_context.utils.utils')
 
 describe("Utils Module:", function()
     it("Deve dividir strings por quebra de linha corretamente", function()

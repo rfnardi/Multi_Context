@@ -63,27 +63,27 @@ function M.create_popup(initial_content_or_bufnr)
     vim.bo[buf].filetype  = 'multicontext_chat'
 
     local km = { noremap = true, silent = true }
-    api.nvim_buf_set_keymap(buf, "n", "<CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "<C-CR>", "<Esc><Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "n", "<C-CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "<S-CR>", "<Esc><Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "n", "<S-CR>", "<Cmd>lua require('multi_context').SendFromPopup()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "n", "<A-b>", "<Cmd>lua require('multi_context.utils').copy_code_block()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "<A-b>", "<Esc><Cmd>lua require('multi_context.utils').copy_code_block()<CR>a", km)
+    api.nvim_buf_set_keymap(buf, "n", "<CR>", "<Cmd>lua require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = vim.api.nvim_get_current_buf() })<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<C-CR>", "<Esc><Cmd>lua require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = vim.api.nvim_get_current_buf() })<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<C-CR>", "<Cmd>lua require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = vim.api.nvim_get_current_buf() })<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<S-CR>", "<Esc><Cmd>lua require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = vim.api.nvim_get_current_buf() })<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<S-CR>", "<Cmd>lua require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = vim.api.nvim_get_current_buf() })<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<A-b>", "<Cmd>lua require('multi_context.utils.utils').copy_code_block()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<A-b>", "<Esc><Cmd>lua require('multi_context.utils.utils').copy_code_block()<CR>a", km)
     api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(1)<CR>", km)
     api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(-1)<CR>", km)
     
-    api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
-    api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.react_loop').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.core.react_orchestrator').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.core.react_orchestrator').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.core.react_orchestrator').abort_stream(true)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.core.react_orchestrator').abort_stream(true)<CR>", km)
 
     api.nvim_buf_set_keymap(buf, "i", "@", "@<Esc><Cmd>lua require('multi_context.agents').open_agent_selector()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "\\", "\\<Esc><Cmd>lua require('multi_context.injectors').open_selector()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "\\", "\\<Esc><Cmd>lua require('multi_context.ecosystem.injectors').open_selector()<CR>", km)
 
-    api.nvim_buf_set_keymap(buf, "n", "<A-x>", "<Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
-    api.nvim_buf_set_keymap(buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<A-x>", "<Cmd>lua require('multi_context.core.react_orchestrator').ExecuteTools(nil, vim.api.nvim_get_current_buf())<CR>", km)
+    api.nvim_buf_set_keymap(buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context.core.react_orchestrator').ExecuteTools(nil, vim.api.nvim_get_current_buf())<CR>", km)
 
     local app = config.options.appearance or {}
     local width  = math.ceil(vim.o.columns * (tonumber(app.width) or 0.8))
@@ -216,7 +216,7 @@ function M.update_title()
     
     local ok, conf = pcall(vim.api.nvim_win_get_config, M.popup_win)
     if ok and conf.relative and conf.relative ~= "" then
-        local utils = require('multi_context.utils')
+        local utils = require('multi_context.utils.utils')
         
         local active_buf = M.popup_buf
         if M.swarm_buffers and #M.swarm_buffers > 0 and M.current_swarm_index then

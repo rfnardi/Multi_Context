@@ -16,7 +16,7 @@ end
 
 M.execute = function(messages, on_start, on_chunk, on_done, on_error, force_api_cfg)
     local config = require('multi_context.config')
-    local api_handlers = require('multi_context.api_handlers')
+    local api_handlers = require('multi_context.llm.api_handlers')
 
     local cfg = config.load_api_config()
     if not cfg then on_error("Configuração de APIs não encontrada."); return end

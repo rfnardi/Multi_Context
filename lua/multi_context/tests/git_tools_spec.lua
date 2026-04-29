@@ -1,4 +1,4 @@
-local tools = require('multi_context.tools')
+local tools = require('multi_context.ecosystem.tools')
 
 describe("Fase 31 - Passo 1: Automação Git (Agente DevOps)", function()
     local orig_system
@@ -77,9 +77,9 @@ end)
 
 describe("Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML", function()
     local agents = require('multi_context.agents')
-    local tool_runner = require('multi_context.tool_runner')
-    local swarm = require('multi_context.swarm_manager')
-    local api_client = require('multi_context.api_client')
+    local tool_runner = require('multi_context.ecosystem.tool_runner')
+    local swarm = require('multi_context.core.swarm_manager')
+    local api_client = require('multi_context.llm.api_client')
 
     it("Deve existir a persona @devops com ferramentas Git", function()
         local loaded = agents.load_agents()

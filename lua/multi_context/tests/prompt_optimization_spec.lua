@@ -1,5 +1,5 @@
 local registry = require('multi_context.skills.registry')
-local prompt_parser = require('multi_context.prompt_parser')
+local prompt_parser = require('multi_context.llm.prompt_parser')
 
 describe("Fase 24 - Otimização de System Prompt (Token Saving):", function()
     local orig_get_doc

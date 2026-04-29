@@ -1,4 +1,4 @@
-local memory_tracker = require('multi_context.memory_tracker')
+local memory_tracker = require('multi_context.utils.memory_tracker')
 
 describe("Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações):", function()
     before_each(function()

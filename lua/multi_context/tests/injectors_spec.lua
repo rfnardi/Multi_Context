@@ -1,4 +1,4 @@
-local injectors = require('multi_context.injectors')
+local injectors = require('multi_context.ecosystem.injectors')
 local popup = require('multi_context.ui.popup')
 
 describe("Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement", function()
@@ -59,7 +59,7 @@ describe("Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement", function()
 end)
 
 describe("Testes Restaurados da Fase 28 - Integridade de Extensoes", function()
-    local injectors = require('multi_context.injectors')
+    local injectors = require('multi_context.ecosystem.injectors')
     
     it("Deve carregar a lista combinada de injetores nativos e custom", function()
         local list = injectors.get_all_injectors()

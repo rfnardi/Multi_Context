@@ -1,4 +1,4 @@
-local skills = require('multi_context.skills_manager')
+local skills = require('multi_context.ecosystem.skills_manager')
 
 describe("Fase 27 - Ecossistema da Comunidade (V1.0):", function()
     -- Usa o diretório root do projeto (assumindo que o Neovim abriu na raiz)

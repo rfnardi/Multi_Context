@@ -2,7 +2,7 @@ package.loaded['multi_context.skills.registry'] = {
     build_manual_for_skills = function(skills) return "=== SKILLS ===" end
 }
 
-local prompt_parser = require('multi_context.prompt_parser')
+local prompt_parser = require('multi_context.llm.prompt_parser')
 local config = require('multi_context.config')
 
 describe("Fase 25 - Passo 2: O System Agent @archivist", function()

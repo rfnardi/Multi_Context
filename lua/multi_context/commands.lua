@@ -6,7 +6,7 @@ local function open_with(content)
 end
 
 M.ContextChatHandler = function(line1, line2)
-    local ctx = require('multi_context.context_builders')
+    local ctx = require('multi_context.utils.context_builders')
     if line1 and line2 and tonumber(line1) ~= tonumber(line2) then
         open_with(ctx.get_visual_selection(line1, line2))
         return
@@ -24,27 +24,27 @@ end
 M.ContextChatFull = function() open_with("") end
 
 M.ContextChatFolder = function()
-    open_with(require('multi_context.context_builders').get_folder_context())
+    open_with(require('multi_context.utils.context_builders').get_folder_context())
 end
 
 M.ContextTree = function()
-    open_with(require('multi_context.context_builders').get_tree_context())
+    open_with(require('multi_context.utils.context_builders').get_tree_context())
 end
 
 M.ContextChatRepo = function()
-    open_with(require('multi_context.context_builders').get_repo_context())
+    open_with(require('multi_context.utils.context_builders').get_repo_context())
 end
 
 M.ContextChatGit = function()
-    open_with(require('multi_context.context_builders').get_git_diff())
+    open_with(require('multi_context.utils.context_builders').get_git_diff())
 end
 
 M.ContextControls = function()
-    require('multi_context.context_controls').open_panel()
+    require('multi_context.ui.context_controls').open_panel()
 end
 
 M.ContextBuffers  = function()
-    open_with(require('multi_context.context_builders').get_all_buffers_content())
+    open_with(require('multi_context.utils.context_builders').get_all_buffers_content())
 end
 
 M.TogglePopup = function()

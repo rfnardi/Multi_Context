@@ -1,4 +1,4 @@
-local skills = require('multi_context.skills_manager')
+local skills = require('multi_context.ecosystem.skills_manager')
 
 describe("Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python)", function()
     local test_dir = "/tmp/mctx_polyglot_test"

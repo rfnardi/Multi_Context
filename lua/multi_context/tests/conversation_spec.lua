@@ -1,4 +1,4 @@
-local conv = require('multi_context.conversation')
+local conv = require('multi_context.core.conversation')
 local config = require('multi_context.config')
 
 describe("Conversation Module:", function()

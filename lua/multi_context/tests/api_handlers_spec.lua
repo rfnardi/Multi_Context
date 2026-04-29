@@ -1,7 +1,7 @@
 -- lua/multi_context/tests/api_handlers_spec.lua
 -- transport.lua carrega normalmente em headless nvim.
 -- O único mock necessário é vim.fn.jobstart, chamado em runtime.
-local handlers = require('multi_context.api_handlers')
+local handlers = require('multi_context.llm.api_handlers')
 
 describe("API Handlers Module (Prompt Caching)", function()
     local original_jobstart

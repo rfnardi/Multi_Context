@@ -1,7 +1,7 @@
 -- lua/multi_context/tests/swarm_etapa4_spec.lua
-local swarm = require('multi_context.swarm_manager')
+local swarm = require('multi_context.core.swarm_manager')
 local popup = require('multi_context.ui.popup')
-local api_client = require('multi_context.api_client')
+local api_client = require('multi_context.llm.api_client')
 
 describe("Swarm Etapa 4 - Execucao Assincrona e Merge:", function()
     local original_create_buf, original_execute

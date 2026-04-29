@@ -1,6 +1,6 @@
 -- lua/multi_context/tests/swarm_etapa3_spec.lua
 local popup = require('multi_context.ui.popup')
-local api_client = require('multi_context.api_client')
+local api_client = require('multi_context.llm.api_client')
 
 describe("Swarm Etapa 3 - Manager e Fila:", function()
     local swarm
@@ -25,8 +25,8 @@ describe("Swarm Etapa 3 - Manager e Fila:", function()
         orig_api_execute = api_client.execute
         api_client.execute = function() end
 
-        package.loaded['multi_context.swarm_manager'] = nil
-        swarm = require('multi_context.swarm_manager')
+        package.loaded['multi_context.core.swarm_manager'] = nil
+        swarm = require('multi_context.core.swarm_manager')
         swarm.reset()
     end)
 

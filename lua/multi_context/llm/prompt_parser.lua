@@ -9,15 +9,15 @@ M.parse_user_input = function(raw_text, agents_table)
         is_autonomous = false
     }
     
-    local react_loop = require('multi_context.react_loop')
-    if react_loop.state.is_moa_mode then
+    local StateManager = require('multi_context.core.state_manager')
+    if StateManager.get('react').is_moa_mode then
         parsed.agent_name = "tech_lead"
         parsed.text_to_send = "O usuário solicitou uma orquestração semântica (Modo MOA). Analise a demanda abaixo e use a ferramenta spawn_swarm para instanciar e coordenar os agentes mencionados para que resolvam o problema:\n\n" .. parsed.text_to_send
         parsed.is_autonomous = true
         return parsed
     end
 
-    local ok_sq, squads_manager = pcall(require, 'multi_context.squads')
+    local ok_sq, squads_manager = pcall(require, 'multi_context.ecosystem.squads')
     local squads = ok_sq and squads_manager.load_squads() or {}
     
     local agent_match = parsed.text_to_send:match("@([%w_]+)")
@@ -92,7 +92,7 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         system_prompt = system_prompt .. active_agent_prompt
     end
 
-    local ok, skills_manager = pcall(require, 'multi_context.skills_manager')
+    local ok, skills_manager = pcall(require, 'multi_context.ecosystem.skills_manager')
     if ok and skills_manager and skills_manager.get_skills then
         local user_skills = skills_manager.get_skills()
         local has_user_skills = false

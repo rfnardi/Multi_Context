@@ -1,6 +1,6 @@
-local swarm = require('multi_context.swarm_manager')
+local swarm = require('multi_context.core.swarm_manager')
 local agents = require('multi_context.agents')
-local api_client = require('multi_context.api_client')
+local api_client = require('multi_context.llm.api_client')
 
 describe("Fase 20 - Passo 2 (Fallback Direcional):", function()
     local orig_load_agents

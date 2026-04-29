@@ -1,9 +1,10 @@
 local init = require('multi_context.init')
-local memory_tracker = require('multi_context.memory_tracker')
-local api_client = require('multi_context.api_client')
+local memory_tracker = require('multi_context.utils.memory_tracker')
+local api_client = require('multi_context.llm.api_client')
 local popup = require('multi_context.ui.popup')
 local config = require('multi_context.config')
-local react_loop = require('multi_context.react_loop')
+local StateManager = require('multi_context.core.state_manager')
+local react_orchestrator = require('multi_context.core.react_orchestrator')
 
 describe("Fase 25 - Passo 2: Alimentando a EMA", function()
     local orig_execute, orig_defer, buf
@@ -35,7 +36,7 @@ describe("Fase 25 - Passo 2: Alimentando a EMA", function()
 
     it("O Motor principal deve alimentar a memoria apos a IA finalizar a resposta", function()
         -- No disparo real, a resposta vai pra tela. O motor agora precisa medir o tamanho delta.
-        init.SendFromPopup()
+        require('multi_context.core.react_orchestrator').SendFromPopup()
         
         -- Pelo design, esperamos que a contagem (count) vá de 0 para 1.
         assert.are.same(1, memory_tracker.state.count, "O on_done do SendFromPopup deveria ter acionado memory_tracker.add_turn()")

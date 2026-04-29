@@ -36,7 +36,7 @@ M.build_workspace_content = function(buf, existing_filename)
     -- Limpa estado do swarm antigo e substitui
     content = content:gsub("<swarm_state>.-</swarm_state>s*", "")
     
-    local swarm = require('multi_context.swarm_manager')
+    local swarm = require('multi_context.core.swarm_manager')
     local popup = require('multi_context.ui.popup')
     
     local state_data = { queue = swarm.state.queue or {}, reports = swarm.state.reports or {}, buffers = {} }
@@ -78,7 +78,7 @@ M.load_workspace_state = function(buf)
     if swarm_state_str then
         local ok, parsed = pcall(vim.fn.json_decode, swarm_state_str)
         if ok and type(parsed) == "table" then
-            local swarm = require('multi_context.swarm_manager')
+            local swarm = require('multi_context.core.swarm_manager')
             local popup = require('multi_context.ui.popup')
             
             swarm.state.queue = parsed.queue or {}
@@ -150,9 +150,9 @@ M.export_to_workspace = function(content, existing_filename)
     
     local km = { noremap = true, silent = true }
     vim.api.nvim_buf_set_keymap(new_buf, "i", "@", "@<Esc><Cmd>lua require('multi_context.agents').open_agent_selector()<CR>", km)
-    api.nvim_buf_set_keymap(new_buf, "i", "\\", "\\<Esc><Cmd>lua require('multi_context.injectors').open_selector()<CR>", km)
-    vim.api.nvim_buf_set_keymap(new_buf, "n", "<A-x>", "<Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
-    vim.api.nvim_buf_set_keymap(new_buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context').ExecuteTools()<CR>", km)
+    api.nvim_buf_set_keymap(new_buf, "i", "\\", "\\<Esc><Cmd>lua require('multi_context.ecosystem.injectors').open_selector()<CR>", km)
+    vim.api.nvim_buf_set_keymap(new_buf, "n", "<A-x>", "<Cmd>lua require('multi_context.core.react_orchestrator').ExecuteTools(nil, vim.api.nvim_get_current_buf())<CR>", km)
+    vim.api.nvim_buf_set_keymap(new_buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context.core.react_orchestrator').ExecuteTools(nil, vim.api.nvim_get_current_buf())<CR>", km)
 
     return filename
 end
@@ -188,10 +188,10 @@ M.copy_code_block = function()
 end
 
 M.apply_highlights        = function(b) require('multi_context.ui.highlights').apply_chat(b) end
-M.get_git_diff            = function()  return require('multi_context.context_builders').get_git_diff() end
-M.get_tree_context        = function()  return require('multi_context.context_builders').get_tree_context() end
-M.get_all_buffers_content = function()  return require('multi_context.context_builders').get_all_buffers_content() end
-M.find_last_user_line     = function(b) return require('multi_context.conversation').find_last_user_line(b) end
+M.get_git_diff            = function()  return require('multi_context.utils.context_builders').get_git_diff() end
+M.get_tree_context        = function()  return require('multi_context.utils.context_builders').get_tree_context() end
+M.get_all_buffers_content = function()  return require('multi_context.utils.context_builders').get_all_buffers_content() end
+M.find_last_user_line     = function(b) return require('multi_context.core.conversation').find_last_user_line(b) end
 M.load_api_config         = function()  return require('multi_context.config').load_api_config() end
 M.load_api_keys           = function()  return require('multi_context.config').load_api_keys() end
 M.set_selected_api        = function(n) return require('multi_context.config').set_selected_api(n) end

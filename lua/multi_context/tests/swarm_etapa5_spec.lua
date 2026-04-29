@@ -1,6 +1,6 @@
-local swarm = require('multi_context.swarm_manager')
+local swarm = require('multi_context.core.swarm_manager')
 local popup = require('multi_context.ui.popup')
-local api_client = require('multi_context.api_client')
+local api_client = require('multi_context.llm.api_client')
 local config = require('multi_context.config')
 local agents = require('multi_context.agents')
 

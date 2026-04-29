@@ -1,4 +1,4 @@
-local ctx = require('multi_context.context_builders')
+local ctx = require('multi_context.utils.context_builders')
 
 describe("Context Builders Module:", function()
     it("Deve extrair o contexto do buffer atual corretamente", function()

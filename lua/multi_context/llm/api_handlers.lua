@@ -1,6 +1,6 @@
 -- lua/multi_context/api_handlers.lua
 local M = {}
-local transport = require('multi_context.transport')
+local transport = require('multi_context.llm.transport')
 
 M.gemini = {
     make_request = function(api_config, messages, api_keys, _, callback)

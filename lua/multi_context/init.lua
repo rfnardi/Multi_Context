@@ -1,13 +1,12 @@
 local api = vim.api
-local utils = require('multi_context.utils')
+local utils = require('multi_context.utils.utils')
 local popup = require('multi_context.ui.popup')
 local commands = require('multi_context.commands')
 local config = require('multi_context.config')
 
-local tool_parser = require('multi_context.tool_parser')
-local tool_runner = require('multi_context.tool_runner')
-local react_loop = require('multi_context.react_loop')
-local prompt_parser = require('multi_context.prompt_parser')
+local tool_parser = require('multi_context.ecosystem.tool_parser')
+local tool_runner = require('multi_context.ecosystem.tool_runner')
+local prompt_parser = require('multi_context.llm.prompt_parser')
 local scroller = require('multi_context.ui.scroller')
 
 local M = {}
@@ -15,7 +14,10 @@ M.popup_buf = popup.popup_buf
 M.popup_win = popup.popup_win
 M.current_workspace_file = nil
 
-M.setup = function(opts) if config and config.setup then config.setup(opts) end end
+M.setup = function(opts)
+    if config and config.setup then config.setup(opts) end
+    require('multi_context.core.react_orchestrator').setup()
+end
 
 M.OnSwarmComplete = function(summary)
     local p = require('multi_context.ui.popup')
@@ -51,7 +53,7 @@ M.OnSwarmComplete = function(summary)
         vim.cmd("normal! zz")
     end
 
-    vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
+    vim.defer_fn(function() require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = buf }) end, 100)
 end
 
 M.ContextChatFull = commands.ContextChatFull
@@ -70,8 +72,8 @@ M.ContextUndo = function()
     local p = require('multi_context.ui.popup')
     local buf = p.popup_buf
     if not buf or not api.nvim_buf_is_valid(buf) then buf = api.nvim_get_current_buf() end
-    if react_loop.state.last_backup then
-        api.nvim_buf_set_lines(buf, 0, -1, false, react_loop.state.last_backup)
+    if require('multi_context.core.state_manager').get('react').last_backup then
+        api.nvim_buf_set_lines(buf, 0, -1, false, require('multi_context.core.state_manager').get('react').last_backup)
         require('multi_context.ui.highlights').apply_chat(buf)
         p.create_folds(buf)
         p.update_title()
@@ -109,7 +111,7 @@ popup.create_popup = function(initial_content)
 end
 
 M.TerminateTurn = function()
-    react_loop.reset_turn()
+    react_orchestrator.reset_turn()
     local p = require('multi_context.ui.popup')
     local buf = p.popup_buf
     if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
@@ -121,17 +123,17 @@ M.TerminateTurn = function()
     local next_prompt_lines = { "", "## API atual: " .. current_api, user_prefix .. " " }
     
     local auto_trigger_queue = false
-    if react_loop.state.queued_tasks and react_loop.state.queued_tasks ~= "" then
-        if react_loop.state.is_queue_mode then
+    if StateManager.get('react').queued_tasks and StateManager.get('react').queued_tasks ~= "" then
+        if StateManager.get('react').is_queue_mode then
             auto_trigger_queue = true
-            for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
+            for _, q_line in ipairs(vim.split(StateManager.get('react').queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
         else
             table.insert(next_prompt_lines, require("multi_context.i18n").t("checkpoint"))
-            for _, q_line in ipairs(vim.split(react_loop.state.queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
+            for _, q_line in ipairs(vim.split(StateManager.get('react').queued_tasks, "\n")) do table.insert(next_prompt_lines, q_line) end
         end
-        react_loop.state.queued_tasks = nil
+        StateManager.get('react').queued_tasks = nil
     else
-        react_loop.state.is_queue_mode = false
+        StateManager.get('react').is_queue_mode = false
     end
     
     vim.api.nvim_buf_set_lines(buf, -1, -1, false, next_prompt_lines)
@@ -146,7 +148,7 @@ M.TerminateTurn = function()
 
     if auto_trigger_queue then
         vim.cmd("stopinsert")
-        vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
+        vim.defer_fn(function() require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = buf }) end, 100)
     end
 end
 
@@ -158,175 +160,6 @@ local function get_context_md_content()
     return nil
 end
 
-function M.SendFromPopup()
-    pcall(function() require('multi_context.skills_manager').load_skills() end)
-    if not popup.popup_buf or not api.nvim_buf_is_valid(popup.popup_buf) then return end
-    local buf = popup.popup_buf
-    local start_idx, _ = utils.find_last_user_line(buf)
-    if not start_idx then return end
-
-    local cfg = require('multi_context.config')
-    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
-    local lines = api.nvim_buf_get_lines(buf, start_idx, -1, false)
-    if lines[1] then lines[1] = lines[1]:gsub("^" .. user_prefix .. "%s*", "") end
-
-    local agents = require('multi_context.agents').load_agents()
-    local current_task_lines = {}; local queued_tasks_lines = {}; local found_agent_count = 0
-
-    local raw_full_text = table.concat(lines, "\n")
-    if raw_full_text:match("%-%-queue") then react_loop.state.is_queue_mode = true end
-    if raw_full_text:match("%-%-moa") then react_loop.state.is_moa_mode = true end
-
-    for i, line in ipairs(lines) do
-        lines[i] = line:gsub("%s*%-%-queue", ""):gsub("%s*%-%-moa", "")
-    end
-
-    for _, line in ipairs(lines) do
-        if not line:match("^> %[Checkpoint%]") then
-            local possible_agent = line:match("@([%w_]+)")
-            if possible_agent and agents[possible_agent] then found_agent_count = found_agent_count + 1 end
-            
-            if react_loop.state.is_moa_mode then
-                table.insert(current_task_lines, line)
-            else
-                if found_agent_count <= 1 then table.insert(current_task_lines, line) else table.insert(queued_tasks_lines, line) end
-            end
-        end
-    end
-
-    local raw_user_text = table.concat(current_task_lines, "\n"):gsub("^%s*", ""):gsub("%s*$", "")
-    if #queued_tasks_lines > 0 then react_loop.state.queued_tasks = table.concat(queued_tasks_lines, "\n") end
-    if raw_user_text == "" then vim.notify(require("multi_context.i18n").t("type_something"), vim.log.levels.WARN); return end
-
-    local parsed_intent = prompt_parser.parse_user_input(raw_user_text, agents)
-    
-    if parsed_intent.agent_name then
-        if parsed_intent.agent_name == "reset" then react_loop.state.active_agent = nil
-        else react_loop.state.active_agent = parsed_intent.agent_name end
-    end
-    if parsed_intent.is_autonomous then react_loop.state.is_autonomous = true end
-
-    local text_to_send = parsed_intent.text_to_send
-    local active_agent_name = react_loop.state.active_agent
-
-    local mem_tracker = require('multi_context.memory_tracker')
-    local current_tokens = utils.estimate_tokens(buf)
-    local prompt_tokens = math.floor(#text_to_send / 4)
-    local predicted_total = mem_tracker.predict_next_total(current_tokens, prompt_tokens)
-    local horizon = (cfg.options.cognitive_horizon or 4000) * (cfg.options.user_tolerance or 1.0)
-
-    if predicted_total > horizon and active_agent_name ~= "archivist" then
-        react_loop.state.pending_user_prompt = text_to_send
-        react_loop.state.active_agent = "archivist"
-        active_agent_name = "archivist"
-        text_to_send = require("multi_context.i18n").t("archivist_sys_prompt")
-        
-        local msg = require("multi_context.i18n").t("guard_limit", predicted_total, horizon)
-        api.nvim_buf_set_lines(buf, -1, -1, false, { "", msg, "" })
-    end
-
-    local sending_msg = require("multi_context.i18n").t("sending_req", active_agent_name and require("multi_context.i18n").t("sending_via", active_agent_name) or "")
-    api.nvim_buf_set_lines(buf, -1, -1, false, { "", sending_msg })
-
-    local history_lines = api.nvim_buf_get_lines(buf, 0, start_idx, false)
-    local messages = require('multi_context.conversation').build_history(history_lines)
-    
-    local base_sys_prompt = cfg.options.master_prompt or "Você é um Engenheiro de Software Autônomo no Neovim."
-    local memory_context = get_context_md_content()
-    local system_prompt = prompt_parser.build_system_prompt(base_sys_prompt, memory_context, active_agent_name, agents, current_tokens)
-    
-    table.insert(messages, 1, { role = "system", content = system_prompt })
-    
-    if #messages > 1 and messages[#messages].role == "user" then
-        messages[#messages].content = messages[#messages].content .. "\n\n" .. text_to_send
-    else
-        table.insert(messages, { role = "user", content = text_to_send })
-    end
-
-    local response_started = false
-    local accumulated_text = ""
-    local current_ia_start_idx = nil
-    
-    local function remove_sending_msg()
-        local count = api.nvim_buf_line_count(buf)
-        local last_line = api.nvim_buf_get_lines(buf, count - 1, count, false)[1]
-        if last_line:match("%[Enviando requisi") then api.nvim_buf_set_lines(buf, count - 2, count, false, {}) end
-    end
-
-    scroller.start_streaming(buf, popup.popup_win)
-
-    require('multi_context.api_client').execute(messages, 
-        function(job_id)
-            react_loop.state.active_job_id = job_id
-            react_loop.state.user_aborted = false
-        end,
-        function(chunk, api_entry)
-            if not response_started then
-                remove_sending_msg()
-                local ia_title = "## IA (" .. api_entry.model .. ")" .. (active_agent_name and ("[@" .. active_agent_name .. "]") or "") .. " >> "
-                local count_before = api.nvim_buf_line_count(buf)
-                api.nvim_buf_set_lines(buf, -1, -1, false, { "", ia_title, "" })
-                current_ia_start_idx = count_before + 2
-                response_started = true
-            end
-            if type(chunk) == "string" and chunk ~= "" then
-                require('multi_context.core.event_bus').emit("UI_APPEND_CHUNK", { buf = buf, chunk = chunk })
-                scroller.on_chunk_received(buf, popup.popup_win)
-                
-                accumulated_text = accumulated_text .. chunk
-                if accumulated_text:match("</tool_call>%s*$") then
-                    local tags = {}
-                    for n in accumulated_text:gmatch('<tool_call[^>]*name="([^"]+)"') do table.insert(tags, n) end
-                    local last_name = tags[#tags]
-                    if last_name and (last_name == "edit_file" or last_name == "replace_lines" or last_name == "run_shell") then
-                        react_loop.abort_stream(false)
-                    end
-                end
-                
-                if popup.popup_win and api.nvim_win_is_valid(popup.popup_win) then
-                    popup.update_title()
-                end
-            end
-        end,
-        function(api_entry, metrics)
-            require('multi_context.memory_tracker').add_turn(math.floor(#accumulated_text / 4))
-            scroller.stop_streaming(buf)
-            react_loop.state.active_job_id = nil
-            
-            if react_loop.state.user_aborted then
-                api.nvim_buf_set_lines(buf, -1, -1, false, { "", require("multi_context.i18n").t("gen_aborted") })
-                M.TerminateTurn()
-                return
-            end
-            
-            if not response_started then remove_sending_msg() end
-            if metrics and (metrics.cache_read_input_tokens or 0) > 0 then
-                vim.notify(require("multi_context.i18n").t("prompt_caching", metrics.cache_read_input_tokens), vim.log.levels.INFO)
-            end
-            
-            local b_lines = api.nvim_buf_get_lines(buf, 0, -1, false)
-            local has_tool = false
-            local scan_start = current_ia_start_idx or 1
-            for i = scan_start, #b_lines do
-                if b_lines[i]:match("<tool_call") then has_tool = true; break end
-            end
-
-            if react_loop.state.pending_user_prompt and react_loop.state.active_agent == "archivist" then
-                vim.defer_fn(function() require('multi_context').HandleArchivistCompression(current_ia_start_idx) end, 100)
-            elseif has_tool then
-                vim.defer_fn(function() require('multi_context').ExecuteTools(current_ia_start_idx) end, 100)
-            else
-                M.TerminateTurn()
-            end
-        end,
-        function(err_msg)
-            scroller.stop_streaming(buf)
-            remove_sending_msg()
-            api.nvim_buf_set_lines(buf, -1, -1, false, { "", "**[ERRO]** " .. err_msg, "", user_prefix .. " " })
-            react_loop.state.is_autonomous = false
-        end
-    )
-end
 function M.ExecuteTools(ia_idx)
     local p = require('multi_context.ui.popup')
     local buf = p.popup_buf
@@ -384,12 +217,12 @@ function M.ExecuteTools(ia_idx)
         do
             local tag_output, should_abort, cont_loop, rew_content, backup_made = tool_runner.execute(
                 parsed_tag, 
-                react_loop.state.is_autonomous, 
+                StateManager.get('react').is_autonomous, 
                 approve_all_ref, 
                 buf
             )
 
-            if backup_made then react_loop.state.last_backup = backup_made end
+            if backup_made then require('multi_context.core.state_manager').get('react').last_backup = backup_made end
             if rew_content then pending_rewrite_content = rew_content end
             if cont_loop then should_continue_loop = true end
 
@@ -399,7 +232,7 @@ function M.ExecuteTools(ia_idx)
             else
                 new_content = new_content .. tag_output
                 if tag_output:match(">%[Sistema%]: ERRO %- Ferramenta") then
-                    react_loop.state.is_autonomous = false
+                    StateManager.get('react').is_autonomous = false
                     should_continue_loop = false
                 end
             end
@@ -421,11 +254,11 @@ function M.ExecuteTools(ia_idx)
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, final_lines)
     end
 
-    if pending_rewrite_content or (not should_continue_loop and not react_loop.state.is_autonomous) then
+    if pending_rewrite_content or (not should_continue_loop and not StateManager.get('react').is_autonomous) then
         M.TerminateTurn(); return
     end
 
-    if react_loop.check_circuit_breaker() then
+    if react_orchestrator.check_circuit_breaker() then
         M.TerminateTurn(); return
     end
 
@@ -433,7 +266,7 @@ function M.ExecuteTools(ia_idx)
     local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
     
     local sys_msg = require("multi_context.i18n").t("sys_info_collected")
-    if not should_continue_loop and react_loop.state.is_autonomous then
+    if not should_continue_loop and StateManager.get('react').is_autonomous then
         sys_msg = require("multi_context.i18n").t("sys_action_executed")
     end
 
@@ -442,7 +275,7 @@ function M.ExecuteTools(ia_idx)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, b_lines)
     require('multi_context.ui.highlights').apply_chat(buf)
 
-    vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
+    vim.defer_fn(function() require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = buf }) end, 100)
 end
 
 vim.api.nvim_create_autocmd("VimLeavePre", {
@@ -462,7 +295,7 @@ command! -nargs=0 ContextApis lua require('multi_context').ContextControls()
 command! -nargs=0 ContextTree lua require('multi_context').ContextTree()
 command! -nargs=0 ContextBuffers lua require('multi_context').ContextBuffers()
 command! -nargs=0 ContextToggle lua require('multi_context').TogglePopup()
-command! -nargs=0 ContextReloadSkills lua require('multi_context.skills_manager').load_skills(); vim.notify('Skills customizadas recarregadas!', vim.log.levels.INFO)
+command! -nargs=0 ContextReloadSkills lua require('multi_context.ecosystem.skills_manager').load_skills(); vim.notify('Skills customizadas recarregadas!', vim.log.levels.INFO)
 ]])
 
 M.HandleArchivistCompression = function(ia_idx)
@@ -496,20 +329,20 @@ M.HandleArchivistCompression = function(ia_idx)
     append_split("<journey>\n" .. vim.trim(journey) .. "\n</journey>\n")
     append_split("<now>\n" .. vim.trim(now) .. "\n</now>\n")
     
-    append_split(user_prefix .. " " .. (react_loop.state.pending_user_prompt or ""))
+    append_split(user_prefix .. " " .. (StateManager.get('react').pending_user_prompt or ""))
     
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
     
-    require('multi_context.memory_tracker').reset()
-    react_loop.state.pending_user_prompt = nil
-    react_loop.state.active_agent = nil
+    require('multi_context.utils.memory_tracker').reset()
+    StateManager.get('react').pending_user_prompt = nil
+    StateManager.get('react').active_agent = nil
     
     require('multi_context.ui.highlights').apply_chat(buf)
     p.create_folds(buf)
     p.update_title()
     
     vim.notify(require("multi_context.i18n").t("archivist_compressed"), vim.log.levels.INFO)
-    vim.defer_fn(function() require('multi_context').SendFromPopup() end, 100)
+    vim.defer_fn(function() require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = buf }) end, 100)
 end
 
 return M

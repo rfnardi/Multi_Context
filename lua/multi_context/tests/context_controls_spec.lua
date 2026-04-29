@@ -1,4 +1,4 @@
-local controls = require('multi_context.context_controls')
+local controls = require('multi_context.ui.context_controls')
 local config = require('multi_context.config')
 local api = vim.api
 
@@ -28,8 +28,8 @@ end
 describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
     before_each(function()
         isolate_environment()
-        package.loaded['multi_context.context_controls'] = nil
-        controls = require('multi_context.context_controls')
+        package.loaded['multi_context.ui.context_controls'] = nil
+        controls = require('multi_context.ui.context_controls')
         controls.reset_state()
         
         config.load_api_config = function()
@@ -38,7 +38,7 @@ describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
         package.loaded['multi_context.agents'] = {
             load_agents = function() return { tech_lead = { skills = {"run_shell"} } } end
         }
-        package.loaded['multi_context.skills_manager'] = {
+        package.loaded['multi_context.ecosystem.skills_manager'] = {
             load_skills = function() end,
             get_skills = function() return { minha_skill = {} } end
         }
@@ -79,8 +79,8 @@ end)
 describe("Fase 26.1 - Interatividade e Mutação (Toggles e Edição)", function()
     before_each(function()
         isolate_environment()
-        package.loaded["multi_context.context_controls"] = nil
-        controls = require("multi_context.context_controls")
+        package.loaded["multi_context.ui.context_controls"] = nil
+        controls = require("multi_context.ui.context_controls")
         controls.reset_state()
         controls.init_state()
         
@@ -125,7 +125,7 @@ end)
 describe("Fase 26.2 - Atalhos", function()
     before_each(function()
         isolate_environment()
-        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls")
+        package.loaded["multi_context.ui.context_controls"] = nil; controls = require("multi_context.ui.context_controls")
         controls.reset_state(); controls.init_state()
     end)
     after_each(restore_environment)
@@ -152,7 +152,7 @@ end)
 describe("Fase A - Refatoracao Visual UX e Footer", function()
     before_each(function()
         isolate_environment()
-        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls")
+        package.loaded["multi_context.ui.context_controls"] = nil; controls = require("multi_context.ui.context_controls")
         controls.reset_state(); controls.init_state()
         
         controls.state.sections[1].desc = "(Gerencie chaves...)"
@@ -174,7 +174,7 @@ end)
 describe("Fase B a G - Integridade Visual Geral", function()
     before_each(function()
         isolate_environment()
-        package.loaded["multi_context.context_controls"] = nil; controls = require("multi_context.context_controls")
+        package.loaded["multi_context.ui.context_controls"] = nil; controls = require("multi_context.ui.context_controls")
         controls.reset_state(); controls.init_state()
     end)
     after_each(restore_environment)
@@ -187,8 +187,8 @@ end)
 describe("Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels)", function()
     before_each(function()
         isolate_environment()
-        package.loaded["multi_context.context_controls"] = nil
-        controls = require("multi_context.context_controls")
+        package.loaded["multi_context.ui.context_controls"] = nil
+        controls = require("multi_context.ui.context_controls")
         controls.reset_state()
         controls.init_state()
         
@@ -319,8 +319,8 @@ end)
 describe("Fase 34 - Sincronização de Memória do Watchdog (Bug 1)", function()
     before_each(function()
         isolate_environment()
-        package.loaded["multi_context.context_controls"] = nil
-        controls = require("multi_context.context_controls")
+        package.loaded["multi_context.ui.context_controls"] = nil
+        controls = require("multi_context.ui.context_controls")
         controls.reset_state()
         controls.init_state()
     end)

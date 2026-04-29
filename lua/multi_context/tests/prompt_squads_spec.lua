@@ -1,7 +1,7 @@
-local prompt_parser = require('multi_context.prompt_parser')
+local prompt_parser = require('multi_context.llm.prompt_parser')
 
 -- Substitui dependência em disco por um mock em memória
-package.loaded['multi_context.squads'] = {
+package.loaded['multi_context.ecosystem.squads'] = {
     load_squads = function()
         return {
             squad_ux = {
@@ -20,8 +20,8 @@ describe("Fase 23 - Passo 2: O Compilador de Meta-Agentes", function()
         local mock_agents = { tech_lead = {} } -- agentes não importam aqui
         
         -- Garante que o parser seja re-requisitado para pegar o mock de squads
-        package.loaded['multi_context.prompt_parser'] = nil
-        local parser = require('multi_context.prompt_parser')
+        package.loaded['multi_context.llm.prompt_parser'] = nil
+        local parser = require('multi_context.llm.prompt_parser')
         
         local parsed = parser.parse_user_input(raw, mock_agents)
         

@@ -3,6 +3,7 @@ local M = {}
 local _state = {}
 
 M.get = function(key)
+    if not _state[key] then _state[key] = {} end
     return _state[key]
 end
 

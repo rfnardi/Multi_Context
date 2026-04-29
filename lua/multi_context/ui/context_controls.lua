@@ -58,7 +58,7 @@ M.init_state = function()
     M.state.debug_mode = config.options.debug_mode == true
 
     local agents = require('multi_context.agents')
-    local skills_mgr = require('multi_context.skills_manager')
+    local skills_mgr = require('multi_context.ecosystem.skills_manager')
     M.state.agents = agents.load_agents() or {}
     pcall(skills_mgr.load_skills)
     M.state.all_skills = skills_mgr.get_skills() or {}
@@ -66,13 +66,13 @@ M.init_state = function()
     local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"}
     for _, t in ipairs(native_tools) do M.state.all_skills[t] = { name = t, is_native = true } end
     
-    local injectors_mgr = require('multi_context.injectors')
+    local injectors_mgr = require('multi_context.ecosystem.injectors')
     M.state.all_injectors = injectors_mgr.get_all_injectors() or {}
     for _, inj in ipairs(injectors_mgr.get_native_injectors()) do
         if M.state.all_injectors[inj.name] then M.state.all_injectors[inj.name].is_native = true end
     end
     
-    local squads_mgr = require('multi_context.squads')
+    local squads_mgr = require('multi_context.ecosystem.squads')
     pcall(function() M.state.squads = squads_mgr.load_squads() or {} end)
     
     local root = vim.fn.system("git rev-parse --show-toplevel")
@@ -438,7 +438,7 @@ M.handle_cr = function()
         if vim.fn.filereadable(filepath) == 1 then
             pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. filepath)
-            require('multi_context.utils').load_workspace_state(api.nvim_get_current_buf())
+            require('multi_context.utils.utils').load_workspace_state(api.nvim_get_current_buf())
             local ui_popup = require('multi_context.ui.popup')
             ui_popup.create_popup(api.nvim_get_current_buf())
         end

@@ -8,7 +8,7 @@ local function fuzzy_match(str, pattern)
 end
 
 M.get_native_injectors = function()
-    local ctx = require('multi_context.context_builders')
+    local ctx = require('multi_context.utils.context_builders')
     return {
         { name = "current_buffer", description = "Código do buffer/arquivo ativo", execute = ctx.get_current_buffer },
         { name = "buffers", description = "Código de todos os buffers abertos", execute = ctx.get_all_buffers_content },

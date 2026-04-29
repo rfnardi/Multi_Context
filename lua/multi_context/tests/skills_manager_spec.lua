@@ -1,6 +1,6 @@
-local skills = require('multi_context.skills_manager')
-local prompt_parser = require('multi_context.prompt_parser')
-local tool_runner = require('multi_context.tool_runner')
+local skills = require('multi_context.ecosystem.skills_manager')
+local prompt_parser = require('multi_context.llm.prompt_parser')
+local tool_runner = require('multi_context.ecosystem.tool_runner')
 
 describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
     local test_dir = "/tmp/mctx_mock_skills"

@@ -1,6 +1,6 @@
 local M = {}
-local tools = require('multi_context.tools')
-local react_loop = require('multi_context.react_loop')
+local tools = require('multi_context.ecosystem.tools')
+local StateManager = require('multi_context.core.state_manager')
 local i18n = require('multi_context.i18n')
 
 local valid_tools = {
@@ -31,7 +31,7 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         return out, false, false, nil, nil
     end
 
-    local skills_manager = require('multi_context.skills_manager')
+    local skills_manager = require('multi_context.ecosystem.skills_manager')
     local custom_skills = skills_manager.get_skills()
     local is_custom_skill = custom_skills[name] ~= nil
 
@@ -42,7 +42,7 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     end
 
     local agents = require('multi_context.agents').load_agents()
-    local active_agent = react_loop.state.active_agent
+    local active_agent = StateManager.get('react').active_agent
     local is_authorized = false
 
     if active_agent and agents[active_agent] and agents[active_agent].skills then
@@ -138,15 +138,15 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         local msg = tool_data.inner and tool_data.inner:match("<message>(.-)</message>") or clean_inner
         should_continue_loop = true; result = tools.git_commit(files_str, msg)
     elseif name == "lsp_definition" then
-        should_continue_loop = true; result = require('multi_context.lsp_utils').get_definition(tool_data.path, tool_data.start_line, clean_inner)
+        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_utils').get_definition(tool_data.path, tool_data.start_line, clean_inner)
     elseif name == "lsp_references" then
-        should_continue_loop = true; result = require('multi_context.lsp_utils').get_references(tool_data.path, tool_data.start_line, clean_inner)
+        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_utils').get_references(tool_data.path, tool_data.start_line, clean_inner)
     elseif name == "lsp_document_symbols" then
-        should_continue_loop = true; result = require('multi_context.lsp_utils').get_document_symbols(tool_data.path)
+        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_utils').get_document_symbols(tool_data.path)
     elseif name == "get_diagnostics" then 
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
     elseif name == "spawn_swarm" then
-        local swarm = require('multi_context.swarm_manager')
+        local swarm = require('multi_context.core.swarm_manager')
         if swarm.init_swarm(clean_inner) then
             swarm.on_swarm_complete = require('multi_context').OnSwarmComplete
             vim.defer_fn(function() swarm.dispatch_next() end, 100)

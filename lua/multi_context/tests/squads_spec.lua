@@ -1,4 +1,4 @@
-local squads = require('multi_context.squads')
+local squads = require('multi_context.ecosystem.squads')
 
 describe("Fase 23 - Passo 1: Loader de Squads", function()
     local test_dir = "/tmp/mctx_squads_test"

@@ -1,4 +1,4 @@
-local tools = require('multi_context.tools')
+local tools = require('multi_context.ecosystem.tools')
 local api = vim.api
 
 describe("Tools Module (get_diagnostics):", function()
