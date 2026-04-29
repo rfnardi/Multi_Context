@@ -270,12 +270,7 @@ function M.SendFromPopup()
                 response_started = true
             end
             if type(chunk) == "string" and chunk ~= "" then
-                local lines_to_add = vim.split(chunk, "\n", {plain = true})
-                local count = api.nvim_buf_line_count(buf)
-                local last_line = api.nvim_buf_get_lines(buf, count - 1, count, false)[1]
-                lines_to_add[1] = last_line .. lines_to_add[1]
-                api.nvim_buf_set_lines(buf, count - 1, count, false, lines_to_add)
-                
+                require('multi_context.core.event_bus').emit("UI_APPEND_CHUNK", { buf = buf, chunk = chunk })
                 scroller.on_chunk_received(buf, popup.popup_win)
                 
                 accumulated_text = accumulated_text .. chunk

@@ -5,7 +5,7 @@ echo "🧪 Executando Suíte Completa de Testes (Isolamento Plenary)..."
 echo "======================================================================"
 
 # Roda o Plenary capturando stdout e stderr
-OUTPUT=$(nvim --headless -c "PlenaryBustedDirectory lua/multi_context/tests/" 2>&1)
+OUTPUT=$(nvim --headless -i NONE -c "PlenaryBustedDirectory lua/multi_context/tests/" 2>&1)
 
 # Imprime a saída original colorida no terminal para você ler normalmente
 echo "$OUTPUT"

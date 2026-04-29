@@ -281,4 +281,34 @@ function M.cycle_swarm_buffer(dir)
     end
 end
 
+
+
+-- =====================================================================
+-- ARQUITETURA 2.0: LISTENERS DO EVENT BUS (A UI é puramente reativa)
+-- =====================================================================
+local EventBus = require('multi_context.core.event_bus')
+
+EventBus.on("UI_APPEND_CHUNK", function(payload)
+    if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
+    if type(payload.chunk) ~= "string" or payload.chunk == "" then return end
+    
+    local lines_to_add = vim.split(payload.chunk, "\n", {plain = true})
+    local count = vim.api.nvim_buf_line_count(payload.buf)
+    local last_line = vim.api.nvim_buf_get_lines(payload.buf, count - 1, count, false)[1] or ""
+    lines_to_add[1] = last_line .. lines_to_add[1]
+    
+    vim.api.nvim_buf_set_lines(payload.buf, count - 1, count, false, lines_to_add)
+    
+    if M.popup_win and vim.api.nvim_win_is_valid(M.popup_win) then
+        M.update_title()
+    end
+end)
+
+EventBus.on("UI_SWARM_WORKER_UPDATE", function(payload)
+    if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
+    local lines = vim.split(payload.text, "\n", {plain=true})
+    vim.api.nvim_buf_set_lines(payload.buf, 4, -1, false, lines)
+end)
+
 return M
+

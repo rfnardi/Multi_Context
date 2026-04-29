@@ -1,0 +1,499 @@
+======================================================================
+🧪 Executando Suíte Completa (Summary Agregado)...
+======================================================================
+======================================================================
+🧪 Executando Suíte Completa de Testes (Isolamento Plenary)...
+======================================================================
+Starting...Scheduling: lua/multi_context/tests/utils_spec.lua
+Scheduling: lua/multi_context/tests/examples_skills_spec.lua
+Scheduling: lua/multi_context/tests/api_handlers_spec.lua
+Scheduling: lua/multi_context/tests/init_tracker_spec.lua
+Scheduling: lua/multi_context/tests/integration_spec.lua
+Scheduling: lua/multi_context/tests/tool_parser_spec.lua
+Scheduling: lua/multi_context/tests/lsp_utils_spec.lua
+Scheduling: lua/multi_context/tests/docs_spec.lua
+Scheduling: lua/multi_context/tests/diagnostics_spec.lua
+Scheduling: lua/multi_context/tests/scroller_spec.lua
+Scheduling: lua/multi_context/tests/swarm_phase21_spec.lua
+Scheduling: lua/multi_context/tests/session_spec.lua
+Scheduling: lua/multi_context/tests/global_flags_spec.lua
+Scheduling: lua/multi_context/tests/context_controls_spec.lua
+Scheduling: lua/multi_context/tests/swarm_etapa5_spec.lua
+Scheduling: lua/multi_context/tests/conversation_spec.lua
+Scheduling: lua/multi_context/tests/tool_runner_lsp_spec.lua
+Scheduling: lua/multi_context/tests/prompt_parser_spec.lua
+Scheduling: lua/multi_context/tests/swarm_etapa1_spec.lua
+Scheduling: lua/multi_context/tests/config_spec.lua
+Scheduling: lua/multi_context/tests/swarm_etapa2_spec.lua
+Scheduling: lua/multi_context/tests/skills_manager_spec.lua
+Scheduling: lua/multi_context/tests/polyglot_spec.lua
+Scheduling: lua/multi_context/tests/injectors_spec.lua
+Scheduling: lua/multi_context/tests/i18n_spec.lua
+Scheduling: lua/multi_context/tests/git_tools_spec.lua
+Scheduling: lua/multi_context/tests/archivist_spec.lua
+Scheduling: lua/multi_context/tests/react_loop_spec.lua
+Scheduling: lua/multi_context/tests/abstraction_level_spec.lua
+Scheduling: lua/multi_context/tests/tools_spec.lua
+Scheduling: lua/multi_context/tests/squads_spec.lua
+Scheduling: lua/multi_context/tests/swarm_etapa3_spec.lua
+Scheduling: lua/multi_context/tests/prompt_optimization_spec.lua
+Scheduling: lua/multi_context/tests/watchdog_spec.lua
+Scheduling: lua/multi_context/tests/context_builders_spec.lua
+Scheduling: lua/multi_context/tests/prompt_squads_spec.lua
+Scheduling: lua/multi_context/tests/swarm_etapa4_spec.lua
+Scheduling: lua/multi_context/tests/memory_tracker_spec.lua
+Scheduling: lua/multi_context/tests/tools_diff_spec.lua
+Scheduling: lua/multi_context/tests/swarm_routing_spec.lua
+Limite de 15 loops atingido. Pausando por segurança.
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/react_loop_spec.lua	
+[32mSuccess[0m	||	ReAct Loop Module: Deve resetar o estado corretamente	
+[32mSuccess[0m	||	ReAct Loop Module: Deve interromper a execução quando atingir 15 loops (Circuit Breaker)	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+🧠 Contexto hiper-comprimido pelo @archivist. Retomando tarefa...
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/archivist_spec.lua	
+[32mSuccess[0m	||	Fase 22 - Passo 3: A Persona @archivist e a Compressao Deve extrair o XML Quadripartite, limpar o buffer e re-anexar o prompt pendente	
+	
+[32mSuccess: [0m	1	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/i18n_spec.lua	
+[32mSuccess[0m	||	Fase 33 - Motor de Internacionalização (i18n) Deve traduzir a string para o idioma configurado (pt-BR)	
+[32mSuccess[0m	||	Fase 33 - Motor de Internacionalização (i18n) Deve realizar fallback para o pt-BR caso a string não exista no en	
+[32mSuccess[0m	||	Fase 33 - Motor de Internacionalização (i18n) Deve retornar a propria chave caso a string não exista em nenhum dicionário	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/injectors_spec.lua	
+[32mSuccess[0m	||	Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement Deve filtrar as opcoes usando o fuzzy finder via _update_filter	
+[32mSuccess[0m	||	Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement Deve injetar o texto NA LINHA DE BAIXO do cursor preservando o prompt	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve carregar a lista combinada de injetores nativos e custom	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve disponibilizar o novo injetor 'current_buffer' nativamente	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve carregar um injetor customizado valido a partir do diretorio local	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve disponibilizar os exemplos base de injetores na pasta examples	
+	
+[32mSuccess: [0m	6	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/skills_manager_spec.lua	
+[32mSuccess[0m	||	Fase 19 - Sistema de Skills (Extensibilidade): Deve carregar e validar uma skill customizada corretamente	
+[32mSuccess[0m	||	Fase 19 - Sistema de Skills (Extensibilidade): Deve ignorar arquivos que não retornam uma tabela de skill valida	
+[32mSuccess[0m	||	Fase 19 - Sistema de Skills (Extensibilidade): Deve injetar a definicao da skill customizada no prompt do sistema	
+[32mSuccess[0m	||	Fase 19 - Sistema de Skills (Extensibilidade): Deve rotear e executar uma skill customizada atraves do tool_runner	
+[32mSuccess[0m	||	Fase 19 - Sistema de Skills (Extensibilidade): Deve limpar skills apagadas e recarregar a lista (Hot-Reload)	
+	
+[32mSuccess: [0m	5	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa2_spec.lua	
+[32mSuccess[0m	||	Swarm Etapa 2 - Multi-Buffers e UI: Deve criar o popup principal e registrar como buffer de indice 1	
+[32mSuccess[0m	||	Swarm Etapa 2 - Multi-Buffers e UI: Deve criar sub-buffers isolados para workers	
+[32mSuccess[0m	||	Swarm Etapa 2 - Multi-Buffers e UI: Deve alternar entre os buffers circularmente (Tab/S-Tab)	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa1_spec.lua	
+[32mSuccess[0m	||	Swarm Etapa 1 - Modelagem e Parser: Deve extrair e decodificar corretamente o JSON rigoroso da tool spawn_swarm	
+[32mSuccess[0m	||	Swarm Etapa 1 - Modelagem e Parser: Deve identificar e retornar corretamente APIs disponíveis como workers	
+[32mSuccess[0m	||	Swarm Etapa 1 - Modelagem e Parser: Deve garantir que a persona @tech_lead exista com a skill correta	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/prompt_parser_spec.lua	
+[32mSuccess[0m	||	Fase 25 - Passo 2: O System Agent @archivist Deve carregar o System Prompt de Compressao com limite Semântico	
+[32mSuccess[0m	||	Fase 25 - Passo 2: O System Agent @archivist Deve injetar o valor exato no prompt caso a estrategia seja Percentual	
+[32mSuccess[0m	||	Fase 25 - Passo 2: O System Agent @archivist Deve injetar o limite restrito caso a estrategia seja Fixo	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/conversation_spec.lua	
+[32mSuccess[0m	||	Conversation Module: Deve encontrar a última linha de comando do usuário	
+[32mSuccess[0m	||	Conversation Module: Deve ignorar mensagens de [Sistema] na hora de ler o último comando	
+[32mSuccess[0m	||	Deve construir o array de mensagens (build_history) perfeitamente	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa5_spec.lua	
+[32mSuccess[0m	||	Swarm Etapa 5 - Resiliência e UI Dinâmica: Deve realizar retry de uma tarefa se a API retornar string vazia	
+[32mSuccess[0m	||	Swarm Etapa 5 - Resiliência e UI Dinâmica: Deve realizar retry de uma tarefa se a API retornar erro HTTP (Rate Limit)	
+[32mSuccess[0m	||	Swarm Etapa 5 - Resiliência e UI Dinâmica: Deve atualizar o titulo do Carrossel e calcular tokens dinamicamente	
+[32mSuccess[0m	||	Swarm Etapa 5 - Resiliência e UI Dinâmica: Deve confirmar a presença do agente @qa no acervo e sua descrição traduzida	
+[32mSuccess[0m	||	Swarm Etapa 5 - Resiliência e UI Dinâmica: Deve confirmar a presença do novo agente @architect no acervo	
+	
+[32mSuccess: [0m	5	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_phase21_spec.lua	
+[32mSuccess[0m	||	Fase 21 - Pipelines e Coreografia: Passo 1: Deve processar 'chain' e 'allow_switch' no init_swarm	
+[32mSuccess[0m	||	Fase 21 - Pipelines e Coreografia: Passo 2: Deve reencarnar a tarefa na fila caso haja agentes restantes na chain	
+[32mSuccess[0m	||	Fase 21 - Pipelines e Coreografia: Passo 3: Deve permitir troca de agente na mesma aba via switch_agent	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/scroller_spec.lua	
+[32mSuccess[0m	||	Scroller Module (Smart Auto-Scroll): Deve ativar streaming e seguir por padrao	
+[32mSuccess[0m	||	Scroller Module (Smart Auto-Scroll): Deve desligar streaming ao solicitar	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/docs_spec.lua	
+[32mSuccess[0m	||	Fase 32 - Distribuição e Documentação O arquivo de ajuda nativa (doc/multicontext.txt) deve existir e estar formatado	
+[32mSuccess[0m	||	Fase 32 - Distribuição e Documentação O README.md deve estar atualizado com as features mais recentes	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tool_parser_spec.lua	
+[32mSuccess[0m	||	Tool Parser Module: Deve sanitizar tags de fechamento corrompidas	
+[32mSuccess[0m	||	Tool Parser Module: Deve converter alucinações de tag direta em tool_call padrão	
+[32mSuccess[0m	||	Tool Parser Module: Deve remover lixo interno (crases markdown e tags órfãs)	
+[32mSuccess[0m	||	Tool Parser Module: Deve extrair a próxima ferramenta corretamente	
+[32mSuccess[0m	||	Fase 30 - Passo 3: Parser de Novas Ferramentas LSP Deve extrair os parametros da ferramenta lsp_definition (inclusive line)	
+	
+[32mSuccess: [0m	5	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/api_handlers_spec.lua	
+[32mSuccess[0m	||	API Handlers Module (Prompt Caching) Deve incluir stream_options e extrair metricas de cache (OpenAI / DeepSeek)	
+[32mSuccess[0m	||	API Handlers Module (Prompt Caching) Deve estruturar o payload Anthropic com cache_control e capturar os metadados	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/examples_skills_spec.lua	
+[32mSuccess[0m	||	Fase 27 - Ecossistema da Comunidade (V1.0): Deve disponibilizar e compilar os exemplos base de skills perfeitamente	
+	
+[32mSuccess: [0m	1	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/utils_spec.lua	
+[32mSuccess[0m	||	Utils Module: Deve dividir strings por quebra de linha corretamente	
+[32mSuccess[0m	||	Utils Module: Deve estimar tokens corretamente (4 chars = 1 token)	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa3_spec.lua	
+[32mSuccess[0m	||	Swarm Etapa 3 - Manager e Fila: Deve inicializar a fila lendo o JSON do Tech Lead	
+[32mSuccess[0m	||	Swarm Etapa 3 - Manager e Fila: Deve transferir tarefas da fila para workers respeitando o limite (Dispatch)	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/squads_spec.lua	
+[32mSuccess[0m	||	Fase 23 - Passo 1: Loader de Squads Deve criar o arquivo padrao caso nao exista e carregar corretamente	
+[32mSuccess[0m	||	Fase 23 - Passo 1: Loader de Squads Deve extrair a lista de nomes dos squads	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/abstraction_level_spec.lua	
+[32mSuccess[0m	||	Fase 20 - Passo 1 (Abstraction Levels): Deve definir abstraction_level='high' para agentes sem o campo configurado	
+[32mSuccess[0m	||	Fase 20 - Passo 1 (Abstraction Levels): Deve definir abstraction_level='medium' para APIs sem o campo configurado	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/diagnostics_spec.lua	
+[32mSuccess[0m	||	Tools Module (get_diagnostics): Deve retornar diagnósticos para arquivo existente	
+[32mSuccess[0m	||	Tools Module (get_diagnostics): Deve retornar mensagem informativa para arquivo sem problemas ou sem LSP	
+[32mSuccess[0m	||	Tools Module (get_diagnostics): Deve truncar saída quando há muitos diagnósticos	
+[32mSuccess[0m	||	Tools Module (get_diagnostics): Deve retornar erro para path inexistente	
+[32mSuccess[0m	||	Tools Module (get_diagnostics): Deve retornar erro quando o path não é fornecido (regra estrita)	
+	
+[32mSuccess: [0m	5	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/prompt_squads_spec.lua	
+[32mSuccess[0m	||	Fase 23 - Passo 2: O Compilador de Meta-Agentes Deve detectar a invocacao de um squad e transpilar para spawn_swarm JSON	
+	
+[32mSuccess: [0m	1	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/context_builders_spec.lua	
+[32mSuccess[0m	||	Context Builders Module: Deve extrair o contexto do buffer atual corretamente	
+[32mSuccess[0m	||	Context Builders Module: Deve incluir o nome do arquivo no cabecalho do get_current_buffer	
+[32mSuccess[0m	||	Context Builders Module: Deve extrair apenas as linhas da selecao visual (com range)	
+[32mSuccess[0m	||	Context Builders Module: Deve corrigir a ordem se o range for passado invertido (baixo pra cima)	
+	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/prompt_optimization_spec.lua	
+[32mSuccess[0m	||	Fase 24 - Otimização de System Prompt (Token Saving): O cabeçalho do manual de habilidades deve ser altamente sintetizado	
+[32mSuccess[0m	||	Fase 24 - Otimização de System Prompt (Token Saving): O system prompt base deve ser limpo e não possuir gorduras	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/memory_tracker_spec.lua	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve inicializar a EMA perfeitamente com o primeiro valor	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve calcular a EMA absorvendo picos sem enviesar totalmente	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve prever os tokens ignorando a dupla contagem do prompt	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve garantir Imunidade de Primeiro Turno (Cold Start)	
+	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_routing_spec.lua	
+[32mSuccess[0m	||	Fase 20 - Passo 2 (Fallback Direcional): Deve bloquear a tarefa se não houver API com capacidade suficiente (Starvation)	
+[32mSuccess[0m	||	Fase 20 - Passo 2 (Fallback Direcional): Deve permitir que uma API poderosa resolva uma tarefa simples (Fallback Direcional)	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session_spec.lua	
+[32mSuccess[0m	||	Fase 18.5 - Session & State Management: Deve gerar tag de sessao e injetar o swarm_state	
+[32mSuccess[0m	||	Fase 18.5 - Session & State Management: Deve desserializar e reconstruir o enxame ao carregar o chat	
+[32mSuccess[0m	||	Deve orquestrar o load pelo comando ToggleWorkspaceView (init.lua)	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/integration_spec.lua	
+[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor popup.lua deve aplicar a largura e borda customizadas do config	
+[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor init.lua deve enviar o master_prompt customizado na requisicao	
+[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor transport.lua deve gerar um arquivo de log quando debug_mode for true	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/init_tracker_spec.lua	
+[32mSuccess[0m	||	Fase 25 - Passo 2: Alimentando a EMA O Motor principal deve alimentar a memoria apos a IA finalizar a resposta	
+	
+[32mSuccess: [0m	1	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/config_spec.lua	
+[32mSuccess[0m	||	Config Module: Deve carregar as opções default corretamente	
+[32mSuccess[0m	||	Config Module: Deve mesclar opções do usuário usando setup() sem perder os defaults	
+[32mSuccess[0m	||	Config Module (Manipulacao de Arquivo JSON): Deve ler e alterar APIs usando um JSON em disco	
+[32mSuccess[0m	||	Fase 25 - Configurações do Guardião 2.0: Deve carregar as opções default de Compressao e Modos	
+	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/polyglot_spec.lua	
+[32mSuccess[0m	||	Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python) Deve ler e envelopar um script bash executavel extraindo parametros do cabecalho	
+	
+[32mSuccess: [0m	1	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa4_spec.lua	
+[32mSuccess[0m	||	Swarm Etapa 4 - Execucao Assincrona e Merge: Deve criar o buffer visual, montar o prompt e disparar a API correta	
+[32mSuccess[0m	||	Swarm Etapa 4 - Execucao Assincrona e Merge: Deve processar a conclusao (on_done), liberar o worker e disparar o merge final	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/global_flags_spec.lua	
+[32mSuccess[0m	||	Fase 35 - Pre-Processador Global de Flags (--queue e --moa) Deve capturar --queue, ligar is_queue_mode e fatiar a fila corretamente	
+[32mSuccess[0m	||	Fase 35 - Pre-Processador Global de Flags (--queue e --moa) Deve capturar --moa, nao fatiar a fila e redirecionar tudo para o tech_lead	
+[32mSuccess[0m	||	Fase 35 - Pre-Processador Global de Flags (--queue e --moa) Deve processar a proxima tarefa automaticamente no TerminateTurn se is_queue_mode for true	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+✅ Arquivo criado/salvo: /tmp/lua_EqSxVH
+✅ Diff aplicado: /tmp/lua_EqSxVH
+✅ Arquivo criado/salvo: /tmp/lua_EqSxVH
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tools_diff_spec.lua	
+[32mSuccess[0m	||	Tools Module (Unified Diff): Deve aplicar um Unified Diff a um arquivo (apply_diff)	
+[32mSuccess[0m	||	Tools Module (Unified Diff): Deve lidar com falhas graciosamente (patch rejeitado)	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+🧠 Contexto hiper-comprimido pelo @archivist. Retomando tarefa...
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/watchdog_spec.lua	
+[32mSuccess[0m	||	Fase 22 - Passo 2: O Interceptador do Watchdog Deve INTERCEPTAR a requisicao e injetar o modelo Quadripartite se estourar, e depois religar sozinho	
+	
+[32mSuccess: [0m	1	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/git_tools_spec.lua	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve retornar o git status formatado (git_status)	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve realizar checkout e criar nova branch se requisitado (git_branch)	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve proibir explicitamente git add em massa como '.' ou '*' (git_commit)	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve fazer add e commit apenas dos arquivos especificos (git_commit)	
+[32mSuccess[0m	||	Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML Deve existir a persona @devops com ferramentas Git	
+[32mSuccess[0m	||	Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML O Gatekeeper deve interceptar comandos git destrutivos (push, reset, rebase)	
+[32mSuccess[0m	||	Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML O swarm_manager deve exigir detalhamento estruturado das operações Git no <final_report>	
+	
+[32mSuccess: [0m	7	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+✅ Arquivo criado/salvo: /tmp/lua_HJDQRj
+✅ Arquivo criado/salvo: /tmp/lua_HJDQRj
+✅ Edição aplicada: /tmp/lua_HJDQRj
+✅ Arquivo criado/salvo: /tmp/lua_HJDQRj
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tools_spec.lua	
+[32mSuccess[0m	||	Tools Module (Agentes Autônomos): Deve criar e sobrescrever um arquivo (edit_file)	
+[32mSuccess[0m	||	Tools Module (Agentes Autônomos): Deve editar cirurgicamente um arquivo mantendo as pontas (replace_lines)	
+[32mSuccess[0m	||	Tools Module (Agentes Autônomos): Deve limpar Markdown intruso do código fonte ao salvar arquivos	
+[32mSuccess[0m	||	Deve retornar erro amigavel ao ler arquivo que nao existe (read_file)	
+[32mSuccess[0m	||	Deve retornar erro se a IA nao enviar o path	
+[32mSuccess[0m	||	Deve proteger replace_lines contra parametros invalidos	
+[32mSuccess[0m	||	Tools Module (Execucao de Shell): Deve executar run_shell e retornar SUCESSO com a saida do terminal	
+[32mSuccess[0m	||	Tools Module (Execucao de Shell): Deve retornar status de FALHA se o comando shell nao existir	
+[32mSuccess[0m	||	Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep) Deve usar ripgrep se 'rg' estiver disponivel no sistema	
+[32mSuccess[0m	||	Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep) Deve usar git grep como fallback se 'rg' nao existir	
+	
+[32mSuccess: [0m	10	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+Agente @arquiteto_teste criado! Expanda-o para dar permissões.
+Configurações e Permissões salvas!
+Agente deletado.
+Configurações e Permissões salvas!
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/context_controls_spec.lua	
+[32mSuccess[0m	||	Fase 26 - Passo 1: Expansão do Motor Virtual e IAM Deve inicializar as novas sessoes e carregar agentes e skills na memoria	
+[32mSuccess[0m	||	Fase 26 - Passo 1: Expansão do Motor Virtual e IAM Deve renderizar os botoes de criar Agente e Skill ao expandir as seções	
+[32mSuccess[0m	||	Fase 26 - Passo 1: Expansão do Motor Virtual e IAM Deve permitir Drill-down (Expandir um Agente) revelando a arvore de skills	
+[32mSuccess[0m	||	Fase 26.1 - Interatividade e Mutação (Toggles e Edição) Deve ligar e desligar uma skill do agente ao usar o espaco (handle_space)	
+[32mSuccess[0m	||	Fase 26.1 - Interatividade e Mutação (Toggles e Edição) Deve alterar a Identidade e Limites com a tecla c (handle_edit)	
+[32mSuccess[0m	||	Fase 26.2 - Atalhos Deve criar um novo agente via handle_cr no painel	
+[32mSuccess[0m	||	Fase A - Refatoracao Visual UX e Footer Deve renderizar [+] e a descricao para secoes ocultas, e [-] sem descricao para abertas	
+[32mSuccess[0m	||	Fase B a G - Integridade Visual Geral As secoes Injetores, Squads, Aparencia, Historico e Cofre devem ser renderizadas na memoria	
+[32mSuccess[0m	||	Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels) Deve renderizar e permitir alternar o Nivel de Abstracao das APIs no Swarm	
+[32mSuccess[0m	||	Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels) Deve renderizar os botoes de Editar Prompt e Deletar Agente	
+[32mSuccess[0m	||	Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels) Deve deletar o agente ao confirmar e atualizar o estado	
+[32mSuccess[0m	||	Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels) Abertura de arquivos deve fechar a janela do painel ANTES de dar o edit (evita E37)	
+[32mSuccess[0m	||	Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels) Deve atualizar o footer via nvim_win_set_config de forma dinamica	
+[32mSuccess[0m	||	Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e Swarm Levels) A edicao do prompt de agente deve criar um buffer isolado via arquivo temporario	
+[32mSuccess[0m	||	Fase 34 - Sincronização de Memória do Watchdog (Bug 1) Deve espelhar o limite do watchdog em memória (config.options) ao salvar o painel	
+	
+[32mSuccess: [0m	15	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+======================================================================
+📊 RESUMO GLOBAL AGREGADO (MULTI-CONTEXT)
+======================================================================
+✅ Success: 127
+❌ Failed : 0
+💥 Errors : 0
+======================================================================

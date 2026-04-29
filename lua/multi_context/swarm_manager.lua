@@ -116,11 +116,10 @@ M.dispatch_next = function()
                     function() end,
                     function(chunk) 
                         current_chunk = current_chunk .. chunk 
-                        if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
-                            local display_text = visual_history .. "\n\n## IA >>\n" .. current_chunk
-                            local lines = vim.split(display_text, "\n", {plain=true})
-                            vim.api.nvim_buf_set_lines(buf_id, 4, -1, false, lines)
-                        end
+                        require('multi_context.core.event_bus').emit("UI_SWARM_WORKER_UPDATE", { 
+                            buf = buf_id, 
+                            text = visual_history .. "\n\n## IA >>\n" .. current_chunk 
+                        })
                     end,
                     function(api_entry, metrics)
                         visual_history = visual_history .. "\n\n## IA >>\n" .. current_chunk

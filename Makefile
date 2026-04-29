@@ -1,5 +1,5 @@
 test:
-	nvim --headless -c "PlenaryBustedDirectory lua/multi_context/tests/"
+	nvim --headless -i NONE -c "PlenaryBustedDirectory lua/multi_context/tests/"
 
 .PHONY: test_agregate_results
 
@@ -13,5 +13,5 @@ test_agregate_results:
 .PHONY: doc
 doc:
 	@echo "📚 Gerando as Help Tags nativas do Vimdoc..."
-	nvim --headless -c "helptags doc/" -c "q"
+	nvim --headless -i NONE -c "helptags doc/" -c "q"
 	@echo "✅ Help Tags geradas!"
