@@ -17,7 +17,7 @@ M.build_workspace_content = function(buf, existing_filename)
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
     local content = table.concat(lines, "\n")
     
-    local session_id = existing_filename and string.match(existing_filename, "chat_(d+_d+).mctx")
+    local session_id = existing_filename and string.match(existing_filename, "chat_(%d+_%d+).mctx")
     local created_at = os.date("Y-m-dTH:M:S")
     local updated_at = os.date("Y-m-dTH:M:S")
 
@@ -28,13 +28,13 @@ M.build_workspace_content = function(buf, existing_filename)
         local old_created = existing_session:match('created="([^"]+)"')
         if old_id then session_id = old_id end
         if old_created then created_at = old_created end
-        content = content:gsub("<mctx_session.-/>s*", "")
+        content = content:gsub("<mctx_session.-/>%s*", "")
     end
     
     if not session_id then session_id = os.date("Ymd_HMS") end
     
     -- Limpa estado do swarm antigo e substitui
-    content = content:gsub("<swarm_state>.-</swarm_state>s*", "")
+    content = content:gsub("<swarm_state>.-</swarm_state>%s*", "")
     
     local swarm = require('multi_context.core.swarm_manager')
     local popup = require('multi_context.ui.popup')
@@ -56,7 +56,7 @@ M.build_workspace_content = function(buf, existing_filename)
         swarm_xml = "\n<swarm_state>\n" .. json_state .. "\n</swarm_state>"
     end
     
-    local header = string.format('<mctx_session id="s" created="s" updated="s" />\n', session_id, created_at, updated_at)
+    local header = string.format('<mctx_session id="%s" created="%s" updated="%s" />\n', session_id, created_at, updated_at)
     local new_content = header .. vim.trim(content) .. "\n" .. swarm_xml
     
     local new_filename = existing_filename
@@ -74,7 +74,7 @@ M.load_workspace_state = function(buf)
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
     local content = table.concat(lines, "\n")
     
-    local swarm_state_str = content:match("<swarm_state>s*(.-)s*</swarm_state>")
+    local swarm_state_str = content:match("<swarm_state>%s*(.-)%s*</swarm_state>")
     if swarm_state_str then
         local ok, parsed = pcall(vim.fn.json_decode, swarm_state_str)
         if ok and type(parsed) == "table" then
@@ -132,7 +132,9 @@ M.export_to_workspace = function(content, existing_filename)
         filename = chat_dir .. "/chat_" .. timestamp .. ".mctx"
     end
     
-    vim.cmd("edit " .. filename)
+    local fname_esc = vim.fn.fnameescape(filename)
+    local ok = pcall(vim.cmd, "edit " .. fname_esc)
+    if not ok then vim.cmd("split " .. fname_esc) end
     
     local new_buf = vim.api.nvim_get_current_buf()
     vim.bo[new_buf].filetype = "multicontext_chat"

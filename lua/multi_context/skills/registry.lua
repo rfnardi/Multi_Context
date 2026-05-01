@@ -30,9 +30,10 @@ end
 
 M.build_manual_for_skills = function(skills_array)
     if not skills_array or #skills_array == 0 then return "" end
-    local manual = [[=== SYSTEM TOOLS ===
-Use STRICTLY XML tags to invoke tools. JSON is FORBIDDEN.
-Auto-LSP is active: edits inject errors. DO NOT call get_diagnostics after editing.
+    local manual = [[=== SYSTEM TOOLS & SYNTAX (CRITICAL) ===
+STRICT XML ONLY: <tool_call name="name" attr="val">
+NO inventing tools/tags. NO Markdown wrapping (```xml).
+ONE action per turn. Auto-LSP active: DO NOT call get_diagnostics after edits.
 === ACTIVE SKILLS ===]]
 
     for _, skill in ipairs(skills_array) do

@@ -1,4 +1,3 @@
--- lua/multi_context/tool_parser.lua
 local M = {}
 
 local valid_tools_list = {
@@ -10,9 +9,20 @@ local valid_tools_list = {
 -- 1. SANITIZADOR ANTI-ALUCINAÇÃO DE SINTAXE
 M.sanitize_payload = function(content)
     local c = content
-    -- Corrigido para [^<]* para que ele engula o ">" do </arg_value>tool_call>
+    -- Corrigido para[^<]* para que ele engula o ">" do </arg_value>tool_call>
     c = c:gsub("</[^<]*tool_call%s*>", "</tool_call>")
     c = c:gsub("<tool_call>%s*([a-zA-Z_]+)%s*>", '<tool_call name="%1">')
+    
+    -- Aliases de Sanitização (Alucinações do LLM)
+    c = c:gsub("<bash%s*>", '<tool_call name="run_shell">')
+    c = c:gsub("</bash%s*>", '</tool_call>')
+    c = c:gsub("<execute%s*>", '<tool_call name="run_shell">')
+    c = c:gsub("</execute%s*>", '</tool_call>')
+    c = c:gsub("<execute_command%s*>", '<tool_call name="run_shell">')
+    c = c:gsub("</execute_command%s*>", '</tool_call>')
+    c = c:gsub("<read%s+path=", '<tool_call name="read_file" path=')
+    c = c:gsub("</read%s*>", '</tool_call>')
+
     for _, tool in ipairs(valid_tools_list) do
         c = c:gsub("<" .. tool .. "%s*>", '<tool_call name="' .. tool .. '">')
         c = c:gsub("<" .. tool .. "%s+([^>]+)>", '<tool_call name="' .. tool .. '" %1>')
@@ -20,6 +30,7 @@ M.sanitize_payload = function(content)
     end
     return c
 end
+
 local function get_attr(attrs, n) 
     if not attrs then return nil end
     return attrs:match(n .. '%s*=%s*["\']([^"\']+)["\']') 
@@ -30,7 +41,8 @@ M.clean_inner_content = function(inner, name)
     local clean = inner
     if not name or name == "" or name == "nil" then return clean end
 
-    local h_tags = {"content", "code", "command", "arg_value", "argument", "parameters", "text", "source", "tool_call"}
+    -- Remove tags inventadas que circundam o JSON
+    local h_tags = {"content", "code", "command", "arg_value", "argument", "parameters", "parameter", "text", "source", "tool_call", "json_payload"}
     local changed = true
     while changed do
         changed = false
@@ -39,14 +51,14 @@ M.clean_inner_content = function(inner, name)
         if before_md ~= clean then changed = true end
         
         for _, tag in ipairs(h_tags) do
-            local pat_full = "^%s*<" .. tag .. ">%s*(.-)%s*</" .. tag .. ">%s*$"
+            local pat_full = "^%s*<" .. tag .. "[^>]*>%s*(.-)%s*</" .. tag .. ">%s*$"
             local val = clean:match(pat_full)
             if val then clean = val; changed = true end
             
             local pat_end = "%s*</" .. tag .. ">%s*$"
             if clean:match(pat_end) then clean = clean:gsub(pat_end, ""); changed = true end
             
-            local pat_start = "^%s*<" .. tag .. ">%s*"
+            local pat_start = "^%s*<" .. tag .. "[^>]*>%s*"
             if clean:match(pat_start) then clean = clean:gsub(pat_start, ""); changed = true end
         end
     end
@@ -112,6 +124,24 @@ M.parse_next_tool = function(content_to_process, cursor)
 
     local clean_inner = M.clean_inner_content(inner, name)
 
+    -- Fallback agressivo: Se a IA mandou o parametro dentro de uma tag interna em vez do atributo
+    if not path or path == "" then
+        local inner_path = clean_inner:match("<path>(.-)</path>")
+        if inner_path then path = vim.trim(inner_path) end
+    end
+    if not query or query == "" then
+        local inner_query = clean_inner:match("<query>(.-)</query>")
+        if inner_query then query = vim.trim(inner_query) end
+    end
+    if not start_line or start_line == "" then
+        local inner_start = clean_inner:match("<start>(.-)</start>") or clean_inner:match("<line>(.-)</line>")
+        if inner_start then start_line = vim.trim(inner_start) end
+    end
+    if not end_line or end_line == "" then
+        local inner_end = clean_inner:match("<end>(.-)</end>")
+        if inner_end then end_line = vim.trim(inner_end) end
+    end
+
     return {
         is_invalid = false,
         text_before = text_before,
@@ -128,9 +158,3 @@ M.parse_next_tool = function(content_to_process, cursor)
 end
 
 return M
-
-
-
-
-
-

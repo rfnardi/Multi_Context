@@ -61,7 +61,13 @@ end
 
 M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table, current_tokens)
     if active_agent_name == "archivist" then
-        local cfg = require('multi_context.config').options
+        if active_agent_name == "tech_lead" then
+        local available = {}
+        for k, _ in pairs(agents_table) do table.insert(available, k) end
+        system_prompt = system_prompt .. "\n\n=== AVAILABLE AGENTS FOR DELEGATION ===\nYou MUST ONLY assign tasks to these exact agents: " .. table.concat(available, ", ") .. "\nDo NOT invent new agent names (e.g., no 'frontend-coder', 'qa_contrato'). Use STRICTLY and ONLY the names listed above."
+    end
+    
+    local cfg = require('multi_context.config').options
         local wd = cfg.watchdog or { strategy = "semantic", percent = 0.3, fixed_target = 1500 }
         local prompt = "You are the system's @archivist. Your mission is to structure the verbose chat memory below using EXACTLY 4 tags: <genesis>, <plan>, <journey>, and <now>.\n"
         if wd.strategy == "percent" then
@@ -122,6 +128,12 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         end
     end
 
+    if active_agent_name == "tech_lead" then
+        local available = {}
+        for k, _ in pairs(agents_table) do table.insert(available, k) end
+        system_prompt = system_prompt .. "\n\n=== AVAILABLE AGENTS FOR DELEGATION ===\nYou MUST ONLY assign tasks to these exact agents: " .. table.concat(available, ", ") .. "\nDo NOT invent new agent names (e.g., no 'frontend-coder', 'qa_contrato'). Use STRICTLY and ONLY the names listed above."
+    end
+    
     local cfg = require('multi_context.config').options
     if cfg.language == "pt-BR" then
         system_prompt = system_prompt .. i18n.t("sys_lang_directive")

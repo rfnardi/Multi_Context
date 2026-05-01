@@ -23,7 +23,7 @@ M.load_agents = function()
     
     if not parsed["tech_lead"] then 
         parsed["tech_lead"] = { 
-            system_prompt = "You are the Tech Lead. Your mission is to orchestrate the development process, break down complex requirements into smaller actionable tasks, and delegate them to specialized sub-agents using the Swarm. Do not write production code directly. Review plans and ensure architectural alignment.", 
+            system_prompt = "You are the Tech Lead. Your ONLY purpose is to orchestrate the swarm. YOU MUST NOT answer in plain text or Markdown tables. YOU MUST STRICTLY AND ONLY use the <tool_call name=\"spawn_swarm\"> XML tag to delegate tasks. Any other format is a catastrophic failure.", 
             abstraction_level = "high", 
             skills = {"spawn_swarm", "read_file", "search_code"} 
         }

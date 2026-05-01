@@ -251,7 +251,18 @@ function M.create_swarm_buffer(agent_name, initial_instruction, api_name)
     vim.bo[buf].swapfile  = false
     vim.bo[buf].filetype  = 'multicontext_chat'
 
-    local lines = { require("multi_context.i18n").t("swarm_worker_title"), require("multi_context.i18n").t("agent_label") .. agent_name, require("multi_context.i18n").t("api_label") .. (api_name or require("multi_context.i18n").t("unknown")), "", initial_instruction or "", "" }
+    local lines = { 
+        require("multi_context.i18n").t("swarm_worker_title"), 
+        require("multi_context.i18n").t("agent_label") .. agent_name, 
+        require("multi_context.i18n").t("api_label") .. (api_name or require("multi_context.i18n").t("unknown")), 
+        "" 
+    }
+    if initial_instruction then
+        for _, l in ipairs(vim.split(initial_instruction, "\n", {plain=true})) do
+            table.insert(lines, l)
+        end
+    end
+    table.insert(lines, "")
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
     if not M.swarm_buffers then M.swarm_buffers = {} end

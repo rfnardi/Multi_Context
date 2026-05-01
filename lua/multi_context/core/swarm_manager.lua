@@ -86,7 +86,11 @@ M.dispatch_next = function()
                 system_prompt = system_prompt .. "\n\n=== YOUR GUIDELINES ===\n" .. loaded_agents[task.agent].system_prompt
             end
             
-            local context_text = ""
+            local registry = require('multi_context.skills.registry')
+            local agent_def_for_skills = loaded_agents[task.agent] or loaded_agents["coder"] or {skills={}}
+            system_prompt = system_prompt .. "\n\n" .. registry.build_manual_for_skills(agent_def_for_skills.skills)
+            
+            local context_text = "" 
             if type(task.context) == "table" then
                 for _, path in ipairs(task.context) do
                     if path ~= "*" and path ~= "" then
@@ -95,7 +99,7 @@ M.dispatch_next = function()
                 end
             end
             system_prompt = system_prompt .. "\n\n=== INITIAL CONTEXT PROVIDED ===\n" .. context_text            
-            system_prompt = system_prompt .. "\n\n=== DELIVERY RULES (MANDATORY) ===\nWhen you finish the task and no longer need to use any tools, you MUST deliver your final report inside the <final_report>...</final_report> tags. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any). This tag ends your execution, and without it, the master will not read your response."
+            system_prompt = system_prompt .. "\n\n=== DELIVERY RULES & TOOL SYNTAX (CRITICAL) ===\n1. TOOL SYNTAX: You must ONLY use the exact tool names provided in the ACTIVE SKILLS list. Do NOT invent tools or XML tags (e.g., no <bash>, <execute>, <function>). Parameters like 'path' MUST be passed as XML attributes, e.g.: <tool_call name=\"read_file\" path=\"src/main.ts\"></tool_call>\n2. TASK COMPLETION: When your task is fully completed and you DO NOT need to call any more tools, you MUST output your results inside <final_report>...</final_report> tags.\n3. FATAL ERROR WARNING: If you stop responding without using a tool AND without opening a <final_report> tag, the system will consider it a FATAL ERROR and fail your task. ALWAYS conclude with <final_report>. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any)."
 
             local cfg = require('multi_context.config').options
             if cfg.language == "pt-BR" then
@@ -169,7 +173,7 @@ M.dispatch_next = function()
                                             new_system = new_system .. "\n\n=== YOUR GUIDELINES ===\n" .. loaded_agents[switch_target].system_prompt
                                         end
                                         new_system = new_system .. "\n\n=== INITIAL CONTEXT PROVIDED ===\n" .. context_text
-                                        new_system = new_system .. "\n\n=== DELIVERY RULES (MANDATORY) ===\nWhen you finish the task and no longer need to use any tools, you MUST deliver your final report inside the <final_report>...</final_report> tags. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any). This tag ends your execution, and without it, the master will not read your response."
+                                        new_system = new_system .. "\n\n=== DELIVERY RULES & TOOL SYNTAX (CRITICAL) ===\n1. TOOL SYNTAX: You must ONLY use exact tool names from ACTIVE SKILLS. Do NOT invent tags (no <bash>, <execute>). Parameters like 'path' MUST be XML attributes.\n2. TASK COMPLETION: When your task is fully completed, you MUST output results inside <final_report>...</final_report> tags.\n3. FATAL ERROR WARNING: Stopping without using a tool AND without a <final_report> is a FATAL ERROR. ALWAYS conclude with <final_report>. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any). This tag ends your execution, and without it, the master will not read your response."
                                         
                                         local cfg = require('multi_context.config').options
                                         if cfg.language == "pt-BR" then
