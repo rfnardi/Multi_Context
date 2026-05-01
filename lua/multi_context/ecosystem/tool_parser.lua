@@ -3,7 +3,7 @@ local M = {}
 local valid_tools_list = {
     "list_files", "read_file", "search_code", "edit_file", 
     "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent",
-    "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"
+    "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit", "get_agents_info", "get_project_stack", "get_git_env"
 }
 
 -- 1. SANITIZADOR ANTI-ALUCINAÇÃO DE SINTAXE

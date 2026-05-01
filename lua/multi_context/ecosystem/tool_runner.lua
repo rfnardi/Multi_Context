@@ -7,7 +7,7 @@ local valid_tools = {
     list_files = true, read_file = true, search_code = true,
     edit_file = true, run_shell = true, replace_lines = true, apply_diff = true,
     rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true, switch_agent = true,
-    lsp_definition = true, lsp_references = true, lsp_document_symbols = true, git_status = true, git_branch = true, git_commit = true
+    lsp_definition = true, lsp_references = true, lsp_document_symbols = true, git_status = true, git_branch = true, git_commit = true, get_agents_info = true, get_project_stack = true, get_git_env = true
 }
 
 local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
@@ -137,6 +137,12 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         local files_str = tool_data.inner and tool_data.inner:match("<files>(.-)</files>") or ""
         local msg = tool_data.inner and tool_data.inner:match("<message>(.-)</message>") or clean_inner
         should_continue_loop = true; result = tools.git_commit(files_str, msg)
+    elseif name == "get_agents_info" then
+        should_continue_loop = true; result = tools.get_agents_info()
+    elseif name == "get_project_stack" then
+        should_continue_loop = true; result = tools.get_project_stack(buf)
+    elseif name == "get_git_env" then
+        should_continue_loop = true; result = tools.get_git_env()
     elseif name == "lsp_definition" then
         should_continue_loop = true; result = require('multi_context.ecosystem.lsp_bridge').get_definition(tool_data.path, tool_data.start_line, clean_inner)
     elseif name == "lsp_references" then

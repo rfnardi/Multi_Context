@@ -272,4 +272,74 @@ M.git_commit = function(files_str, message)
     return i18n.t("succ_commit", commit_out)
 end
 
+
+M.get_agents_info = function()
+    local agents = require('multi_context.agents').load_agents()
+    local out = {"=== AGENTES DISPONÍVEIS E SUAS FERRAMENTAS ==="}
+    for name, data in pairs(agents) do
+        table.insert(out, "- @" .. name .. " [Nível: " .. (data.abstraction_level or "high") .. "]: " .. table.concat(data.skills or {}, ", "))
+    end
+    return table.concat(out, "\n")
+end
+
+M.get_project_stack = function(buf)
+    local root = get_repo_root() or vim.fn.getcwd()
+    local out = {"=== PROJECT STACK & ENVIRONMENT ==="}
+    
+    local os_info = vim.loop.os_uname()
+    table.insert(out, "SO: " .. os_info.sysname .. " " .. os_info.release .. " (" .. os_info.machine .. ")")
+    table.insert(out, "Shell: " .. vim.o.shell)
+
+    if buf and vim.api.nvim_buf_is_valid(buf) then
+        local expandtab = vim.bo[buf].expandtab
+        local shiftwidth = vim.bo[buf].shiftwidth
+        table.insert(out, "Indentação do Buffer Atual: " .. (expandtab and "Espaços" or "Tabs") .. " (Tamanho: " .. shiftwidth .. ")")
+
+        local clients = vim.lsp.get_clients and vim.lsp.get_clients({bufnr = buf}) or {}
+        if #clients > 0 then
+            local lsp_names = {}
+            for _, c in ipairs(clients) do table.insert(lsp_names, c.name) end
+            table.insert(out, "LSP Ativo Neste Arquivo: Sim (" .. table.concat(lsp_names, ", ") .. ")")
+        else
+            table.insert(out, "LSP Ativo Neste Arquivo: Não")
+        end
+    end
+
+    local markers = {"Makefile", "package.json", "Cargo.toml", "requirements.txt", "pom.xml", "go.mod", "tests/", "spec/", "docker-compose.yml"}
+    local found_markers = {}
+    for _, m in ipairs(markers) do
+        if vim.fn.glob(root .. "/" .. m) ~= "" then table.insert(found_markers, m) end
+    end
+    if #found_markers > 0 then
+        table.insert(out, "Marcadores de Ecossistema Encontrados: " .. table.concat(found_markers, ", "))
+    end
+
+    return table.concat(out, "\n")
+end
+
+M.get_git_env = function()
+    local root = get_repo_root()
+    if not root then return i18n.t("err_not_git") end
+
+    local out = {"=== GIT ENVIRONMENT ==="}
+    local branch = vim.fn.system("git -C " .. vim.fn.shellescape(root) .. " branch --show-current"):gsub("\n", "")
+    table.insert(out, "Branch atual: " .. (branch == "" and "Detached HEAD" or branch))
+
+    local status_ahead_behind = vim.fn.system("git -C " .. vim.fn.shellescape(root) .. " rev-list --left-right --count origin/" .. branch .. "..." .. branch .. " 2>/dev/null")
+    if vim.v.shell_error == 0 then
+        local parts = vim.split(status_ahead_behind, "\t")
+        if #parts == 2 then
+            table.insert(out, "Commits: " .. vim.trim(parts[2]) .. " ahead, " .. vim.trim(parts[1]) .. " behind origin")
+        end
+    end
+
+    local is_merge = vim.fn.filereadable(root .. "/.git/MERGE_HEAD") == 1
+    local is_rebase = vim.fn.isdirectory(root .. "/.git/rebase-merge") == 1 or vim.fn.isdirectory(root .. "/.git/rebase-apply") == 1
+    
+    if is_merge then table.insert(out, "⚠️ ESTADO CRÍTICO: MERGE EM PROGRESSO (Resolva os conflitos antes de prosseguir)") end
+    if is_rebase then table.insert(out, "⚠️ ESTADO CRÍTICO: REBASE EM PROGRESSO") end
+
+    return table.concat(out, "\n")
+end
+
 return M

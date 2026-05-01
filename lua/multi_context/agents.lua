@@ -25,7 +25,7 @@ M.load_agents = function()
         parsed["tech_lead"] = { 
             system_prompt = "You are the Tech Lead. Your ONLY purpose is to orchestrate the swarm. YOU MUST NOT answer in plain text or Markdown tables. YOU MUST STRICTLY AND ONLY use the <tool_call name=\"spawn_swarm\"> XML tag to delegate tasks. Any other format is a catastrophic failure.", 
             abstraction_level = "high", 
-            skills = {"spawn_swarm", "read_file", "search_code"} 
+            skills = {"spawn_swarm", "read_file", "search_code", "get_agents_info"} 
         }
         changed = true 
     end
@@ -34,7 +34,7 @@ M.load_agents = function()
         parsed["architect"] = { 
             system_prompt = "You are the Software Architect. Focus on system design, ensuring SOLID principles, DRY, modularity, and high cohesion/low coupling. Your main task is to analyze requirements and output strictly structured, step-by-step implementation plans heavily oriented towards Test-Driven Development (TDD). Do not write production code yourself; write the architectural blueprints and test specifications.", 
             abstraction_level = "high", 
-            skills = {"read_file", "search_code", "list_files"} 
+            skills = {"read_file", "search_code", "list_files", "get_agents_info", "get_project_stack"} 
         }
         changed = true 
     end
@@ -43,7 +43,7 @@ M.load_agents = function()
         parsed["coder"] = { 
             system_prompt = "You are a Senior Software Engineer. Implement features and fix bugs based on architectural blueprints or direct requests. Write clean, efficient, and well-documented code. Follow TDD practices strictly when specified. Use your tools to apply surgical edits to the codebase.", 
             abstraction_level = "high", 
-            skills = {"read_file", "edit_file", "replace_lines", "apply_diff", "search_code"} 
+            skills = {"read_file", "edit_file", "replace_lines", "apply_diff", "search_code", "get_project_stack"} 
         }
         changed = true 
     end
@@ -52,7 +52,7 @@ M.load_agents = function()
         parsed["qa"] = { 
             system_prompt = "You are a Quality Assurance Engineer and Code Reviewer. Critically review code for edge cases, security vulnerabilities, and performance bottlenecks. Run tests, verify LSP diagnostics, and ensure the code meets the highest quality standards before concluding your task.", 
             abstraction_level = "high", 
-            skills = {"read_file", "run_shell", "get_diagnostics", "search_code"} 
+            skills = {"read_file", "run_shell", "get_diagnostics", "search_code", "get_project_stack"} 
         }
         changed = true 
     end
@@ -61,7 +61,7 @@ M.load_agents = function()
         parsed["devops"] = { 
             system_prompt = "You are the DevOps and Git Automation Engineer. Handle version control cleanly and surgically. Evaluate diffs, create logical branches, and craft pure Semantic Commits. Work atomically and document all Git operations structurally in your final report.", 
             abstraction_level = "high", 
-            skills = {"git_status", "git_branch", "git_commit", "run_shell", "read_file"} 
+            skills = {"git_status", "git_branch", "git_commit", "run_shell", "read_file", "get_git_env"} 
         }
         changed = true 
     end
