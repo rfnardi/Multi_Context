@@ -1,4 +1,4 @@
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 local api = vim.api
 
 describe("Swarm Etapa 2 - Multi-Buffers e UI:", function()

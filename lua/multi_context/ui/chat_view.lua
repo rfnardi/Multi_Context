@@ -71,8 +71,8 @@ function M.create_popup(initial_content_or_bufnr)
     api.nvim_buf_set_keymap(buf, "n", "<A-b>", "<Cmd>lua require('multi_context.utils.utils').copy_code_block()<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<A-b>", "<Esc><Cmd>lua require('multi_context.utils.utils').copy_code_block()<CR>a", km)
     api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
-    api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(1)<CR>", km)
-    api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(-1)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.chat_view').cycle_swarm_buffer(1)<CR>", km)
+    api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.chat_view').cycle_swarm_buffer(-1)<CR>", km)
     
     api.nvim_buf_set_keymap(buf, "n", "<C-x>", "<Cmd>lua require('multi_context.core.react_orchestrator').abort_stream(true)<CR>", km)
     api.nvim_buf_set_keymap(buf, "i", "<C-x>", "<Esc><Cmd>lua require('multi_context.core.react_orchestrator').abort_stream(true)<CR>", km)
@@ -107,7 +107,7 @@ function M.create_popup(initial_content_or_bufnr)
     api.nvim_create_autocmd({"TextChanged", "TextChangedI", "TextChangedP"}, {
         buffer = buf,
         callback = function()
-            require('multi_context.ui.popup').update_title()
+            require('multi_context.ui.chat_view').update_title()
         end
     })
 
@@ -157,7 +157,7 @@ function M.create_folds(buf)
                 vim.api.nvim_win_call(win, function()
                     vim.cmd("setlocal foldmethod=manual")
                     vim.cmd("setlocal foldexpr=")
-                    vim.cmd("setlocal foldtext=v:lua.require('multi_context.ui.popup').fold_text()")
+                    vim.cmd("setlocal foldtext=v:lua.require('multi_context.ui.chat_view').fold_text()")
                     pcall(vim.cmd, 'normal! zE')
 
                     local total_lines = vim.api.nvim_buf_line_count(buf)
@@ -270,8 +270,8 @@ function M.create_swarm_buffer(agent_name, initial_instruction, api_name)
 
     local km = { noremap = true, silent = true }
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "<Cmd>q<CR>", km)
-    vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(1)<CR>", km)
-    vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.popup').cycle_swarm_buffer(-1)<CR>", km)
+    vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "<Cmd>lua require('multi_context.ui.chat_view').cycle_swarm_buffer(1)<CR>", km)
+    vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "<Cmd>lua require('multi_context.ui.chat_view').cycle_swarm_buffer(-1)<CR>", km)
     
     require('multi_context.ui.highlights').apply_chat(buf)
     M.create_folds(buf)
@@ -319,6 +319,82 @@ EventBus.on("UI_SWARM_WORKER_UPDATE", function(payload)
     if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
     local lines = vim.split(payload.text, "\n", {plain=true})
     vim.api.nvim_buf_set_lines(payload.buf, 4, -1, false, lines)
+end)
+
+
+EventBus.on("UI_TERMINATE_TURN", function(payload)
+    local M_pop = require('multi_context.ui.chat_view')
+    local buf = M_pop.popup_buf
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
+    
+    local next_prompt_lines = { "", "## API atual: " .. payload.current_api, "## " .. payload.user_name .. " >> " }
+    
+    if payload.queued_tasks and payload.queued_tasks ~= "" then
+        if not payload.is_queue_mode then
+            table.insert(next_prompt_lines, require("multi_context.i18n").t("checkpoint"))
+        end
+        for _, q_line in ipairs(vim.split(payload.queued_tasks, "\n")) do 
+            table.insert(next_prompt_lines, q_line) 
+        end
+    end
+    
+    vim.api.nvim_buf_set_lines(buf, -1, -1, false, next_prompt_lines)
+    M_pop.create_folds(buf)
+    require('multi_context.ui.highlights').apply_chat(buf)
+    M_pop.update_title()
+    
+    if M_pop.popup_win and vim.api.nvim_win_is_valid(M_pop.popup_win) then
+        pcall(vim.api.nvim_win_set_cursor, M_pop.popup_win, { vim.api.nvim_buf_line_count(buf), 0 })
+        vim.cmd("normal! zz"); vim.cmd("startinsert!")
+    end
+
+    if payload.auto_trigger then
+        vim.cmd("stopinsert")
+        vim.defer_fn(function() require('multi_context.core.event_bus').emit('USER_SUBMIT', { buf = buf }) end, 100)
+    end
+end)
+
+
+EventBus.on("UI_SET_LINES_PARTIAL", function(payload)
+    if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
+    vim.api.nvim_buf_set_lines(payload.buf, payload.start_idx, payload.end_idx, false, payload.lines)
+end)
+
+EventBus.on("UI_SET_LINES", function(payload)
+    if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
+    vim.api.nvim_buf_set_lines(payload.buf, 0, -1, false, payload.lines)
+end)
+
+EventBus.on("UI_APPEND_LINES", function(payload)
+    if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
+    vim.api.nvim_buf_set_lines(payload.buf, -1, -1, false, payload.lines)
+    require('multi_context.ui.highlights').apply_chat(payload.buf)
+end)
+
+EventBus.on("UI_ARCHIVIST_DONE", function(payload)
+    if not payload.buf or not vim.api.nvim_buf_is_valid(payload.buf) then return end
+    local p = require('multi_context.ui.chat_view')
+    require('multi_context.ui.highlights').apply_chat(payload.buf)
+    p.create_folds(payload.buf)
+    p.update_title()
+end)
+
+EventBus.on("UI_UPDATE_TITLE", function()
+    require('multi_context.ui.chat_view').update_title()
+end)
+
+EventBus.on("UI_START_STREAMING", function(payload)
+    local p = require('multi_context.ui.chat_view')
+    require('multi_context.ui.scroller').start_streaming(payload.buf, p.popup_win)
+end)
+
+EventBus.on("UI_STOP_STREAMING", function(payload)
+    require('multi_context.ui.scroller').stop_streaming(payload.buf)
+end)
+
+EventBus.on("UI_CHUNK_RECEIVED", function(payload)
+    local p = require('multi_context.ui.chat_view')
+    require('multi_context.ui.scroller').on_chunk_received(payload.buf, p.popup_win)
 end)
 
 return M

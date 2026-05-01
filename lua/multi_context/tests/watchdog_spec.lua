@@ -1,7 +1,7 @@
 local init = require('multi_context')
 local memory_tracker = require('multi_context.utils.memory_tracker')
 local api_client = require('multi_context.llm.api_client')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 local config = require('multi_context.config')
 local StateManager = require('multi_context.core.state_manager')
 local react_orchestrator = require('multi_context.core.react_orchestrator')
@@ -12,6 +12,7 @@ describe("Fase 22 - Passo 2: O Interceptador do Watchdog", function()
     local buf
 
     before_each(function()
+        config.options.user_name = "Nardi"
         captured_requests = {}
         StateManager.get('react').pending_user_prompt = nil
         StateManager.get('react').active_agent = nil
@@ -50,7 +51,7 @@ describe("Fase 22 - Passo 2: O Interceptador do Watchdog", function()
             if call_count == 1 then return 2500 else return 1000 end
         end
         
-        require('multi_context.core.react_orchestrator').SendFromPopup()
+        require('multi_context.core.react_orchestrator').ProcessTurn(buf)
         
         assert.are.same(2, #captured_requests, "O Motor deve ter feito a chamada do Guardiao E religado automaticamente depois!")
         

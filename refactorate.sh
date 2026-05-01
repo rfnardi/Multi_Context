@@ -1,61 +1,54 @@
 #!/bin/bash
 
 echo "==========================================================="
-echo "🩹 CORRIGINDO TESTES DA FASE 35 (REGISTRY E SWARM MANAGER)"
+echo "🩹 ATUALIZANDO TESTES PARA A ARQUITETURA V2.0"
 echo "==========================================================="
 
-python3 - << 'PY_EOF'
+python3 - << 'EOF'
 import os
-import re
 
-def find_file(filename):
-    for root, _, files in os.walk("lua/multi_context"):
-        if filename in files: return os.path.join(root, filename)
-    return None
+def patch_file(filepath, replacements):
+    if not os.path.exists(filepath):
+        print(f"Arquivo não encontrado: {filepath}")
+        return
+        
+    with open(filepath, 'r') as f:
+        content = f.read()
+        
+    original = content
+    for old, new in replacements:
+        content = content.replace(old, new)
+        
+    if content != original:
+        with open(filepath, 'w') as f:
+            f.write(content)
+        print(f"✅ Teste corrigido: {filepath}")
 
-# =====================================================================
-# 1. FIX: Otimização Extrema de Tokens no Registry (prompt_optimization_spec)
-# =====================================================================
-registry_path = find_file("registry.lua")
-if registry_path:
-    with open(registry_path, "r") as f: content = f.read()
-    
-    # Vamos substituir tudo entre o SYSTEM TOOLS e ACTIVE SKILLS por uma versão ultracurta
-    pattern = r"local manual = \[\[=== SYSTEM TOOLS & SYNTAX.*?=== ACTIVE SKILLS ===\]\]"
-    
-    hyper_synthetic_manual = """local manual = [[=== SYSTEM TOOLS & SYNTAX (CRITICAL) ===
-STRICT XML ONLY: <tool_call name="name" attr="val">
-NO inventing tools/tags. NO Markdown wrapping (```xml).
-ONE action per turn. Auto-LSP active: DO NOT call get_diagnostics after edits.
-=== ACTIVE SKILLS ===]]"""
+# 1. global_flags_spec.lua
+patch_file('lua/multi_context/tests/global_flags_spec.lua', [
+    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(buf)"),
+    ("before_each(function()", "before_each(function()\n        require('multi_context.config').options.user_name = \"Nardi\"")
+])
 
-    if re.search(pattern, content, re.DOTALL):
-        content = re.sub(pattern, hyper_synthetic_manual, content, flags=re.DOTALL)
-        with open(registry_path, "w") as f: f.write(content)
-        print("✅ prompt_optimization_spec corrigido: Manual base sintetizado para < 280 chars.")
-    else:
-        print("⚠️ Padrão não encontrado no registry.lua")
+# 2. integration_spec.lua
+patch_file('lua/multi_context/tests/integration_spec.lua', [
+    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(popup.popup_buf)")
+])
 
-# =====================================================================
-# 2. FIX: Exigência do Git no Relatório do Swarm (git_tools_spec)
-# =====================================================================
-swarm_path = find_file("swarm_manager.lua")
-if swarm_path:
-    with open(swarm_path, "r") as f: content = f.read()
-    
-    # Injetar a obrigatoriedade do Git no <final_report> da instrução inicial do Swarm
-    old_str = "ALWAYS conclude with <final_report>.\""
-    new_str = "ALWAYS conclude with <final_report>. The report MUST include a clear summary of what was done, the edited files, and list in a structured way the executed Git operations (if any).\""
-    
-    if old_str in content:
-        content = content.replace(old_str, new_str)
-        with open(swarm_path, "w") as f: f.write(content)
-        print("✅ git_tools_spec corrigido: Swarm Manager agora cobra explicitamente operações Git no <final_report>.")
-    else:
-        print("⚠️ Padrão não encontrado no swarm_manager.lua")
+# 3. init_tracker_spec.lua
+patch_file('lua/multi_context/tests/init_tracker_spec.lua', [
+    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(buf)"),
+    ("before_each(function()", "before_each(function()\n        config.options.user_name = \"Nardi\"")
+])
 
-PY_EOF
+# 4. watchdog_spec.lua
+patch_file('lua/multi_context/tests/watchdog_spec.lua', [
+    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(buf)"),
+    ("before_each(function()", "before_each(function()\n        config.options.user_name = \"Nardi\"")
+])
+
+EOF
 
 echo "==========================================================="
-echo "Concluído! Rode 'make test_agregate_results' para verificar."
+echo "🚀 Pronto! Rode 'make test_agregate_results'."
 echo "==========================================================="

@@ -1,5 +1,5 @@
 local M = {}
-local tools = require('multi_context.ecosystem.tools')
+local tools = require('multi_context.ecosystem.native_tools')
 local StateManager = require('multi_context.core.state_manager')
 local i18n = require('multi_context.i18n')
 
@@ -138,11 +138,11 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         local msg = tool_data.inner and tool_data.inner:match("<message>(.-)</message>") or clean_inner
         should_continue_loop = true; result = tools.git_commit(files_str, msg)
     elseif name == "lsp_definition" then
-        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_utils').get_definition(tool_data.path, tool_data.start_line, clean_inner)
+        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_bridge').get_definition(tool_data.path, tool_data.start_line, clean_inner)
     elseif name == "lsp_references" then
-        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_utils').get_references(tool_data.path, tool_data.start_line, clean_inner)
+        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_bridge').get_references(tool_data.path, tool_data.start_line, clean_inner)
     elseif name == "lsp_document_symbols" then
-        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_utils').get_document_symbols(tool_data.path)
+        should_continue_loop = true; result = require('multi_context.ecosystem.lsp_bridge').get_document_symbols(tool_data.path)
     elseif name == "get_diagnostics" then 
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
     elseif name == "spawn_swarm" then

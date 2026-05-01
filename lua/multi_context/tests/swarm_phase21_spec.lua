@@ -1,6 +1,6 @@
 local swarm = require('multi_context.core.swarm_manager')
 local api_client = require('multi_context.llm.api_client')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 local agents = require('multi_context.agents')
 
 describe("Fase 21 - Pipelines e Coreografia:", function()

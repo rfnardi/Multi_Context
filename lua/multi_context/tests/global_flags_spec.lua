@@ -2,7 +2,7 @@ local init = require('multi_context')
 local StateManager = require('multi_context.core.state_manager')
 local react_orchestrator = require('multi_context.core.react_orchestrator')
 local prompt_parser = require('multi_context.llm.prompt_parser')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 
 describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function()
     local buf
@@ -11,6 +11,7 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
     local api_client = require('multi_context.llm.api_client')
 
     before_each(function()
+        require('multi_context.config').options.user_name = "Nardi"
         react_orchestrator.reset_turn()
         StateManager.get('react').is_queue_mode = false
         StateManager.get('react').queued_tasks = nil
@@ -20,6 +21,7 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
         
         captured_messages = nil
         orig_execute = api_client.execute
+        captured_messages = nil
         api_client.execute = function(msgs, on_start, on_chunk, on_done)
             captured_messages = msgs
         end
@@ -39,10 +41,11 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
         }
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, text)
         
-        require('multi_context.core.react_orchestrator').SendFromPopup()
+        require('multi_context.core.react_orchestrator').ProcessTurn(buf)
         
         assert.is_true(StateManager.get('react').is_queue_mode, "A flag --queue deve ativar o modo de fila")
         assert.truthy(StateManager.get('react').queued_tasks:match("@qa"), "O segundo agente deve ter ido para a fila")
+        assert.is_not_nil(captured_messages)
         assert.falsy(captured_messages[#captured_messages].content:match("%-%-queue"), "A flag deve ser removida do payload")
     end)
 
@@ -53,7 +56,7 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
         }
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, text)
         
-        require('multi_context.core.react_orchestrator').SendFromPopup()
+        require('multi_context.core.react_orchestrator').ProcessTurn(buf)
         
         assert.is_nil(StateManager.get('react').queued_tasks, "No modo MOA a fila deve ficar vazia")
         assert.are.same("tech_lead", StateManager.get('react').active_agent, "O tech_lead deve assumir o controle forcadamente")
@@ -69,8 +72,8 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
         StateManager.get('react').queued_tasks = "@qa teste"
         
         local send_called = false
-        local orig_send = require('multi_context.core.react_orchestrator').SendFromPopup
-        require('multi_context.core.react_orchestrator').SendFromPopup = function() send_called = true end
+        local orig_send = require('multi_context.core.react_orchestrator').ProcessTurn
+        require('multi_context.core.react_orchestrator').ProcessTurn = function() send_called = true end
         
         local orig_defer = vim.defer_fn
         vim.defer_fn = function(cb, ms) cb() end
@@ -85,6 +88,6 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
         assert.is_true(send_called, "Deve ter agendado o proximo turno automaticamente")
         
         vim.defer_fn = orig_defer
-        require('multi_context.core.react_orchestrator').SendFromPopup = orig_send
+        require('multi_context.core.react_orchestrator').ProcessTurn = orig_send
     end)
 end)

@@ -77,7 +77,7 @@ M.get_current_buffer = function()
     
     -- Se quem invocou isso foi o Injetor por dentro do chat, nós pegamos o buffer de código subjacente!
     if vim.bo[buf].filetype == 'multicontext_chat' then
-        local pcall_ok, popup = pcall(require, 'multi_context.ui.popup')
+        local pcall_ok, popup = pcall(require, 'multi_context.ui.chat_view')
         if pcall_ok and popup.code_buf_before_popup and api.nvim_buf_is_valid(popup.code_buf_before_popup) then
             buf = popup.code_buf_before_popup
         end
@@ -99,7 +99,7 @@ M.get_visual_selection = function(line1, line2)
     local buf = api.nvim_get_current_buf()
     
     if vim.bo[buf].filetype == 'multicontext_chat' then
-        local pcall_ok, popup = pcall(require, 'multi_context.ui.popup')
+        local pcall_ok, popup = pcall(require, 'multi_context.ui.chat_view')
         if pcall_ok and popup.code_buf_before_popup and api.nvim_buf_is_valid(popup.code_buf_before_popup) then
             buf = popup.code_buf_before_popup
         end

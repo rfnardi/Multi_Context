@@ -1,5 +1,5 @@
 local EventBus = require('multi_context.core.event_bus')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 
 describe("UI View Arquitetura 2.0 (popup.lua):", function()
     it("Deve injetar texto no buffer ao escutar o evento UI_APPEND_CHUNK", function()

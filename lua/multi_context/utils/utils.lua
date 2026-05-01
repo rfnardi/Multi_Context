@@ -37,7 +37,7 @@ M.build_workspace_content = function(buf, existing_filename)
     content = content:gsub("<swarm_state>.-</swarm_state>%s*", "")
     
     local swarm = require('multi_context.core.swarm_manager')
-    local popup = require('multi_context.ui.popup')
+    local popup = require('multi_context.ui.chat_view')
     
     local state_data = { queue = swarm.state.queue or {}, reports = swarm.state.reports or {}, buffers = {} }
     
@@ -79,7 +79,7 @@ M.load_workspace_state = function(buf)
         local ok, parsed = pcall(vim.fn.json_decode, swarm_state_str)
         if ok and type(parsed) == "table" then
             local swarm = require('multi_context.core.swarm_manager')
-            local popup = require('multi_context.ui.popup')
+            local popup = require('multi_context.ui.chat_view')
             
             swarm.state.queue = parsed.queue or {}
             swarm.state.reports = parsed.reports or {}
@@ -148,7 +148,7 @@ M.export_to_workspace = function(content, existing_filename)
     vim.cmd("stopinsert")
     
     require('multi_context.ui.highlights').apply_chat(new_buf)
-    require('multi_context.ui.popup').create_folds(new_buf)
+    require('multi_context.ui.chat_view').create_folds(new_buf)
     
     local km = { noremap = true, silent = true }
     vim.api.nvim_buf_set_keymap(new_buf, "i", "@", "@<Esc><Cmd>lua require('multi_context.agents').open_agent_selector()<CR>", km)

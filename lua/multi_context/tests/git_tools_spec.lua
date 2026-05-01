@@ -1,4 +1,4 @@
-local tools = require('multi_context.ecosystem.tools')
+local tools = require('multi_context.ecosystem.native_tools')
 
 describe("Fase 31 - Passo 1: Automação Git (Agente DevOps)", function()
     local orig_system

@@ -1,6 +1,6 @@
 local utils = require('multi_context.utils.utils')
 local swarm = require('multi_context.core.swarm_manager')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 
 describe("Fase 18.5 - Session & State Management:", function()
     before_each(function()

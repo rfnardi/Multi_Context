@@ -1,7 +1,7 @@
 local config = require('multi_context.config')
 local api_client = require('multi_context.llm.api_client')
-local popup = require('multi_context.ui.popup')
-local tools = require('multi_context.ecosystem.tools')
+local popup = require('multi_context.ui.chat_view')
+local tools = require('multi_context.ecosystem.native_tools')
 local agents = require('multi_context.agents')
 local tool_parser = require('multi_context.ecosystem.tool_parser')
 local tool_runner = require('multi_context.ecosystem.tool_runner')
@@ -184,7 +184,7 @@ M.dispatch_next = function()
                                         new_content = i18n.t("swarm_success_switch", switch_target)
                                         
                                         if buf_id and vim.api.nvim_buf_is_valid(buf_id) then
-                                            local popup = require('multi_context.ui.popup')
+                                            local popup = require('multi_context.ui.chat_view')
                                             if popup.swarm_buffers then
                                                 for _, sb in ipairs(popup.swarm_buffers) do
                                                     if sb.buf == buf_id then

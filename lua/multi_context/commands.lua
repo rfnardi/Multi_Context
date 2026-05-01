@@ -1,7 +1,7 @@
 local M = {}
 
 local function open_with(content)
-    local buf, win = require('multi_context.ui.popup').create_popup(content)
+    local buf, win = require('multi_context.ui.chat_view').create_popup(content)
     if buf and win then vim.cmd("startinsert!") end
 end
 
@@ -40,7 +40,7 @@ M.ContextChatGit = function()
 end
 
 M.ContextControls = function()
-    require('multi_context.ui.context_controls').open_panel()
+    require('multi_context.ui.controls_view').open_panel()
 end
 
 M.ContextBuffers  = function()
@@ -48,7 +48,7 @@ M.ContextBuffers  = function()
 end
 
 M.TogglePopup = function()
-    local popup = require('multi_context.ui.popup')
+    local popup = require('multi_context.ui.chat_view')
 
     if popup.popup_win and vim.api.nvim_win_is_valid(popup.popup_win) then
         vim.api.nvim_win_hide(popup.popup_win)

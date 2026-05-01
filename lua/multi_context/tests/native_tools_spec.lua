@@ -1,4 +1,4 @@
-local tools = require('multi_context.ecosystem.tools')
+local tools = require('multi_context.ecosystem.native_tools')
 
 describe("Tools Module (Agentes Autônomos):", function()
     local tmp_file = os.tmpname()
@@ -57,7 +57,7 @@ end)
     end)
 
 describe("Tools Module (Execucao de Shell):", function()
-    local tools = require('multi_context.ecosystem.tools')
+    local tools = require('multi_context.ecosystem.native_tools')
 
     it("Deve executar run_shell e retornar SUCESSO com a saida do terminal", function()
         local res = tools.run_shell("echo 'Testando_Terminal_123'")
@@ -79,7 +79,7 @@ end)
 
 
 describe("Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep)", function()
-    local tools = require('multi_context.ecosystem.tools')
+    local tools = require('multi_context.ecosystem.native_tools')
     local orig_executable
     local orig_system
 

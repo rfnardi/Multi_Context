@@ -1,5 +1,5 @@
 local init = require('multi_context') -- Usando require na raiz para capturar o mesmo cache!
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 local StateManager = require('multi_context.core.state_manager')
 local react_orchestrator = require('multi_context.core.react_orchestrator')
 local memory_tracker = require('multi_context.utils.memory_tracker')
@@ -11,8 +11,8 @@ describe("Fase 22 - Passo 3: A Persona @archivist e a Compressao", function()
 
     before_each(function()
         send_called = false
-        orig_send = require('multi_context.core.react_orchestrator').SendFromPopup
-        require('multi_context.core.react_orchestrator').SendFromPopup = function() send_called = true end
+        orig_send = require('multi_context.core.react_orchestrator').ProcessTurn
+        require('multi_context.core.react_orchestrator').ProcessTurn = function() send_called = true end
 
         orig_defer = vim.defer_fn
         vim.defer_fn = function(cb, ms) cb() end
@@ -34,13 +34,13 @@ describe("Fase 22 - Passo 3: A Persona @archivist e a Compressao", function()
     end)
 
     after_each(function()
-        require('multi_context.core.react_orchestrator').SendFromPopup = orig_send
+        require('multi_context.core.react_orchestrator').ProcessTurn = orig_send
         vim.defer_fn = orig_defer
         vim.api.nvim_buf_delete(buf, { force = true })
     end)
 
     it("Deve extrair o XML Quadripartite, limpar o buffer e re-anexar o prompt pendente", function()
-        require('multi_context.core.react_orchestrator').HandleArchivistCompression(1)
+        require('multi_context.core.react_orchestrator').HandleArchivistCompression(1, buf)
         
         local final_content = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
         

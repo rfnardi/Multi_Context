@@ -1,4 +1,4 @@
-local tools = require('multi_context.ecosystem.tools')
+local tools = require('multi_context.ecosystem.native_tools')
 
 describe("Tools Module (Unified Diff):", function()
     local tmp_file = os.tmpname()

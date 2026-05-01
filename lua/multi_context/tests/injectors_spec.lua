@@ -1,5 +1,5 @@
 local injectors = require('multi_context.ecosystem.injectors')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 
 describe("Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement", function()
     local orig_get_native

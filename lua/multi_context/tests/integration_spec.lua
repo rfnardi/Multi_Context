@@ -1,5 +1,5 @@
 local config = require('multi_context.config')
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 local init = require('multi_context.init')
 local api_client = require('multi_context.llm.api_client')
 local transport = require('multi_context.llm.transport')
@@ -58,7 +58,7 @@ describe("Integracao - Consumo das Configs do Painel pelo Motor", function()
         local orig_defer = vim.defer_fn
         vim.defer_fn = function(cb) cb() end
         
-        require('multi_context.core.react_orchestrator').SendFromPopup()
+        require('multi_context.core.react_orchestrator').ProcessTurn(popup.popup_buf)
         
         vim.defer_fn = orig_defer
         assert.truthy(captured_sys_prompt:match("DIRETRIZ_MESTRE_TESTE"), "O master_prompt deve ser injetado no inicio da requisicao")

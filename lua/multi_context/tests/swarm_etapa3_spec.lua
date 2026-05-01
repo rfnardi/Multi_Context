@@ -1,5 +1,5 @@
 -- lua/multi_context/tests/swarm_etapa3_spec.lua
-local popup = require('multi_context.ui.popup')
+local popup = require('multi_context.ui.chat_view')
 local api_client = require('multi_context.llm.api_client')
 
 describe("Swarm Etapa 3 - Manager e Fila:", function()

@@ -439,7 +439,7 @@ M.handle_cr = function()
             pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. filepath)
             require('multi_context.utils.utils').load_workspace_state(api.nvim_get_current_buf())
-            local ui_popup = require('multi_context.ui.popup')
+            local ui_popup = require('multi_context.ui.chat_view')
             ui_popup.create_popup(api.nvim_get_current_buf())
         end
     end
