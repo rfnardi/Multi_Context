@@ -161,6 +161,7 @@ end
 
 M._select = function()
     local name = M.filtered_list[M.current_selection]
+    if not name then M._close(); return end
     M._close_win_only()
     if M.parent_win and api.nvim_win_is_valid(M.parent_win) then
         api.nvim_set_current_win(M.parent_win)

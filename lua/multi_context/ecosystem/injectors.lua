@@ -138,6 +138,7 @@ end
 
 M._select = function()
     local name = M.filtered_list[M.current_selection]
+    if not name then M._close(); return end
     local all = M.get_all_injectors()
     local injector = all[name]
     
