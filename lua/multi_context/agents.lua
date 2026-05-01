@@ -170,7 +170,7 @@ M._select = function()
         local new_line = string.sub(line, 1, col + 1) .. name .. string.sub(line, col + 2)
         api.nvim_set_current_line(new_line)
         api.nvim_win_set_cursor(0, {row, col + 1 + #name})
-        api.nvim_feedkeys("a", "n", true)
+        vim.cmd("startinsert")
     end
 end
 
@@ -183,7 +183,7 @@ M._close = function()
     M._close_win_only()
     if M.parent_win and api.nvim_win_is_valid(M.parent_win) then 
         api.nvim_set_current_win(M.parent_win)
-        api.nvim_feedkeys("a", "n", true) 
+        vim.cmd("startinsert") 
     end
 end
 

@@ -166,7 +166,7 @@ M._select = function()
         
         api.nvim_win_set_cursor(0, {row + #content_lines, #(content_lines[#content_lines])})
         
-        api.nvim_feedkeys("a", "n", true)
+        vim.cmd("startinsert")
     end
 end
 
@@ -179,7 +179,7 @@ M._close = function()
     M._close_win_only()
     if M.parent_win and api.nvim_win_is_valid(M.parent_win) then 
         api.nvim_set_current_win(M.parent_win)
-        api.nvim_feedkeys("a", "n", true) 
+        vim.cmd("startinsert") 
     end
 end
 return M
