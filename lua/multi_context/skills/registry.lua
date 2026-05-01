@@ -29,11 +29,19 @@ M.get_skill_doc = function(skill_name)
 end
 
 M.build_manual_for_skills = function(skills_array)
-    if not skills_array or #skills_array == 0 then return "" end
+    if not skills_array or #skills_array == 0 then 
+        return "\n\n=== SYSTEM TOOLS ===\nWARNING: You currently have NO TOOLS available. You cannot read files, edit code, or run commands. Rely entirely on your internal reasoning and the provided context." 
+    end
     local manual = [[=== SYSTEM TOOLS & SYNTAX (CRITICAL) ===
-STRICT XML ONLY: <tool_call name="name" attr="val">
-NO inventing tools/tags. NO Markdown wrapping (```xml).
-ONE action per turn. Auto-LSP active: DO NOT call get_diagnostics after edits.
+You are an autonomous machine connected to a Neovim IDE. You have access to the tools below.
+
+CRITICAL RULES:
+1. STRICT XML ONLY. Format: <tool_call name="name" attr="val">...</tool_call>
+2. NO MARKDOWN WRAPPING. Never wrap your XML in ```xml ... ``` blocks.
+3. NO INVENTED TOOLS. Use ONLY the tools explicitly listed below.
+4. ONE ACTION PER TURN. Use ONE tool per response to allow the system to process it.
+5. AUTO-LSP ACTIVE. The system automatically runs diagnostics after edits. Do not call get_diagnostics manually after saving.
+
 === ACTIVE SKILLS ===]]
 
     for _, skill in ipairs(skills_array) do

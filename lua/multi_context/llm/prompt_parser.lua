@@ -91,9 +91,7 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         local agent_data = agents_table[active_agent_name]
         local active_agent_prompt = "\n\n=== AGENT INSTRUCTIONS: " .. string.upper(active_agent_name) .. " ===\n" .. agent_data.system_prompt
         
-        if agent_data.skills and #agent_data.skills > 0 then
-            active_agent_prompt = active_agent_prompt .. "\n\n" .. registry.build_manual_for_skills(agent_data.skills)
-        end
+        active_agent_prompt = active_agent_prompt .. "\n\n" .. registry.build_manual_for_skills(agent_data.skills)
         
         system_prompt = system_prompt .. active_agent_prompt
     end
@@ -138,6 +136,16 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
     if cfg.language == "pt-BR" then
         system_prompt = system_prompt .. i18n.t("sys_lang_directive")
     end
+
+    
+    local guardrails = [[
+
+=== FINAL GUARDRAILS (OBEY STRICTLY) ===
+- Provide your thought process if needed, but ALWAYS end your turn with a valid <tool_call> OR <final_report>.
+- NEVER output ```xml wrappers around your tags. Output raw XML directly.
+- NEVER invent tool names.]]
+    
+    system_prompt = system_prompt .. guardrails
 
     return system_prompt
 end

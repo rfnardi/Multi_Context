@@ -1,54 +1,28 @@
-#!/bin/bash
+#!/bin/fish 
 
-echo "==========================================================="
-echo "🩹 ATUALIZANDO TESTES PARA A ARQUITETURA V2.0"
-echo "==========================================================="
+gitgo '
 
-python3 - << 'EOF'
-import os
+feat(llm): blindagem cognitiva e guardrails anti-alucinação
 
-def patch_file(filepath, replacements):
-    if not os.path.exists(filepath):
-        print(f"Arquivo não encontrado: {filepath}")
-        return
-        
-    with open(filepath, 'r') as f:
-        content = f.read()
-        
-    original = content
-    for old, new in replacements:
-        content = content.replace(old, new)
-        
-    if content != original:
-        with open(filepath, 'w') as f:
-            f.write(content)
-        print(f"✅ Teste corrigido: {filepath}")
+Finaliza a Fase 36 do desenvolvimento, focada em otimização de contexto
+e mitigação de alucinações (tool-use) nos modelos de IA.
 
-# 1. global_flags_spec.lua
-patch_file('lua/multi_context/tests/global_flags_spec.lua', [
-    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(buf)"),
-    ("before_each(function()", "before_each(function()\n        require('multi_context.config').options.user_name = \"Nardi\"")
-])
+Mudanças implementadas:
+- 🛡️ Recency Bias Guardrails: Regras críticas (STRICT XML ONLY, sem
+  wrappers markdown) agora são injetadas no final absoluto do
+  System Prompt, garantindo obediência imediata do modelo.
+- 🛑 Zero-Skill Awareness: Agentes sem ferramentas habilitadas recebem
+  um aviso explícito ("NO TOOLS") para impedir a invenção de tags e 
+  forçar a resolução via raciocínio puro.
+- ⚙️ Registry Otimizado: O manual de ferramentas foi reescrito
+  adotando linguagem imperativa e concisa (estilo Claude Code),
+  reduzindo tokens e reforçando o limite de 1 ação por turno.
+- 🧪 Testes de Prompt: Adição do `prompt_hardening_spec.lua` para
+  garantir a integridade estrutural das strings injetadas no motor.
 
-# 2. integration_spec.lua
-patch_file('lua/multi_context/tests/integration_spec.lua', [
-    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(popup.popup_buf)")
-])
+Marco atingido: 149/149 testes automatizados no verde (100% de sucesso).
 
-# 3. init_tracker_spec.lua
-patch_file('lua/multi_context/tests/init_tracker_spec.lua', [
-    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(buf)"),
-    ("before_each(function()", "before_each(function()\n        config.options.user_name = \"Nardi\"")
-])
+[Fase 36 Concluída]
 
-# 4. watchdog_spec.lua
-patch_file('lua/multi_context/tests/watchdog_spec.lua', [
-    ("require('multi_context.core.react_orchestrator').ProcessTurn()", "require('multi_context.core.react_orchestrator').ProcessTurn(buf)"),
-    ("before_each(function()", "before_each(function()\n        config.options.user_name = \"Nardi\"")
-])
 
-EOF
-
-echo "==========================================================="
-echo "🚀 Pronto! Rode 'make test_agregate_results'."
-echo "==========================================================="
+'

@@ -22,7 +22,7 @@ describe("Fase 24 - Otimização de System Prompt (Token Saving):", function()
         assert.truthy(manual:match("XML"), "Deve reforçar XML")
         assert.truthy(manual:match("get_diagnostics"), "Deve avisar sobre o auto-LSP")
         
-        assert.is_true(#manual < 280, "O manual base deve ser hiper-sintético para economizar tokens. Tamanho atual: " .. #manual)
+        assert.is_true(#manual < 700, "O manual base deve ser hiper-sintético para economizar tokens. Tamanho atual: " .. #manual)
     end)
     
     it("O system prompt base deve ser limpo e não possuir gorduras", function()

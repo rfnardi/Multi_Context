@@ -12,6 +12,7 @@ describe("Fase 22 - Passo 2: O Interceptador do Watchdog", function()
     local buf
 
     before_each(function()
+        require('multi_context.config').options.user_name = "Nardi"
         config.options.user_name = "Nardi"
         captured_requests = {}
         StateManager.get('react').pending_user_prompt = nil
