@@ -24,6 +24,8 @@ All of this is supported by an asynchronous multithreaded **Swarm Architecture**
 | 🛡️ | **Context Watchdog 2.0** | A predictive tracker (EMA) monitors tokens. If the limit is breached, the `@archivist` performs an aggressive Quadripartite Compression via XML. |
 | 🔍 | **LSP & Ripgrep Navigation** | We abandoned noisy RAG. The AI tracks down code with ultra-fast `rg` and jumps into functions via **Go To Definition** using Neovim's own LSP for maximum token efficiency. |
 | 👨‍💻 | **Git Automation (@devops)** | At the end of a task, the AI creates branches and surgically commits specific files through a strict Security Gatekeeper (blocking remote pushes). |
+| 🧠 | **Cognitive Hardening** | Implements Recency Bias Guardrails and Zero-Skill Awareness to prevent tool hallucinations and strictly enforce XML outputs without markdown wrappers. |
+| ⚡ | **V2.0 Event-Driven Core** | Pure Lua PubSub Architecture (EventBus) with Centralized State Management and Session AST, making the UI 100% reactive and decoupled. |
 | 🔌 | **Polyglot Extensibility** | Teach custom skills (e.g., Pytest, Jira, Databases) by writing scripts in Bash, Python, or Go, and native `env` bridging will couple them to the AI. |
 
 ---
@@ -100,7 +102,7 @@ MultiContext features an **Auto-Setup**. Upon running it for the first time, it 
 
 ## 🧪 Automated Testing and Reliability (TDD)
 
-The engine of this plugin was strictly developed under TDD and is maintained with military-grade resilience (**127 isolated tests passing at 100%**).
+The engine of this plugin was strictly developed under TDD and is maintained with military-grade resilience (**149 isolated tests passing at 100%**).
 ```bash
 make test_agregate_results
 ```
@@ -113,7 +115,7 @@ make test_agregate_results
 ======================================================================
 📊 AGGREGATED GLOBAL SUMMARY (MULTI-CONTEXT)
 ======================================================================
-✅ Success: 127
+✅ Success: 149
 ❌ Failed : 0
 💥 Errors : 0
 ======================================================================

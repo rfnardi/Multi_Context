@@ -4,6 +4,7 @@
 `:ContextUndo`	multicontext.txt	/*`:ContextUndo`*
 `@`	multicontext.txt	/*`@`*
 `\`	multicontext.txt	/*`\\`*
+multicontext-arch	multicontext.txt	/*multicontext-arch*
 multicontext-commands	multicontext.txt	/*multicontext-commands*
 multicontext-contents	multicontext.txt	/*multicontext-contents*
 multicontext-controls	multicontext.txt	/*multicontext-controls*

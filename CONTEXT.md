@@ -9,7 +9,7 @@ In its **V1.3** release, it features an advanced **Swarm Architecture** (Mixture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **127 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **149 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises).
 - **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -128,4 +128,14 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
 - Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
 - Local Git automation via DevOps Agent with atomic security locks.
-- **Plenary Test Coverage:** 127 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 149 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+
+
+### 12. V2.0 Event-Driven Architecture & Session AST (Phase 35)
+- **Clean Architecture**: The core logic is fully decoupled from the Neovim UI through a strict PubSub `EventBus`. The UI is 100% reactive, enabling potential headless executions.
+- **Centralized State Management**: A Redux-like state manager eradicates global variables and ensures predictable state mutations.
+- **Session AST**: Chat history is maintained as an Abstract Syntax Tree in RAM, replacing regex-heavy parsing and allowing structured prompt building.
+
+### 13. Cognitive Hardening & Anti-Hallucination (Phase 36)
+- **Recency Bias Guardrails**: Critical formatting rules (like strict XML enforcement without markdown wrappers) are injected at the absolute end of the system prompt, exploiting LLM recency bias for maximum obedience.
+- **Zero-Skill Awareness**: Agents focused on planning or philosophy with no assigned tools are explicitly warned that they lack operational capabilities, completely eliminating tool-invention hallucinations.
