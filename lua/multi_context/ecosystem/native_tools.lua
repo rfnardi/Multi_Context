@@ -47,6 +47,9 @@ M.edit_file = function(path, content)
     content = content:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
     
     local lines = vim.split(content, "\n", {plain=true})
+    -- Fase 39: JIT Provisioning de LSP
+    require("multi_context.ecosystem.lsp_manager").ensure_lsp_for_file(full_path)
+
     local bufnr = vim.fn.bufnr(full_path)
     
     if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
@@ -93,6 +96,9 @@ M.replace_lines = function(path, start_line, end_line, content)
     start_line, end_line = tonumber(start_line), tonumber(end_line)
     if not start_line or not end_line then return i18n.t("err_lines_num") end
     
+    -- Fase 39: JIT Provisioning de LSP
+    require("multi_context.ecosystem.lsp_manager").ensure_lsp_for_file(full_path)
+
     local bufnr = vim.fn.bufnr(full_path)
     local lines = {}
     if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
@@ -133,6 +139,9 @@ M.get_diagnostics = function(path)
     local full_path = resolve_path(path)
     if not full_path then return i18n.t("err_path_invalid") end
     
+    -- Fase 39: JIT Provisioning de LSP
+    require("multi_context.ecosystem.lsp_manager").ensure_lsp_for_file(full_path)
+
     local bufnr = vim.fn.bufnr(full_path)
     if bufnr == -1 then
         if vim.fn.filereadable(full_path) == 0 then return i18n.t("err_file_not_found", full_path) end
@@ -188,6 +197,9 @@ M.apply_diff = function(path, diff_content)
     local full_path = resolve_path(path)
     if not full_path then return i18n.t("err_path_req") end
     
+    -- Fase 39: JIT Provisioning de LSP
+    require("multi_context.ecosystem.lsp_manager").ensure_lsp_for_file(full_path)
+
     local bufnr = vim.fn.bufnr(full_path)
     local lines = {}
     

@@ -3,13 +3,13 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V1.3+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
+In its **V1.4+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **214 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **216 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -32,6 +32,7 @@ lua/multi_context/
 ├── squads.lua            # Loader and resolver for Meta-Agent Squads
 ├── skills_manager.lua    # Async loader and external code validator (Hot-Reload)
 ├── lsp_utils.lua         # Silent bridge with Neovim LSP (Go to Definition/References)
+├── lsp_manager.lua       # JIT LSP Provisioning, Extension Mappings, and Mason.nvim integration
 ├── react_loop.lua        # Session state manager and Circuit Breaker
 ├── memory_tracker.lua    # Predictive Watchdog with EMA calculation and Initial Turn Immunity
 ├── context_builders.lua  # Context extractors injecting strict line numbering (1 | code)
@@ -46,6 +47,7 @@ lua/multi_context/
 │   ├── i18n_spec.lua             # Language Engine and Fallback Tests
 │   ├── git_tools_spec.lua        # Git Automation and Gatekeeper Tests
 │   ├── lsp_utils_spec.lua        # Silent LSP Bridge Tests
+│   ├── lsp_manager_spec.lua      # JIT LSP Auto-Setup Tests
 │   ├── tool_runner_lsp_spec.lua  # LSP Routing Tests
 │   └── ... (plus 40+ files)
 └── examples/
@@ -134,11 +136,17 @@ lua/multi_context/
 - **Project Heuristics (`get_project_stack`)**: Exposes OS, Base Shell, active LSPs, and indent configurations (Tabs vs Spaces) to prevent syntax/formatting errors across all agents.
 - **Deep Git State (`get_git_env`)**: Exposes current branch, commits ahead/behind, and blocks (MERGE_HEAD/REBASE) to the `@devops` agent, avoiding blind commits during conflicts.
 
+### 16. Just-in-Time LSP Auto-Setup (Phase 39)
+- **Proactive Infrastructure**: When the AI attempts to edit or run diagnostics on a file, the system checks the target extension (e.g., `.rs`, `.go`) to ensure the proper LSP is active.
+- **Mason.nvim Integration**: If the LSP is missing, the AI's execution is paused, and the user is prompted to install it seamlessly via `Mason` (`[S/N]`).
+- **Stateful Alert Fatigue Prevention**: Rejected installations are saved in the `StateManager` to ensure the user is not repeatedly bothered during the same session.
+- **JIT Attachment**: Successfully installed LSPs are dynamically attached to the buffers (`BufReadPost` hook) without requiring the user to reload the file, allowing the AI to instantly receive accurate syntax errors.
+
 ---
 
 ## Current Development State
 
-### ✅ Implemented, Stable, and Tested (V2.1 Architecture)
+### ✅ Implemented, Stable, and Tested (V1.4+ Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
 - 100% Internationalized System (i18n) and Cognitive Backend.
 - `LazyVim`-like interface with Anchored Dynamic Footer and 12 Master Modules.
@@ -148,7 +156,8 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Advanced Swarm (MoA, Mutable Cognitive Levels, Pipelines, Choreography).
 - Pure Lua PubSub Architecture (EventBus) with Centralized State Management.
 - Situational Awareness Tools enabling active environmental inspection.
+- Just-in-Time LSP Provisioning with `Mason.nvim` integration.
 - Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
 - Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
 - Local Git automation via DevOps Agent with atomic security locks.
-- **Plenary Test Coverage:** 214 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 216 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).

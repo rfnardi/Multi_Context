@@ -190,7 +190,11 @@ M.dict = {
         cc_inj_desc_ph = "Your description here",
         cc_inj_res_ph = "Text to be injected",
         cc_agent_sys_ph = "You are an expert in...",
-        cc_saved = "Settings and Permissions saved!"
+        cc_saved = "Settings and Permissions saved!",
+        lsp_prompt_install = "The file \"%s\" requires the LSP \"%s\". Install via Mason? (Recommended for AI)",
+        lsp_installing = "Installing LSP %s... Please wait.",
+        lsp_installed = "LSP %s installed successfully!",
+        lsp_failed = "Failed to install LSP %s.",
     },
     ["pt-BR"] = {
         tool_not_found = "Ferramenta '%s' não existe.",
@@ -380,7 +384,11 @@ M.dict = {
         cc_inj_desc_ph = "Sua descrição aqui",
         cc_inj_res_ph = "Texto a ser injetado",
         cc_agent_sys_ph = "Você é um especialista em...",
-        cc_saved = "Configurações e Permissões salvas!"
+        cc_saved = "Configurações e Permissões salvas!",
+        lsp_prompt_install = "O arquivo \"%s\" requer o LSP \"%s\". Deseja instalar via Mason? (Recomendado para a IA)",
+        lsp_installing = "Instalando LSP %s... Por favor, aguarde.",
+        lsp_installed = "LSP %s instalado com sucesso!",
+        lsp_failed = "Falha ao instalar o LSP %s.",
     }
 }
 
