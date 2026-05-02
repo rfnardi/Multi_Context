@@ -17,18 +17,28 @@ M.init_swarm = function(json_payload)
     if not json_payload or json_payload == "" then return false end
     local ok, decoded = pcall(vim.fn.json_decode, vim.trim(json_payload))
     if not ok or type(decoded) ~= "table" or type(decoded.tasks) ~= "table" then return false end
-    
+    local ok_sq, squads_manager = pcall(require, "multi_context.ecosystem.squads")
+    local squads = ok_sq and squads_manager.load_squads() or {}
+    local new_tasks = {}
     for _, task in ipairs(decoded.tasks) do
-        if not task.agent and type(task.chain) == "table" and #task.chain > 0 then
-            task.agent = task.chain[1]
+        local target = task.agent or (task.chain and task.chain[1])
+        if target and squads[target] then
+            local squad = squads[target]
+            local main_task = vim.deepcopy(squad.tasks[1] or {})
+            local col_purp = squad.collective_purpose or squad.description or ""
+            local purpose_block = col_purp ~= "" and ("\n=== SQUAD MISSION: " .. col_purp .. " ===\n") or ""
+            main_task.instruction = purpose_block .. (main_task.instruction or "") .. "\n\nDelegated Task: " .. (task.instruction or "")
+            if not main_task.agent and main_task.chain and #main_task.chain > 0 then main_task.agent = main_task.chain[1] end
+            table.insert(new_tasks, main_task)
+            if squad.tasks then for i = 2, #squad.tasks do table.insert(new_tasks, squad.tasks[i]) end end
+        else
+            if not task.agent and type(task.chain) == "table" and #task.chain > 0 then task.agent = task.chain[1] end
+            table.insert(new_tasks, task)
         end
     end
-    
-    M.state.queue = decoded.tasks
-    local apis = config.get_spawn_apis()
-    for _, api_cfg in ipairs(apis) do
-        table.insert(M.state.workers, { api = api_cfg, busy = false, current_task = nil })
-    end
+    M.state.queue = new_tasks
+    local apis = require("multi_context.config").get_spawn_apis()
+    for _, api_cfg in ipairs(apis) do table.insert(M.state.workers, { api = api_cfg, busy = false, current_task = nil }) end
     return true
 end
 

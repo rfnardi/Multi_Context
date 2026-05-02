@@ -65,7 +65,7 @@ describe("Swarm Etapa 1 - Modelagem e Parser:", function()
         local has_spawn_skill = false
         if loaded_agents["tech_lead"] and loaded_agents["tech_lead"].skills then
             for _, skill in ipairs(loaded_agents["tech_lead"].skills) do
-                if skill == "spawn_swarm" then has_spawn_skill = true end
+                if skill == "swarm_orchestration" then has_spawn_skill = true end
             end
         end
         assert.is_true(has_spawn_skill)

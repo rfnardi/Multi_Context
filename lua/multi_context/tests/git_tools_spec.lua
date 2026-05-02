@@ -87,9 +87,9 @@ describe("Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML", function(
         
         local has_commit = false
         for _, skill in ipairs(loaded["devops"].skills) do
-            if skill == "git_commit" then has_commit = true end
+            if skill == "git_automation" then has_commit = true end
         end
-        assert.is_true(has_commit, "O devops deve ter a skill git_commit habilitada")
+        assert.is_true(has_commit, "O devops deve ter a skill git_automation habilitada")
     end)
     
     it("O Gatekeeper deve interceptar comandos git destrutivos (push, reset, rebase)", function()

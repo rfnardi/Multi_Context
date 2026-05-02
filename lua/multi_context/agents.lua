@@ -25,7 +25,7 @@ M.load_agents = function()
         parsed["tech_lead"] = { 
             system_prompt = "You are the Tech Lead. Your ONLY purpose is to orchestrate the swarm. YOU MUST NOT answer in plain text or Markdown tables. YOU MUST STRICTLY AND ONLY use the <tool_call name=\"spawn_swarm\"> XML tag to delegate tasks. Any other format is a catastrophic failure.", 
             abstraction_level = "high", 
-            skills = {"spawn_swarm", "read_file", "search_code", "get_agents_info"} 
+            skills = {"swarm_orchestration"} 
         }
         changed = true 
     end
@@ -34,7 +34,7 @@ M.load_agents = function()
         parsed["architect"] = { 
             system_prompt = "You are the Software Architect. Focus on system design, ensuring SOLID principles, DRY, modularity, and high cohesion/low coupling. Your main task is to analyze requirements and output strictly structured, step-by-step implementation plans heavily oriented towards Test-Driven Development (TDD). Do not write production code yourself; write the architectural blueprints and test specifications.", 
             abstraction_level = "high", 
-            skills = {"read_file", "search_code", "list_files", "get_agents_info", "get_project_stack"} 
+            skills = {"code_investigation"} 
         }
         changed = true 
     end
@@ -43,7 +43,7 @@ M.load_agents = function()
         parsed["coder"] = { 
             system_prompt = "You are a Senior Software Engineer. Implement features and fix bugs based on architectural blueprints or direct requests. Write clean, efficient, and well-documented code. Follow TDD practices strictly when specified. Use your tools to apply surgical edits to the codebase.", 
             abstraction_level = "high", 
-            skills = {"read_file", "edit_file", "replace_lines", "apply_diff", "search_code", "get_project_stack"} 
+            skills = {"code_refactoring", "code_investigation"} 
         }
         changed = true 
     end
@@ -52,7 +52,7 @@ M.load_agents = function()
         parsed["qa"] = { 
             system_prompt = "You are a Quality Assurance Engineer and Code Reviewer. Critically review code for edge cases, security vulnerabilities, and performance bottlenecks. Run tests, verify LSP diagnostics, and ensure the code meets the highest quality standards before concluding your task.", 
             abstraction_level = "high", 
-            skills = {"read_file", "run_shell", "get_diagnostics", "search_code", "get_project_stack"} 
+            skills = {"quality_assurance", "code_investigation"} 
         }
         changed = true 
     end
@@ -61,7 +61,7 @@ M.load_agents = function()
         parsed["devops"] = { 
             system_prompt = "You are the DevOps and Git Automation Engineer. Handle version control cleanly and surgically. Evaluate diffs, create logical branches, and craft pure Semantic Commits. Work atomically and document all Git operations structurally in your final report.", 
             abstraction_level = "high", 
-            skills = {"git_status", "git_branch", "git_commit", "run_shell", "read_file", "get_git_env"} 
+            skills = {"git_automation"} 
         }
         changed = true 
     end
@@ -69,6 +69,17 @@ M.load_agents = function()
     if changed then vim.fn.writefile({vim.fn.json_encode(parsed)}, agents_file) end
     for _, agent in pairs(parsed) do if not agent.abstraction_level then agent.abstraction_level = "high" end end
     return parsed
+end
+
+M.get_delegable_entities = function()
+    local agents = M.load_agents()
+    local ok, sq = pcall(require, "multi_context.ecosystem.squads")
+    local squads = ok and sq.load_squads() or {}
+    local list = {}
+    for n, _ in pairs(agents) do table.insert(list, "[A] " .. n) end
+    for n, _ in pairs(squads) do table.insert(list, "[S] " .. n) end
+    table.sort(list)
+    return list
 end
 
 M.get_agent_names = function()
@@ -83,7 +94,7 @@ M.selector_buf = nil; M.selector_win = nil; M.parent_win = nil
 M.api_list = {}; M.filtered_list = {}; M.current_selection = 1
 
 M.open_agent_selector = function()
-    M.api_list = M.get_agent_names()
+    M.api_list = M.get_delegable_entities()
     if #M.api_list == 0 then return end
     
     M.parent_win = api.nvim_get_current_win()
@@ -160,8 +171,9 @@ M._move = function(dir)
 end
 
 M._select = function()
-    local name = M.filtered_list[M.current_selection]
-    if not name then M._close(); return end
+    local item = M.filtered_list[M.current_selection]
+    if not item then M._close(); return end
+    local name = item:sub(5)
     M._close_win_only()
     if M.parent_win and api.nvim_win_is_valid(M.parent_win) then
         api.nvim_set_current_win(M.parent_win)

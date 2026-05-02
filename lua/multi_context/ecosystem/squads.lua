@@ -5,14 +5,9 @@ M.load_squads = function()
     if vim.fn.filereadable(M.squads_file) == 0 then
         local default_squads = {
             squad_dev = {
-                description = "Esquadrão padrao de desenvolvimento e qualidade",
+                description = "Esquadrao padrao de desenvolvimento e qualidade",
                 tasks = {
-                    {
-                        agent = "tech_lead",
-                        instruction = "Analise o pedido do usuario e orquestre o desenvolvimento.",
-                        chain = {"coder", "qa"},
-                        allow_switch = {}
-                    }
+                    { agent = "tech_lead", instruction = "Orquestre o desenvolvimento.", chain = {"coder", "qa"} }
                 }
             }
         }
@@ -24,7 +19,32 @@ M.load_squads = function()
     local content = file:read('*a')
     file:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
-    return ok and parsed or {}
+    parsed = ok and parsed or {}
+
+    local ok_ag, ag_mod = pcall(require, 'multi_context.agents')
+    local agents = ok_ag and ag_mod.load_agents() or {}
+    local val = { low = 1, medium = 2, high = 3 }
+    local rev = { [1] = "low", [2] = "medium",[3] = "high" }
+    
+    for _, sq_def in pairs(parsed) do
+        local max_lvl = 1
+        if sq_def.tasks then
+            for _, t in ipairs(sq_def.tasks) do
+                if t.agent then
+                    local lvl = (agents[t.agent] and agents[t.agent].abstraction_level) and val[agents[t.agent].abstraction_level] or 3
+                    if lvl > max_lvl then max_lvl = lvl end
+                end
+                if type(t.chain) == "table" then
+                    for _, ag in ipairs(t.chain) do
+                        local lvl = (agents[ag] and agents[ag].abstraction_level) and val[agents[ag].abstraction_level] or 3
+                        if lvl > max_lvl then max_lvl = lvl end
+                    end
+                end
+            end
+        end
+        sq_def.abstraction_level = rev[max_lvl]
+    end
+    return parsed
 end
 
 M.get_squad_names = function()
@@ -34,11 +54,4 @@ M.get_squad_names = function()
     table.sort(names)
     return names
 end
-
 return M
-
-
-
-
-
-
