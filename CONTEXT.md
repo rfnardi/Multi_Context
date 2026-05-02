@@ -3,14 +3,14 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V1.3** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
+In its **V1.3+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **149 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
-- **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises).
+- **Testing Framework**: `plenary.nvim` (busted) - **214 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
 - **State Serialization**: Metadata Envelopes and JSON-in-XML injection to save and restore Swarm sessions without losing the readability of the raw Markdown chat file.
@@ -47,7 +47,7 @@ lua/multi_context/
 │   ├── git_tools_spec.lua        # Git Automation and Gatekeeper Tests
 │   ├── lsp_utils_spec.lua        # Silent LSP Bridge Tests
 │   ├── tool_runner_lsp_spec.lua  # LSP Routing Tests
-│   └── ... (plus 36 files)
+│   └── ... (plus 40+ files)
 └── examples/
     ├── skills/           # Community Skill Templates (Jira, Pytest, SQL)
     └── injectors/        # Community Injector Templates (Project Dump, LSP Errors, Git Log)
@@ -113,24 +113,6 @@ lua/multi_context/
 - **Cognitive Backend**: Heavy structural rules (Swarm architecture, XML formatting, ReAct logic, Watchdog boundaries) are inherently passed to the LLM in **English**. Since foundation models are primarily trained on English datasets, this effectively reduces structural hallucinations and saves tokens.
 - **Adaptive Language Directive**: A conditional `sys_lang_directive` is injected into the prompt. The AI processes complex rules in English but is instructed to output its final thoughts, comments, and code in the user's chosen `config.language`.
 
----
-
-## Current Development State
-
-### ✅ Implemented, Stable, and Tested (V1.3 - Production)
-The core of the product is a cutting-edge industrial orchestration engine.
-- 100% Internationalized System (i18n) and Cognitive Backend.
-- `LazyVim`-like interface with Anchored Dynamic Footer and 12 Master Modules.
-- Dual Extensibility: Active Polyglot Skills for the AI, Textual Injectors (`\`) for the User.
-- Predictive Watchdog 2.0 (Flexible Compression Engines).
-- Real-time IAM for Agents and Skills (Safe Deletion, Isolated Prompt Editing).
-- Advanced Swarm (MoA, Mutable Cognitive Levels, Pipelines, Choreography).
-- Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
-- Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
-- Local Git automation via DevOps Agent with atomic security locks.
-- **Plenary Test Coverage:** 149 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
-
-
 ### 12. V2.0 Event-Driven Architecture & Session AST (Phase 35)
 - **Clean Architecture**: The core logic is fully decoupled from the Neovim UI through a strict PubSub `EventBus`. The UI is 100% reactive, enabling potential headless executions.
 - **Centralized State Management**: A Redux-like state manager eradicates global variables and ensures predictable state mutations.
@@ -139,3 +121,34 @@ The core of the product is a cutting-edge industrial orchestration engine.
 ### 13. Cognitive Hardening & Anti-Hallucination (Phase 36)
 - **Recency Bias Guardrails**: Critical formatting rules (like strict XML enforcement without markdown wrappers) are injected at the absolute end of the system prompt, exploiting LLM recency bias for maximum obedience.
 - **Zero-Skill Awareness**: Agents focused on planning or philosophy with no assigned tools are explicitly warned that they lack operational capabilities, completely eliminating tool-invention hallucinations.
+
+### 14. Network Resilience & UX Boundary Hardening (Phase 37)
+- **HTTP Stream Bufferization**: Robust TCP chunking abstraction that intercepts split JSON payloads during slow network conditions, preventing parser crashes.
+- **Directional Fallback**: API Client gracefully hops to the next available provider upon 500/429 errors.
+- **Boundary Clamping**: Safe cyclic index limits on Fuzzy Finders preventing Neovim UI crashes (`Index Out of Bounds`).
+- **Safe Undo**: The `:ContextUndo` command restores the chat to its exact prior state before an Archivist compression occurs, ensuring safety for long contexts.
+
+### 15. Situational Awareness Tools & Active Context (Phase 38)
+- **Just-in-Time Intelligence**: Instead of inflating the System Prompt, agents are equipped with tools to query their environment dynamically, enabling true *ReAct* reasoning.
+- **Workforce Matrix (`get_agents_info`)**: Allows `@tech_lead` to query available agents and their precise skills before orchestrating the swarm.
+- **Project Heuristics (`get_project_stack`)**: Exposes OS, Base Shell, active LSPs, and indent configurations (Tabs vs Spaces) to prevent syntax/formatting errors across all agents.
+- **Deep Git State (`get_git_env`)**: Exposes current branch, commits ahead/behind, and blocks (MERGE_HEAD/REBASE) to the `@devops` agent, avoiding blind commits during conflicts.
+
+---
+
+## Current Development State
+
+### ✅ Implemented, Stable, and Tested (V2.1 Architecture)
+The core of the product is a cutting-edge industrial orchestration engine.
+- 100% Internationalized System (i18n) and Cognitive Backend.
+- `LazyVim`-like interface with Anchored Dynamic Footer and 12 Master Modules.
+- Dual Extensibility: Active Polyglot Skills for the AI, Textual Injectors (`\`) for the User.
+- Predictive Watchdog 2.0 (Flexible Compression Engines) & Safe Undo.
+- Real-time IAM for Agents and Skills (Safe Deletion, Isolated Prompt Editing).
+- Advanced Swarm (MoA, Mutable Cognitive Levels, Pipelines, Choreography).
+- Pure Lua PubSub Architecture (EventBus) with Centralized State Management.
+- Situational Awareness Tools enabling active environmental inspection.
+- Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
+- Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
+- Local Git automation via DevOps Agent with atomic security locks.
+- **Plenary Test Coverage:** 214 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
