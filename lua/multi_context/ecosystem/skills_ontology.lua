@@ -5,23 +5,23 @@ M.load_semantic_skills = function()
     if vim.fn.filereadable(M.skills_file) == 0 then
         local defaults = {
             swarm_orchestration = {
-                purpose = "Orchestrate other agents and delegate tasks appropriately.",
+                purpose = "CAPABILITY: Agentic Task Decomposition & Swarm Routing.\nTRIGGER: Use exclusively when a complex task requires multiple steps, parallel execution, or specialized knowledge.\nPROTOCOL: Inspect available agents (Workforce Matrix) and route the workload precisely. Do not hoard tasks. You are an orchestrator, not a worker.",
                 tools = {"spawn_swarm", "get_agents_info"}
             },
             code_refactoring = {
-                purpose = "Safely modify existing code using surgical tools.",
+                purpose = "CAPABILITY: Surgical Code Manipulation & File I/O.\nTRIGGER: Use to alter, append, or delete source code within the local file system.\nPROTOCOL: You are strictly forbidden from guessing file structures. If you do not know the exact line numbers, read the file first. Prioritize minimal `replace_lines` over full file overwrites to prevent syntax corruption and save token bandwidth.",
                 tools = {"read_file", "edit_file", "replace_lines", "apply_diff"}
             },
             code_investigation = {
-                purpose = "Explore the codebase to find definitions and references.",
+                purpose = "CAPABILITY: Deep Codebase Reconnaissance & Semantic RAG (LSP/Ripgrep).\nTRIGGER: Use immediately upon receiving a task to map unknowns before acting.\nPROTOCOL: Query the Language Server Protocol (LSP) for definitions and references to map blast radius before changing critical functions. Understand the OS and stack context to avoid environment conflicts.",
                 tools = {"read_file", "search_code", "list_files", "get_project_stack", "lsp_definition", "lsp_references", "lsp_document_symbols"}
             },
             quality_assurance = {
-                purpose = "Run tests and checks to guarantee code quality.",
+                purpose = "CAPABILITY: Sandboxed Execution & Diagnostic Validation.\nTRIGGER: Use to prove code correctness dynamically.\nPROTOCOL: Run shell commands to execute test runners (pytest, jest, cargo test). Always query LSP diagnostics after a coder edits a file to ensure zero syntax regressions.",
                 tools = {"run_shell", "get_diagnostics"}
             },
             git_automation = {
-                purpose = "Manage version control, create branches, and execute commits.",
+                purpose = "CAPABILITY: Repository State & Version Control Management.\nTRIGGER: Use to snapshot safe codebase states or branch workflows.\nPROTOCOL: Always assess the environment (`get_git_env`) for active rebases or merge conflicts before acting. Execute granular, deterministic version control operations.",
                 tools = {"git_status", "git_branch", "git_commit", "get_git_env"}
             }
         }

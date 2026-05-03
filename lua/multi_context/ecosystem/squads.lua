@@ -5,23 +5,24 @@ M.load_squads = function()
     if vim.fn.filereadable(M.squads_file) == 0 then
         local default_squads = {
             squad_dev = {
-                description = "Esquadrao padrao de desenvolvimento e qualidade",
+                description = "Tactical Engineering Unit (End-to-End Delivery)",
+                collective_purpose = "MISSION OBJECTIVE: You are an autonomous assembly line. Your collective goal is to implement, rigorously test, and safely version-control the requested feature.\nCHAIN OF COMMAND: 1. The Coder MUST execute the logic. 2. The QA MUST ruthlessly verify edge cases and LSP diagnostics. 3. The DevOps MUST finalize the process with atomic semantic commits.\nRESTRICTION: Do not bypass the QA verification stage under any circumstances. Code that has not been diagnosed and tested is considered toxic.",
                 tasks = {
-                    { agent = "tech_lead", instruction = "Orquestre o desenvolvimento.", chain = {"coder", "qa"} }
+                    { agent = "tech_lead", instruction = "INITIATE PIPELINE: Analyze the human request. Decompose the requirements, enforce the strict Coder -> QA -> DevOps chain, and ensure the pipeline does not stop until the code is committed.", chain = {"coder", "qa", "devops"} }
                 }
             }
         }
         vim.fn.writefile({vim.fn.json_encode(default_squads)}, M.squads_file)
     end
 
-    local file = io.open(M.squads_file, 'r')
+    local file = io.open(M.squads_file, "r")
     if not file then return {} end
-    local content = file:read('*a')
+    local content = file:read("*a")
     file:close()
     local ok, parsed = pcall(vim.fn.json_decode, content)
     parsed = ok and parsed or {}
 
-    local ok_ag, ag_mod = pcall(require, 'multi_context.agents')
+    local ok_ag, ag_mod = pcall(require, "multi_context.agents")
     local agents = ok_ag and ag_mod.load_agents() or {}
     local val = { low = 1, medium = 2, high = 3 }
     local rev = { [1] = "low", [2] = "medium",[3] = "high" }
@@ -54,4 +55,5 @@ M.get_squad_names = function()
     table.sort(names)
     return names
 end
+
 return M

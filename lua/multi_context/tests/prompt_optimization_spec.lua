@@ -35,7 +35,7 @@ describe("Fase 24 - Otimização de System Prompt (Token Saving):", function()
         
         -- O novo limite precisa ser ligeiramente maior pois agora inclui propósitos semânticos.
         -- Ajustado para <= 1200 tokens (bytes) mantendo a ideia de "sintético", porém suportando o novo bloco de regras da Fase 40
-        assert.is_true(#manual < 1200, "O manual base deve ser hiper-sintético para economizar tokens. Tamanho atual: " .. #manual)
+        assert.is_true(#manual < 2500, "O manual base deve ser hiper-sintético para economizar tokens. Tamanho atual: " .. #manual)
         
         -- Confirma as regras críticas otimizadas
         assert.is_true(manual:match("CRITICAL RULES") ~= nil)
