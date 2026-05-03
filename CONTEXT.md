@@ -3,13 +3,13 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V1.4+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
+In its **V2.3+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **216 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **223 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -31,12 +31,13 @@ lua/multi_context/
 ├── swarm_manager.lua     # Swarm Brain: queues, workers, ReAct, MoA, Pipelines, and Choreography
 ├── squads.lua            # Loader and resolver for Meta-Agent Squads
 ├── skills_manager.lua    # Async loader and external code validator (Hot-Reload)
+├── skills_ontology.lua   # Semantic resolution mapping Agent Skills to System Tools (MCP)
 ├── lsp_utils.lua         # Silent bridge with Neovim LSP (Go to Definition/References)
 ├── lsp_manager.lua       # JIT LSP Provisioning, Extension Mappings, and Mason.nvim integration
 ├── react_loop.lua        # Session state manager and Circuit Breaker
 ├── memory_tracker.lua    # Predictive Watchdog with EMA calculation and Initial Turn Immunity
 ├── context_builders.lua  # Context extractors injecting strict line numbering (1 | code)
-├── context_controls.lua  # Master Command Center (12 Sections: API, IAM, Swarm, History, Vault...)
+├── context_controls.lua  # Master Command Center (13 Sections: API, IAM, Skills, Tools, Swarm...)
 ├── tools.lua             # Native tools (read, edit, bash, LSP, Unified Diff, Git, Ripgrep)
 ├── utils.lua             # Token calculation and Workspace serialization tools
 ├── ui/
@@ -62,7 +63,7 @@ lua/multi_context/
 - **Local Injector Ecosystem**: Users can program their own connectors by writing a simple Lua/Bash/Python script in `~/.config/nvim/mctx_injectors/`. Community templates are provided for LSP Diagnostics, Project Dumps, and Git Logs.
 
 ### 2. Master Command Center and Identity & Access Management (IAM)
-- **12-Section Declarative Grid**: A unified interactive interface accessed via `:ContextControls`. Renders visual toggles (`[ ON ]`, `[ ✓ ]`), dots (`· · ·`), and expandable nodes (`[+]/[-]`).
+- **13-Section Declarative Grid**: A unified interactive interface accessed via `:ContextControls`. Renders visual toggles (`[ ON ]`, `[ ✓ ]`), dots (`· · ·`), and expandable nodes (`[+]/[-]`).
 - **Dynamic Anchored Footer**: The panel's footer dynamically instructs the user on which action to take (`<Space>`, `c`, `e`, `<CR>`) depending on cursor position, using Neovim 0.10+ native `footer` API.
 - **Interactivity and State Mutation**: Total keyboard control. Allows toggling permissions, editing loop limits, ordering API fallback queues (`dd` and `p`), editing Master Prompts, and toggling telemetry. Features native protection against the `E37` error.
 - **Agent Permission Matrix**: Fine-grained control listing every agent, allowing users to toggle specific tools (Skills) individually, enforcing a Principle of Least Privilege saved in `mctx_agents.json`.
@@ -142,6 +143,12 @@ lua/multi_context/
 - **Stateful Alert Fatigue Prevention**: Rejected installations are saved in the `StateManager` to ensure the user is not repeatedly bothered during the same session.
 - **JIT Attachment**: Successfully installed LSPs are dynamically attached to the buffers (`BufReadPost` hook) without requiring the user to reload the file, allowing the AI to instantly receive accurate syntax errors.
 
+### 17. Semantic Ontology and MCP Alignment (Phases 40 and 41)
+- **Model Context Protocol (MCP) Adoption**: The architecture cleanly separates **Semantic Skills** (responsibilities, behaviors, and military rules of engagement) from **System Tools** (raw executable mechanisms like bash or lua scripts).
+- **Semantic IAM Dashboard**: The Master Command Center (`:ContextControls`) was visually refactored. The Gatekeeper now assigns high-level Semantic Skills (e.g., `code_refactoring`, `git_automation`) to Agents, rather than giving them blind access to raw tools.
+- **Skill Guardrails & Editing**: A dedicated *Semantic Skills* UI section allows users to create new behaviors, map which System Tools they contain, and press `e` to edit their strict `Purpose`, `Trigger`, and `Protocol` in an isolated Neovim buffer. This completely eliminates the UI's cognitive dissonance and prevents raw tool hallucination.
+- **Dynamic Tool Resolution**: Behind the scenes, the `skills_ontology` compiler resolves the agent's semantic skills down to a flat array of System Tools just-in-time for the API payload, acting as a flawless auto-wrapper.
+
 ---
 
 ## Current Development State
@@ -149,10 +156,10 @@ lua/multi_context/
 ### ✅ Implemented, Stable, and Tested (V1.4+ Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
 - 100% Internationalized System (i18n) and Cognitive Backend.
-- `LazyVim`-like interface with Anchored Dynamic Footer and 12 Master Modules.
+- `LazyVim`-like interface with Anchored Dynamic Footer and 13 Master Modules.
 - Dual Extensibility: Active Polyglot Skills for the AI, Textual Injectors (`\`) for the User.
 - Predictive Watchdog 2.0 (Flexible Compression Engines) & Safe Undo.
-- Real-time IAM for Agents and Skills (Safe Deletion, Isolated Prompt Editing).
+- Real-time IAM for Agents and Semantic Skills (Safe Deletion, Isolated Prompt Editing).
 - Advanced Swarm (MoA, Mutable Cognitive Levels, Pipelines, Choreography).
 - Pure Lua PubSub Architecture (EventBus) with Centralized State Management.
 - Situational Awareness Tools enabling active environmental inspection.
@@ -160,4 +167,4 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
 - Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
 - Local Git automation via DevOps Agent with atomic security locks.
-- **Plenary Test Coverage:** 216 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 223 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).

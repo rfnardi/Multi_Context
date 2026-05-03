@@ -1,19 +1,26 @@
 #!/bin/fish
 
 gitgo '
+refactor(ui): alinha Master Command Center com Ontologia Semântica MCP (Fase 41)
 
-feat(core): implementa topologia semântica, deduplicação de tools e polimorfismo de squads
+Esta grande refatoração de UI resolve a dissonância cognitiva do painel,
+espelhando visualmente a arquitetura do Model Context Protocol (MCP).
+O Centro de Comando agora separa rigorosamente "Skills Semânticas"
+(Comportamentos e guardrails) de "System Tools" (Binários brutos).
 
-Transição profunda da arquitetura do plugin de um modelo mecanicista para um Modelo Organizacional Semântico (Agentes -> Skills -> Tools), resolvendo problemas de token bloat e alucinações de tool-use.
+Principais alterações:
+- feat(controls): separação estrutural entre `all_tools` e `semantic_skills` 
+  no estado do DOM virtual.
+- feat(iam): Gatekeeper agora delega apenas Skills Semânticas aos agentes, 
+  impedido o mapeamento cego de ferramentas (anti-alucinação).
+- feat(ui): novas seções interativas para criar, editar (buffer de guardrails) 
+  e deletar Skills Semânticas, sincronizadas com `mctx_skills_v2.json`.
+- feat(i18n): injeção de novas chaves de tradução (en e pt-BR) para a nova 
+  hierarquia e dicas do rodapé dinâmico.
+- test(bdd): blindagem profunda dos testes em `controls_view_spec.lua` 
+  com mocks de isolamento, mantendo 100% de sucesso nos 223 testes.
+- docs: atualização do README.md, CONTEXT.md e doc/multicontext.txt para a 
+  Versão 2.3+, documentando o alinhamento MCP, Squads e JIT LSP.
 
-Mudanças principais:
-* Desempacotamento de Squads: O Swarm Manager agora aceita Squads como "targets" de delegação, desempacotando-os dinamicamente em pipelines de execução e injetando o "propósito coletivo" no prompt inicial.
-* Deduplicação de Tools (Token Saving): O compilador de prompts agora analisa as dependências das skills e injeta o schema XML de cada ferramenta estritamente uma única vez por prompt, gerando extrema economia de tokens.
-* Menu Polimórfico (@): O Fuzzy Finder de inserção foi unificado e agora lista tanto Agentes [A] quanto Squads [S], permitindo delegação transparente.
-* Justificativa Semântica: Agentes agora recebem o "propósito" de uma habilidade antes da instrução mecânica, fornecendo contexto do "porquê" usar a ferramenta.
-* Auto-Wrapper de Retrocompatibilidade: Camada de segurança que envelopa automaticamente ferramentas antigas e scripts soltos em Skills de acesso direto na RAM, garantindo que as configurações atuais do usuário não quebrem.
-
-Ref: Fase 40 (Semantic Topology)
-Testes: 220 testes unitários e de integração aprovados (100% Verde).
-
+Refs: Fase 41
 '

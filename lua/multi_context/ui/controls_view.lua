@@ -10,11 +10,11 @@ M.state = {
     watchdog = {}, horizon = 4000, tolerance = 1.0,
     identity = "User", max_loops = 15,
     agents = {}, expanded_agents = {},
-    all_skills = {}, all_injectors = {}, squads = {},
+    semantic_skills = {}, expanded_semantic_skills = {},
+    all_tools = {}, all_injectors = {}, squads = {},
     appearance = {}, history_files = {},
     api_keys_status = {}, master_prompt = "",
-    debug_mode = false,
-    clipboard_api = nil
+    debug_mode = false, clipboard_api = nil
 }
 
 M.line_map = {}
@@ -25,6 +25,7 @@ M.reset_state = function()
         for _, s in ipairs(M.state.sections) do s.expanded = false end
     end
     M.state.expanded_agents = {}
+    M.state.expanded_semantic_skills = {}
 end
 
 M.init_state = function()
@@ -35,7 +36,8 @@ M.init_state = function()
         { id = "watchdog", title = i18n.t("cc_watchdog_title"), desc = i18n.t("cc_watchdog_desc"), expanded = false },
         { id = "limits", title = i18n.t("cc_limits_title"), desc = i18n.t("cc_limits_desc"), expanded = false },
         { id = "gatekeeper", title = i18n.t("cc_gatekeeper_title"), desc = i18n.t("cc_gatekeeper_desc"), expanded = false },
-        { id = "skills", title = i18n.t("cc_skills_title"), desc = i18n.t("cc_skills_desc"), expanded = false },
+        { id = "semantic_skills", title = i18n.t("cc_semantic_skills_title"), desc = i18n.t("cc_semantic_skills_desc"), expanded = false },
+        { id = "system_tools", title = i18n.t("cc_system_tools_title"), desc = i18n.t("cc_system_tools_desc"), expanded = false },
         { id = "injectors", title = i18n.t("cc_injectors_title"), desc = i18n.t("cc_injectors_desc"), expanded = false },
         { id = "squads", title = i18n.t("cc_squads_title"), desc = i18n.t("cc_squads_desc"), expanded = false },
         { id = "appearance", title = i18n.t("cc_app_title"), desc = i18n.t("cc_app_desc"), expanded = false },
@@ -58,13 +60,17 @@ M.init_state = function()
     M.state.debug_mode = config.options.debug_mode == true
 
     local agents = require('multi_context.agents')
-    local skills_mgr = require('multi_context.ecosystem.skills_manager')
     M.state.agents = agents.load_agents() or {}
+    
+    local ontology = require('multi_context.ecosystem.skills_ontology')
+    pcall(function() M.state.semantic_skills = ontology.load_semantic_skills() or {} end)
+
+    local skills_mgr = require('multi_context.ecosystem.skills_manager')
     pcall(skills_mgr.load_skills)
-    M.state.all_skills = skills_mgr.get_skills() or {}
+    M.state.all_tools = skills_mgr.get_skills() or {}
     
     local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"}
-    for _, t in ipairs(native_tools) do M.state.all_skills[t] = { name = t, is_native = true } end
+    for _, t in ipairs(native_tools) do M.state.all_tools[t] = { name = t, is_native = true } end
     
     local injectors_mgr = require('multi_context.ecosystem.injectors')
     M.state.all_injectors = injectors_mgr.get_all_injectors() or {}
@@ -107,17 +113,17 @@ end
 M.get_footer_hint = function(action)
     if not action then return i18n.t("cc_hint_default") end
     local t = action.type
-    if t == "section" or t == "agent_expand" then return i18n.t("cc_hint_expand") end
-    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
+    if t == "section" or t == "agent_expand" or t == "semantic_skill_expand" then return i18n.t("cc_hint_expand") end
+    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "semantic_skill_tool_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
         return i18n.t("cc_hint_toggle")
     end
     if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" or t == "app_width" or t == "app_height" or t == "edit_master_prompt" then
         return i18n.t("cc_hint_edit_val")
     end
-    if t == "edit_skill" or t == "edit_injector" or t == "edit_squad" or t == "edit_vault" then 
+    if t == "edit_tool" or t == "edit_injector" or t == "edit_squad" or t == "edit_vault" then 
         return i18n.t("cc_hint_edit_src") 
     end
-    if t == "create_agent" or t == "create_skill" or t == "create_injector" or t == "create_squad" or t == "load_history" or t == "edit_agent_prompt" or t == "delete_agent" then 
+    if t == "create_agent" or t == "create_tool" or t == "create_semantic_skill" or t == "create_injector" or t == "create_squad" or t == "load_history" or t == "edit_agent_prompt" or t == "delete_agent" or t == "edit_semantic_skill_prompt" or t == "delete_semantic_skill" then 
         return i18n.t("cc_hint_cr") 
     end
     return i18n.t("cc_hint_default")
@@ -153,7 +159,6 @@ M.render = function()
     local lines = {}
     local w = 62
 
-    -- Removido o titulo nativo daqui pois passou para a borda da janela
     add_line(lines, "", nil)
 
     for s_idx, sec in ipairs(M.state.sections) do
@@ -188,7 +193,6 @@ M.render = function()
                 local strat = "Semântico"
                 if wd.strategy == "percent" then strat = "Percentual" elseif wd.strategy == "fixed" then strat = "Fixo" end
                 add_line(lines, format_row(i18n.t("cc_wd_strategy"), "[ " .. strat .. " ]", w), { type = "wd_strategy" })
-                
                 if wd.strategy == "percent" then
                     add_line(lines, format_row(i18n.t("cc_wd_percent"), math.floor((wd.percent or 0.3) * 100) .. "%", w), { type = "wd_percent" })
                 elseif wd.strategy == "fixed" then
@@ -203,6 +207,10 @@ M.render = function()
                 for n, _ in pairs(M.state.agents) do table.insert(agent_names, n) end
                 table.sort(agent_names)
 
+                local sem_skills_keys = {}
+                for sk, _ in pairs(M.state.semantic_skills) do table.insert(sem_skills_keys, sk) end
+                table.sort(sem_skills_keys)
+
                 for _, ag_name in ipairs(agent_names) do
                     local is_exp = M.state.expanded_agents[ag_name]
                     add_line(lines, "    " .. (is_exp and "[-] " or "[+] ") .. ag_name, { type = "agent_expand", name = ag_name })
@@ -210,13 +218,8 @@ M.render = function()
                         local ag_data = M.state.agents[ag_name]
                         local ag_skills = ag_data.skills or {}
                         
-                        local skill_names = {}
-                        for sn, _ in pairs(M.state.all_skills) do table.insert(skill_names, sn) end
-                        table.sort(skill_names)
-
-                        for _, sn in ipairs(skill_names) do
-                            local has_skill = false
-                            for _, s in ipairs(ag_skills) do if s == sn then has_skill = true; break end end
+                        for _, sn in ipairs(sem_skills_keys) do
+                            local has_skill = vim.tbl_contains(ag_skills, sn)
                             add_line(lines, format_row("      ├─ " .. sn, has_skill and "[ ✓ ]" or "[   ]", w), { type = "agent_skill_toggle", agent = ag_name, skill = sn })
                         end
                         add_line(lines, format_row("      ├─ Abstraction Level", "[ " .. (ag_data.abstraction_level or "high") .. " ]", w), { type = "agent_level", name = ag_name })
@@ -225,17 +228,48 @@ M.render = function()
                     end
                 end
                 add_line(lines, i18n.t("cc_create_agent"), { type = "create_agent" })
-            elseif sec.id == "skills" then
-                add_line(lines, i18n.t("cc_skills_hint"), nil)
-                local skill_names = {}
-                for sn, _ in pairs(M.state.all_skills) do table.insert(skill_names, sn) end
-                table.sort(skill_names)
-                
-                for _, sn in ipairs(skill_names) do
-                    local sk = M.state.all_skills[sn]
-                    add_line(lines, format_row("    ├─ " .. sn, sk.is_native and "[ " .. i18n.t("cc_native_f") .. " ]" or "[ " .. i18n.t("cc_custom") .. " ]", w), { type = "edit_skill", name = sn })
+            
+            elseif sec.id == "semantic_skills" then
+                local sem_skills_keys = {}
+                for sk, _ in pairs(M.state.semantic_skills) do table.insert(sem_skills_keys, sk) end
+                table.sort(sem_skills_keys)
+
+                local tool_names = {}
+                for tn, _ in pairs(M.state.all_tools) do table.insert(tool_names, tn) end
+                table.sort(tool_names)
+
+                for _, sn in ipairs(sem_skills_keys) do
+                    local is_exp = M.state.expanded_semantic_skills[sn]
+                    add_line(lines, "    " .. (is_exp and "[-] " or "[+] ") .. sn, { type = "semantic_skill_expand", name = sn })
+                    if is_exp then
+                        local sk_data = M.state.semantic_skills[sn]
+                        local purpose = sk_data.purpose or ""
+                        local trunc_purpose = purpose:sub(1, 40):gsub("\n", " ") .. "..."
+                        add_line(lines, format_row("      ├─ Purpose", trunc_purpose, w), nil)
+                        add_line(lines, i18n.t("cc_edit_skill_purpose"), { type = "edit_semantic_skill_prompt", name = sn })
+                        add_line(lines, i18n.t("cc_delete_skill"), { type = "delete_semantic_skill", name = sn })
+                        add_line(lines, "      ├─ Tools:", nil)
+                        
+                        for _, tn in ipairs(tool_names) do
+                            local has_tool = vim.tbl_contains(sk_data.tools or {}, tn)
+                            add_line(lines, format_row("        ├─ " .. tn, has_tool and "[ ✓ ]" or "[   ]", w), { type = "semantic_skill_tool_toggle", skill = sn, tool = tn })
+                        end
+                    end
                 end
-                add_line(lines, i18n.t("cc_create_skill"), { type = "create_skill" })
+                add_line(lines, i18n.t("cc_create_semantic_skill"), { type = "create_semantic_skill" })
+                
+            elseif sec.id == "system_tools" then
+                add_line(lines, i18n.t("cc_system_tools_hint"), nil)
+                local tool_names = {}
+                for tn, _ in pairs(M.state.all_tools) do table.insert(tool_names, tn) end
+                table.sort(tool_names)
+                
+                for _, tn in ipairs(tool_names) do
+                    local tl = M.state.all_tools[tn]
+                    add_line(lines, format_row("    ├─ " .. tn, tl.is_native and "[ " .. i18n.t("cc_native_f") .. " ]" or "[ " .. i18n.t("cc_custom") .. " ]", w), { type = "edit_tool", name = tn })
+                end
+                add_line(lines, i18n.t("cc_create_tool"), { type = "create_tool" })
+
             elseif sec.id == "injectors" then
                 add_line(lines, i18n.t("cc_inj_hint"), nil)
                 local inj_names = {}
@@ -259,9 +293,7 @@ M.render = function()
                     if sq.tasks then
                         for _, t in ipairs(sq.tasks) do
                             local chain_str = t.agent or "tech_lead"
-                            if type(t.chain) == "table" and #t.chain > 0 then
-                                chain_str = chain_str .. " ➔ " .. table.concat(t.chain, " ➔ ")
-                            end
+                            if type(t.chain) == "table" and #t.chain > 0 then chain_str = chain_str .. " ➔ " .. table.concat(t.chain, " ➔ ") end
                             add_line(lines, "      └─ " .. chain_str, nil)
                         end
                     end
@@ -314,47 +346,81 @@ M.update_buffer = function()
     pcall(function() M.update_footer(api.nvim_win_get_cursor(M.win)[1]) end)
 end
 
+M._edit_agent_prompt = function(name)
+    local ag = M.state.agents[name]
+    if not ag then return end
+    local tmp_path = vim.fn.stdpath("data") .. "/mctx_agent_" .. name .. "_" .. os.date("%H%M%S") .. ".md"
+    vim.fn.writefile(vim.split(ag.system_prompt or "", "\n"), tmp_path)
+    
+    pcall(api.nvim_win_close, M.win, true)
+    vim.cmd("edit " .. tmp_path)
+    
+    api.nvim_create_autocmd("BufWritePost", {
+        buffer = api.nvim_get_current_buf(),
+        callback = function()
+            local lines = vim.fn.readfile(tmp_path)
+            local agents = require('multi_context.agents').load_agents()
+            if agents[name] then
+                agents[name].system_prompt = table.concat(lines, "\n")
+                local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
+                vim.fn.writefile({vim.fn.json_encode(agents)}, agents_file)
+                vim.notify(i18n.t("cc_sys_prompt_updated", name), vim.log.levels.INFO)
+            end
+        end
+    })
+end
+
+M._edit_skill_prompt = function(name)
+    local sk = M.state.semantic_skills[name]
+    if not sk then return end
+    local tmp_path = vim.fn.stdpath("data") .. "/mctx_skill_" .. name .. "_" .. os.date("%H%M%S") .. ".txt"
+    vim.fn.writefile(vim.split(sk.purpose or "", "\n"), tmp_path)
+    pcall(api.nvim_win_close, M.win, true)
+    vim.cmd("edit " .. tmp_path)
+    
+    api.nvim_create_autocmd("BufWritePost", {
+        buffer = api.nvim_get_current_buf(),
+        callback = function()
+            local lines = vim.fn.readfile(tmp_path)
+            local ontology = require('multi_context.ecosystem.skills_ontology')
+            local skills_v2 = ontology.load_semantic_skills()
+            if skills_v2[name] then
+                skills_v2[name].purpose = table.concat(lines, "\n")
+                local skills_file = vim.fn.stdpath("config") .. "/mctx_skills_v2.json"
+                vim.fn.writefile({vim.fn.json_encode(skills_v2)}, skills_file)
+                vim.notify(i18n.t("cc_sys_prompt_updated", name), vim.log.levels.INFO)
+            end
+        end
+    })
+end
+
 M.handle_cr = function()
     local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
     if not action then return end
     
     if action.type == "section" then 
-        M.toggle_section(action.idx)
-        M.update_buffer()
+        M.toggle_section(action.idx); M.update_buffer()
     elseif action.type == "agent_expand" then 
-        M.state.expanded_agents[action.name] = not M.state.expanded_agents[action.name]
-        M.update_buffer()
+        M.state.expanded_agents[action.name] = not M.state.expanded_agents[action.name]; M.update_buffer()
+    elseif action.type == "semantic_skill_expand" then 
+        M.state.expanded_semantic_skills[action.name] = not M.state.expanded_semantic_skills[action.name]; M.update_buffer()
     elseif action.type == "delete_agent" then
         local choice = vim.fn.confirm(i18n.t("cc_delete_agent_prompt", action.name), i18n.t("cc_yes") .. "\n" .. i18n.t("cc_no"), 2)
         if choice == 1 then
-            M.state.agents[action.name] = nil
-            M.state.expanded_agents[action.name] = nil
-            M.save_config()
-            vim.notify(i18n.t("cc_deleted"), vim.log.levels.INFO)
-            M.update_buffer()
+            M.state.agents[action.name] = nil; M.state.expanded_agents[action.name] = nil
+            M.save_config(); vim.notify(i18n.t("cc_deleted"), vim.log.levels.INFO); M.update_buffer()
+        end
+    elseif action.type == "delete_semantic_skill" then
+        local choice = vim.fn.confirm(i18n.t("cc_delete_skill_prompt", action.name), i18n.t("cc_yes") .. "\n" .. i18n.t("cc_no"), 2)
+        if choice == 1 then
+            M.state.semantic_skills[action.name] = nil; M.state.expanded_semantic_skills[action.name] = nil
+            M.save_config(); vim.notify(i18n.t("cc_deleted"), vim.log.levels.INFO); M.update_buffer()
         end
     elseif action.type == "edit_agent_prompt" then
-        local ag = M.state.agents[action.name]
-        local tmp_path = vim.fn.stdpath("data") .. "/mctx_agent_" .. action.name .. "_" .. os.date("%H%M%S") .. ".md"
-        vim.fn.writefile(vim.split(ag.system_prompt or "", "\n"), tmp_path)
-        
-        pcall(api.nvim_win_close, M.win, true)
-        vim.cmd("edit " .. tmp_path)
-        
-        api.nvim_create_autocmd("BufWritePost", {
-            buffer = api.nvim_get_current_buf(),
-            callback = function()
-                local lines = vim.fn.readfile(tmp_path)
-                local agents = require('multi_context.agents').load_agents()
-                if agents[action.name] then
-                    agents[action.name].system_prompt = table.concat(lines, "\n")
-                    local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
-                    vim.fn.writefile({vim.fn.json_encode(agents)}, agents_file)
-                    vim.notify(i18n.t("cc_sys_prompt_updated", action.name), vim.log.levels.INFO)
-                end
-            end
-        })
-    elseif action.type == "create_skill" then
+        M._edit_agent_prompt(action.name)
+    elseif action.type == "edit_semantic_skill_prompt" then
+        M._edit_skill_prompt(action.name)
+    elseif action.type == "create_tool" then
         vim.ui.input({ prompt = i18n.t("cc_create_skill_pmpt") }, function(input)
             if not input or input == "" then return end
             input = input:gsub("%.lua$", "")
@@ -386,15 +452,9 @@ M.handle_cr = function()
             local dir = vim.fn.stdpath("config") .. "/mctx_injectors"
             if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
             local path = dir .. "/" .. input .. ".lua"
-            
             local boilerplate = {
-                "return {",
-                "    name = '" .. input .. "',",
-                "    description = '" .. i18n.t("cc_inj_desc_ph") .. "',",
-                "    execute = function()",
-                "        return '" .. i18n.t("cc_inj_res_ph") .. "'",
-                "    end",
-                "}"
+                "return {", "    name = '" .. input .. "',", "    description = '" .. i18n.t("cc_inj_desc_ph") .. "',",
+                "    execute = function()", "        return '" .. i18n.t("cc_inj_res_ph") .. "'", "    end", "}"
             }
             vim.fn.writefile(boilerplate, path)
             pcall(api.nvim_win_close, M.win, true)
@@ -405,26 +465,23 @@ M.handle_cr = function()
         vim.ui.input({ prompt = i18n.t("cc_create_agent_pmpt") }, function(input)
             if not input or input == "" then return end
             if not M.state.agents[input] then
-                M.state.agents[input] = {
-                    system_prompt = i18n.t("cc_agent_sys_ph"),
-                    abstraction_level = "high",
-                    skills = {}
-                }
-                M.save_config()
-                vim.notify(i18n.t("cc_create_agent_notify", input), vim.log.levels.INFO)
-                M.update_buffer()
+                M.state.agents[input] = { system_prompt = i18n.t("cc_agent_sys_ph"), abstraction_level = "high", skills = {} }
+                M.save_config(); vim.notify(i18n.t("cc_create_agent_notify", input), vim.log.levels.INFO); M.update_buffer()
+            end
+        end)
+    elseif action.type == "create_semantic_skill" then
+        vim.ui.input({ prompt = i18n.t("cc_create_semantic_skill_pmpt") }, function(input)
+            if not input or input == "" then return end
+            if not M.state.semantic_skills[input] then
+                M.state.semantic_skills[input] = { purpose = "Nova Skill Semântica / New Semantic Skill", tools = {} }
+                M.save_config(); vim.notify(string.format(i18n.t("cc_semantic_skill_created"), input), vim.log.levels.INFO); M.update_buffer()
             end
         end)
     elseif action.type == "create_squad" then
         vim.ui.input({ prompt = i18n.t("cc_create_squad_pmpt") }, function(input)
             if not input or input == "" then return end
             if not M.state.squads[input] then
-                M.state.squads[input] = {
-                    description = "Novo esquadrão / New squad",
-                    tasks = {
-                        { agent = "tech_lead", instruction = "Instrução inicial", chain = {"coder"} }
-                    }
-                }
+                M.state.squads[input] = { description = "Novo esquadrão / New squad", tasks = { { agent = "tech_lead", instruction = "Instrução inicial", chain = {"coder"} } } }
                 local squads_file = vim.fn.stdpath("config") .. "/mctx_squads.json"
                 vim.fn.writefile({vim.fn.json_encode(M.state.squads)}, squads_file)
                 vim.notify(i18n.t("cc_squad_created", input), vim.log.levels.INFO)
@@ -439,8 +496,7 @@ M.handle_cr = function()
             pcall(api.nvim_win_close, M.win, true)
             vim.cmd("edit " .. filepath)
             require('multi_context.utils.utils').load_workspace_state(api.nvim_get_current_buf())
-            local ui_popup = require('multi_context.ui.chat_view')
-            ui_popup.create_popup(api.nvim_get_current_buf())
+            require('multi_context.ui.chat_view').create_popup(api.nvim_get_current_buf())
         end
     end
 end
@@ -468,6 +524,12 @@ M.handle_space = function()
         local found_idx = nil
         for i, s in ipairs(ag.skills) do if s == action.skill then found_idx = i; break end end
         if found_idx then table.remove(ag.skills, found_idx) else table.insert(ag.skills, action.skill) end
+    elseif action.type == "semantic_skill_tool_toggle" then
+        local sk = M.state.semantic_skills[action.skill]
+        if not sk.tools then sk.tools = {} end
+        local found_idx = nil
+        for i, t in ipairs(sk.tools) do if t == action.tool then found_idx = i; break end end
+        if found_idx then table.remove(sk.tools, found_idx) else table.insert(sk.tools, action.tool) end
     elseif action.type == "app_border" then
         local borders = { rounded = "single", single = "double", double = "solid", solid = "shadow", shadow = "none", none = "rounded" }
         M.state.appearance.border = borders[M.state.appearance.border or "rounded"] or "rounded"
@@ -482,14 +544,9 @@ M.handle_edit = function()
     if not action then return end
 
     local function prompt_str(msg, callback)
-        vim.ui.input({ prompt = msg }, function(input)
-            if input and input ~= "" then callback(input); M.update_buffer() end
-        end)
+        vim.ui.input({ prompt = msg }, function(input) if input and input ~= "" then callback(input); M.update_buffer() end end)
     end
-
-    local function prompt_num(msg, callback)
-        prompt_str(msg, function(i) local n = tonumber(i); if n then callback(n) end end)
-    end
+    local function prompt_num(msg, callback) prompt_str(msg, function(i) local n = tonumber(i); if n then callback(n) end end) end
 
     if action.type == "wd_horizon" then prompt_num(i18n.t("cc_prompt_wd_horizon"), function(n) M.state.horizon = n end)
     elseif action.type == "wd_tolerance" then prompt_num(i18n.t("cc_prompt_wd_tolerance"), function(n) M.state.tolerance = n end)
@@ -510,23 +567,30 @@ end
 
 M.handle_open_file = function()
     local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
-    local path = nil
+    if not action then return end
     
-    if action and action.type == "edit_skill" then
-        if M.state.all_skills[action.name].is_native then
-            vim.notify(i18n.t("cc_core_tool_warn"), vim.log.levels.WARN)
-            return
+    if action.type == "agent_expand" or action.type == "edit_agent_prompt" then
+        M._edit_agent_prompt(action.name)
+        return
+    elseif action.type == "semantic_skill_expand" or action.type == "edit_semantic_skill_prompt" then
+        M._edit_skill_prompt(action.name)
+        return
+    end
+
+    local path = nil
+    if action.type == "edit_tool" then
+        if M.state.all_tools[action.name].is_native then
+            vim.notify(i18n.t("cc_core_tool_warn"), vim.log.levels.WARN); return
         end
         path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
-    elseif action and action.type == "edit_injector" then
+    elseif action.type == "edit_injector" then
         if M.state.all_injectors[action.name].is_native then
-            vim.notify(i18n.t("cc_core_inj_warn"), vim.log.levels.WARN)
-            return
+            vim.notify(i18n.t("cc_core_inj_warn"), vim.log.levels.WARN); return
         end
         path = vim.fn.stdpath("config") .. "/mctx_injectors/" .. action.name .. ".lua"
-    elseif action and action.type == "edit_squad" then
+    elseif action.type == "edit_squad" then
         path = vim.fn.stdpath("config") .. "/mctx_squads.json"
-    elseif action and action.type == "edit_vault" then
+    elseif action.type == "edit_vault" then
         path = config.options.api_keys_path
     end
     
@@ -539,8 +603,7 @@ end
 M.handle_dd = function()
     local action = M.line_map[api.nvim_win_get_cursor(0)[1]]
     if action and (action.type == "api_select" or action.type == "api_spawn") then
-        M.state.clipboard_api = table.remove(M.state.apis, action.idx)
-        M.update_buffer()
+        M.state.clipboard_api = table.remove(M.state.apis, action.idx); M.update_buffer()
     end
 end
 
@@ -550,8 +613,7 @@ M.handle_p = function()
     local idx = #M.state.apis + 1
     if action and (action.type == "api_select" or action.type == "api_spawn") then idx = action.idx + 1 end
     table.insert(M.state.apis, idx, M.state.clipboard_api)
-    M.state.clipboard_api = nil
-    M.update_buffer()
+    M.state.clipboard_api = nil; M.update_buffer()
 end
 
 M.save_config = function()
@@ -572,8 +634,6 @@ M.save_config = function()
     config.options.appearance = vim.deepcopy(M.state.appearance)
     config.options.master_prompt = M.state.master_prompt
     config.options.debug_mode = M.state.debug_mode
-    
-    -- FIX BUG 1: Sincronização do Watchdog com a memória RAM
     config.options.watchdog = vim.deepcopy(M.state.watchdog)
     config.options.cognitive_horizon = M.state.horizon
     config.options.user_tolerance = M.state.tolerance
@@ -582,6 +642,11 @@ M.save_config = function()
     local raw_json = vim.fn.json_encode(M.state.agents)
     vim.fn.writefile({raw_json}, agents_file)
     pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw_json), agents_file)) end)
+
+    local skills_file = vim.fn.stdpath("config") .. "/mctx_skills_v2.json"
+    local raw_skills = vim.fn.json_encode(M.state.semantic_skills)
+    vim.fn.writefile({raw_skills}, skills_file)
+    pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw_skills), skills_file)) end)
 
     M._last_saved_cfg = cfg
     vim.notify(i18n.t("cc_saved"), vim.log.levels.INFO)
@@ -596,45 +661,23 @@ M.open_panel = function()
     vim.bo[M.buf].swapfile = false
     api.nvim_buf_set_name(M.buf, "MultiContext_Controls")
     
-    local w, h = 72, 25
+    local w, h = 76, 28
+    local win_opts = { relative = 'editor', width = w, height = h, row = math.floor((vim.o.lines - h) / 2), col = math.floor((vim.o.columns - w) / 2), border = 'rounded', style = 'minimal' }
     
-    -- O TÍTULO AGORA VAI AQUI, NA BORDA DA JANELA
-    local win_opts = {
-        relative = 'editor', width = w, height = h,
-        row = math.floor((vim.o.lines - h) / 2), col = math.floor((vim.o.columns - w) / 2),
-        border = 'rounded', style = 'minimal'
-    }
-    
-    -- title e title_pos dependem do Neovim 0.9+. 
-    if vim.fn.has("nvim-0.9") == 1 then
-        win_opts.title = " MultiContext AI 🤖[v1.3] "
-        win_opts.title_pos = "center"
-    end
+    if vim.fn.has("nvim-0.9") == 1 then win_opts.title = " MultiContext AI 🤖[v1.4] "; win_opts.title_pos = "center" end
     
     M.win = api.nvim_open_win(M.buf, true, win_opts)
-    
     vim.wo[M.win].cursorline = true; vim.wo[M.win].wrap = false; vim.wo[M.win].number = true; vim.wo[M.win].relativenumber = true
     M.update_buffer()
     
     local km = { noremap = true, silent = true }
     local function map(k, f) api.nvim_buf_set_keymap(M.buf, "n", k, "", { callback = f, noremap = true, silent = true }) end
     
-    map("<CR>", M.handle_cr)
-    map("<Space>", M.handle_space)
-    map("c", M.handle_edit)
-    map("e", M.handle_open_file)
-    map("dd", M.handle_dd)
-    map("p", M.handle_p)
+    map("<CR>", M.handle_cr); map("<Space>", M.handle_space); map("c", M.handle_edit); map("e", M.handle_open_file); map("dd", M.handle_dd); map("p", M.handle_p)
     api.nvim_buf_set_keymap(M.buf, "n", "q", ":q!<CR>", km)
     
     api.nvim_create_autocmd("BufWriteCmd", { buffer = M.buf, callback = M.save_config })
-    api.nvim_create_autocmd("CursorMoved", {
-        buffer = M.buf,
-        callback = function()
-            if not api.nvim_buf_is_valid(M.buf) or not api.nvim_win_is_valid(M.win) then return end
-            M.update_footer(api.nvim_win_get_cursor(M.win)[1])
-        end
-    })
+    api.nvim_create_autocmd("CursorMoved", { buffer = M.buf, callback = function() if not api.nvim_buf_is_valid(M.buf) or not api.nvim_win_is_valid(M.win) then return end; M.update_footer(api.nvim_win_get_cursor(M.win)[1]) end })
 end
 
 return M

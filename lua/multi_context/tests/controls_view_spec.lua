@@ -49,7 +49,7 @@ describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
         controls.init_state()
         assert.truthy(#controls.state.sections >= 6)
         assert.is_not_nil(controls.state.agents["tech_lead"])
-        assert.is_not_nil(controls.state.all_skills["minha_skill"])
+        assert.is_not_nil(controls.state.all_tools["minha_skill"])
     end)
 
     it("Deve renderizar os botoes de criar Agente e Skill ao expandir as seções", function()
@@ -59,20 +59,29 @@ describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
         local lines = controls.render()
         local str_lines = table.concat(lines, "\n")
         assert.truthy(str_lines:match("%+ Criar Novo Agente"))
-        assert.truthy(str_lines:match("%+ Criar Nova Skill"))
+        assert.truthy(str_lines:match("Criar Nova Skill Sem"))
         assert.truthy(str_lines:match("%[%+%] tech_lead"))
     end)
     
     it("Deve permitir Drill-down (Expandir um Agente) revelando a arvore de skills", function()
         controls.init_state()
-        controls.toggle_section(5)
+        
+        -- Override manual para isolar o teste do BDD (Mock Perfeito)
+        controls.state.semantic_skills = { code_refactoring = { purpose = "Refatorar codigo com seguranca." } }
+        controls.state.agents = {
+            tech_lead = { skills = {"code_refactoring"}, abstraction_level = "high" }
+        }
+        
+        -- Abre o Gatekeeper e expande o tech_lead
+        controls.state.sections[5].expanded = true
         controls.state.expanded_agents["tech_lead"] = true
+        
         local lines = controls.render()
         local found = false
         for _, line in ipairs(lines) do
-            if line:match("├─ run_shell") and line:match("%[ ✓ %]") then found = true end
+            if line:match("├─ code_refactoring") and line:match("%[ ✓ %]") then found = true end
         end
-        assert.is_true(found)
+        assert.is_true(found, "Gatekeeper deve listar a skill semantica com checkbox ativado")
     end)
 end)
 
@@ -85,7 +94,7 @@ describe("Fase 26.1 - Interatividade e Mutação (Toggles e Edição)", function
         controls.init_state()
         
         controls.state.agents = { coder = { skills = {"read_file"}, abstraction_level = "high" } }
-        controls.state.all_skills = { read_file = { name = "read_file", is_native = true }, run_shell = { name = "run_shell", is_native = true } }
+        controls.state.all_tools = { read_file = { name = "read_file", is_native = true }, run_shell = { name = "run_shell", is_native = true } }
     end)
     after_each(restore_environment)
 
@@ -246,8 +255,8 @@ describe("Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e 
     end)
 
     it("Abertura de arquivos deve fechar a janela do painel ANTES de dar o edit (evita E37)", function()
-        controls.line_map = { [1] = { type = "edit_skill", name = "skill_teste" } }
-        controls.state.all_skills = { skill_teste = { is_native = false } }
+        controls.line_map = { [1] = { type = "edit_tool", name = "skill_teste" } }
+        controls.state.all_tools = { skill_teste = { is_native = false } }
         vim.fn.writefile({"-- teste"}, mock_test_dir .. "/mctx_skills/skill_teste.lua")
         
         local execution_order = {}
@@ -337,5 +346,72 @@ describe("Fase 34 - Sincronização de Memória do Watchdog (Bug 1)", function()
         -- 3. As opções em RAM do motor principal devem refletir a mudança
         assert.are.same(150000, config.options.cognitive_horizon, "A memória global (config.options.cognitive_horizon) não foi atualizada!")
         assert.are.same("auto", config.options.watchdog.mode, "A memória global (config.options.watchdog.mode) não foi atualizada!")
+    end)
+end)
+
+describe("Fase 41 - UI Semantica (MoA e MCP)", function()
+    before_each(function()
+        isolate_environment()
+        package.loaded['multi_context.ui.controls_view'] = nil
+        controls = require('multi_context.ui.controls_view')
+        controls.reset_state()
+        
+        config.load_api_config = function() return { fallback_mode = true, default_api = "api_A", apis = { { name = "api_A" } } } end
+        
+        package.loaded['multi_context.agents'] = {
+            load_agents = function() return { coder = { skills = {"code_refactoring"} } } end
+        }
+        package.loaded['multi_context.ecosystem.skills_ontology'] = {
+            load_semantic_skills = function() return { 
+                code_refactoring = { purpose = "Refatorar codigo com seguranca.", tools = {"read_file", "edit_file"} } 
+            } end
+        }
+        package.loaded['multi_context.ecosystem.skills_manager'] = {
+            load_skills = function() end,
+            get_skills = function() return { read_file = {is_native = true}, edit_file = {is_native = true}, run_shell = {is_native = true} } end
+        }
+    end)
+    after_each(restore_environment)
+
+    it("Contrato 1.1 e 1.2: Deve carregar semantic_skills separadas das raw tools", function()
+        controls.init_state()
+        assert.is_not_nil(controls.state.semantic_skills["code_refactoring"])
+        assert.is_not_nil(controls.state.all_tools["run_shell"])
+    end)
+
+    it("Contrato 2.1 e 2.2: Deve renderizar a nova arvore semantica no Gatekeeper e na secao dedicada", function()
+        controls.init_state()
+        -- Simulando a expansao do agente no Gatekeeper
+        controls.state.sections[5].expanded = true
+        controls.state.expanded_agents["coder"] = true
+        
+        -- Simulando a expansao da secao nova e da skill
+        controls.state.sections[6].expanded = true
+        controls.state.expanded_semantic_skills["code_refactoring"] = true
+        
+        local lines = controls.render()
+        local str_lines = table.concat(lines, "\n")
+        
+        assert.truthy(str_lines:match("├─ code_refactoring"), "Gatekeeper deve exibir a skill semantica")
+        assert.truthy(str_lines:match("├─ Purpose .* Refatorar codigo"), "Deve exibir o proposito na nova secao")
+        assert.truthy(str_lines:match("├─ read_file"), "Deve exibir a ferramenta aninhada a skill")
+    end)
+
+    it("Contrato 3.1 e 3.2: Deve permitir toggle state na memoria (Mutadores)", function()
+        controls.init_state()
+        
+        -- Toggle skill no agente
+        controls.line_map = { [1] = { type = "agent_skill_toggle", agent = "coder", skill = "code_investigation" } }
+        local orig_cursor = vim.api.nvim_win_get_cursor
+        vim.api.nvim_win_get_cursor = function() return {1, 0} end
+        controls.handle_space()
+        assert.is_true(vim.tbl_contains(controls.state.agents["coder"].skills, "code_investigation"))
+
+        -- Toggle tool na skill semantica
+        controls.line_map = { [1] = { type = "semantic_skill_tool_toggle", skill = "code_refactoring", tool = "run_shell" } }
+        controls.handle_space()
+        assert.is_true(vim.tbl_contains(controls.state.semantic_skills["code_refactoring"].tools, "run_shell"))
+        
+        vim.api.nvim_win_get_cursor = orig_cursor
     end)
 end)
