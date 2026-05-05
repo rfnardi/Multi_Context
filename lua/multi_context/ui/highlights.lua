@@ -2,9 +2,6 @@ local api = vim.api
 local M = {}
 
 M.define_groups = function()
-    -- === PALETA UNIFICADA (Chat e Controls) ===
-    
-    -- Laranja Primário (Header, Infos, Botões Ativos, Valores Numéricos)
     vim.cmd("highlight default ContextHeader gui=bold guifg=#FF4500 guibg=NONE")
     vim.cmd("highlight default ContextCurrentBuffer gui=bold guifg=#FFA500 guibg=NONE")
     vim.cmd("highlight default ContextUpdateMessages gui=bold guifg=#FFA500 guibg=NONE")
@@ -16,14 +13,11 @@ M.define_groups = function()
     vim.cmd("highlight default link ContextUIActive ContextBoldText")
     vim.cmd("highlight default link ContextUIData ContextBoldText")
 
-    -- Vermelho/Firebrick (Usuário, Inativos)
     vim.cmd("highlight default ContextUser gui=bold guifg=#B22222 guibg=NONE")
     vim.cmd("highlight default link ContextUIInactive ContextUser")
 
-    -- Azul (Inteligência Artificial)
     vim.cmd("highlight default ContextUserAI gui=bold guifg=#0000CD guibg=NONE")
 
-    -- Neutros/Cinza Escuro (Pontilhados, Ajuda de rodapé)
     vim.cmd("highlight default ContextUIHelp guifg=#696969 guibg=NONE")
     vim.cmd("highlight default ContextUIDot guifg=#404040 guibg=NONE")
 end
@@ -40,10 +34,14 @@ M.apply_chat = function(buf)
         vim.cmd("syntax match ContextUser '^## .* >>.*'")
         vim.cmd("syntax match ContextUserAI '^## IA.*'")
         vim.cmd("syntax match ContextApiInfo '^## API atual:.*'")
-        vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
         vim.cmd("syntax region ContextCodeBlock start='^```' end='^```'")
         vim.cmd("highlight default link ContextCodeBlock String")
+        vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
         vim.cmd("highlight default link ContextBold ContextBoldText")
+        
+        -- FASE 42.5: Ocultação de XML via Conceal
+        vim.cmd("syntax match ContextBlockTag \"<block[^>]*>\" conceal")
+        vim.cmd("syntax match ContextBlockEndTag \"</block>\" conceal")
     end)
 end
 
@@ -52,24 +50,14 @@ M.apply_controls = function(buf)
     vim.api.nvim_buf_call(buf, function()
         M.define_groups()
         vim.cmd("syntax clear")
-        
-        -- Título Superior
         vim.cmd("syntax match ContextUITitle '^===.*==='")
         vim.cmd("syntax match ContextUITitle 'MultiContext AI.*'")
-        
-        -- Textos de Ajuda (Rodapé e Topo)
         vim.cmd("syntax match ContextUIHelp '^.*<CR>.*<Space>.*'")
         vim.cmd("syntax match ContextUIHelp '^.*Use j/k para navegar.*'")
-        
-        -- Expansores e Seções
         vim.cmd("syntax match ContextUISection '^▶.*'")
         vim.cmd("syntax match ContextUISection '^▼.*'")
-        
-        -- Grid Dots
         vim.cmd("syntax match ContextUIDot '\\.\\.\\.*'")
         vim.cmd("syntax match ContextUIDot '··*'")
-        
-        -- Valores Positivos / Ativos
         vim.cmd("syntax match ContextUIActive '●'")
         vim.cmd("syntax match ContextUIActive '\\[ ON \\]'")
         vim.cmd("syntax match ContextUIActive '\\[ ✓ \\]'")
@@ -78,14 +66,11 @@ M.apply_controls = function(buf)
         vim.cmd("syntax match ContextUIActive '\\[ Semântico \\]'")
         vim.cmd("syntax match ContextUIActive '\\[ Percentual \\]'")
         vim.cmd("syntax match ContextUIActive '\\[ Fixo \\]'")
-        
-        -- Valores Negativos / Inativos
+        vim.cmd("syntax match ContextUIActive '\\[ Dinâmico \\]'")
         vim.cmd("syntax match ContextUIInactive '○'")
         vim.cmd("syntax match ContextUIInactive '\\[ OFF \\]'")
         vim.cmd("syntax match ContextUIInactive '\\[   \\]'")
         vim.cmd("syntax match ContextUIInactive '\\[ Off \\]'")
-        
-        -- Valores em destaque numérico (Tokens, tolerância, %)
         vim.cmd("syntax match ContextUIData '\\d\\+ tokens'")
         vim.cmd("syntax match ContextUIData '\\d\\+%%'")
         vim.cmd("syntax match ContextUIData '1\\.\\d\\+'")

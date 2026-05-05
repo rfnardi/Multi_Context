@@ -1,26 +1,27 @@
 #!/bin/fish
 
 gitgo '
-refactor(ui): alinha Master Command Center com Ontologia Semântica MCP (Fase 41)
+feat(memory): implementa ledger imutável polimórfico e watchdog dinâmico
 
-Esta grande refatoração de UI resolve a dissonância cognitiva do painel,
-espelhando visualmente a arquitetura do Model Context Protocol (MCP).
-O Centro de Comando agora separa rigorosamente "Skills Semânticas"
-(Comportamentos e guardrails) de "System Tools" (Binários brutos).
+A Fase 42 conclui uma mudança arquitetural massiva no gerenciamento de memória,
+transitando de um garbage collection destrutivo para um modelo relacional.
 
-Principais alterações:
-- feat(controls): separação estrutural entre `all_tools` e `semantic_skills` 
-  no estado do DOM virtual.
-- feat(iam): Gatekeeper agora delega apenas Skills Semânticas aos agentes, 
-  impedido o mapeamento cego de ferramentas (anti-alucinação).
-- feat(ui): novas seções interativas para criar, editar (buffer de guardrails) 
-  e deletar Skills Semânticas, sincronizadas com `mctx_skills_v2.json`.
-- feat(i18n): injeção de novas chaves de tradução (en e pt-BR) para a nova 
-  hierarquia e dicas do rodapé dinâmico.
-- test(bdd): blindagem profunda dos testes em `controls_view_spec.lua` 
-  com mocks de isolamento, mantendo 100% de sucesso nos 223 testes.
-- docs: atualização do README.md, CONTEXT.md e doc/multicontext.txt para a 
-  Versão 2.3+, documentando o alinhamento MCP, Squads e JIT LSP.
+Principais adições:
+- Ledger Imutável: Substituída a manipulação de strings por um schema 
+  estrito de tags XML `<block>` (rastreando `id`, `status`, `type` e `covers`).
+  O histórico agora é "append-only", preservando todos os dados brutos.
+- Watchdog Dinâmico: Introduzido um bibliotecário assíncrono em background
+  que delega a sumarização de contexto para uma API secundária, evitando 
+  travamentos na UI e poupando a janela de contexto do modelo principal.
+- RAG Local (`deep_dive`): Agentes de IA agora possuem uma ferramenta nativa 
+  para buscar e ler blocos de histórico arquivados sob demanda.
+- Motor Visual Nativo: Integrados o `conceallevel=2` e `folds` do Neovim 
+  para ocultar o XML e encapsular o texto arquivado sob dobras elegantes 
+  na interface (ex: `📦[X linhas arquivadas]`).
+- Integração de UI: Adicionado seletor de estratégias e escolha de API de 
+  background no Master Command Center (`:ContextControls`).
+- Testes: Mocks legados migrados para o novo formato de AST XML, alcançando 
+  a marca de 233/233 testes passando.
 
-Refs: Fase 41
+Refs: Fase 42 -- versão 2.3.1
 '

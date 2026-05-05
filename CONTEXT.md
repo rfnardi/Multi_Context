@@ -3,17 +3,17 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V2.3+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, and a **Cognitive Optimization & Internationalization (i18n) Engine**.
+In its **V2.3.1+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, and a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **223 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **233 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
-- **XML Processing**: Fault-tolerant functional parser, featuring implicit tag auto-closing to prevent LLM hallucinations.
+- **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`).
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
-- **State Serialization**: Metadata Envelopes and JSON-in-XML injection to save and restore Swarm sessions without losing the readability of the raw Markdown chat file.
+- **State Serialization & Visual Engine**: Metadata Envelopes and JSON-in-XML injection to save and restore Swarm sessions. Leverages Neovim's native `conceallevel` and `foldexpr` to invisibly render XML metadata while cleanly grouping archived history under semantic summaries.
 
 ### Directory Structure
 ```text
@@ -36,6 +36,8 @@ lua/multi_context/
 ├── lsp_manager.lua       # JIT LSP Provisioning, Extension Mappings, and Mason.nvim integration
 ├── react_loop.lua        # Session state manager and Circuit Breaker
 ├── memory_tracker.lua    # Predictive Watchdog with EMA calculation and Initial Turn Immunity
+├── archiver.lua          # Relational compression engine manipulating the AST blocks
+├── dynamic_watchdog.lua  # Asynchronous background librarian orchestrator
 ├── context_builders.lua  # Context extractors injecting strict line numbering (1 | code)
 ├── context_controls.lua  # Master Command Center (13 Sections: API, IAM, Skills, Tools, Swarm...)
 ├── tools.lua             # Native tools (read, edit, bash, LSP, Unified Diff, Git, Ripgrep)
@@ -47,9 +49,8 @@ lua/multi_context/
 ├── tests/                # Automated Test Suite (TDD/Plenary) with complex mocks
 │   ├── i18n_spec.lua             # Language Engine and Fallback Tests
 │   ├── git_tools_spec.lua        # Git Automation and Gatekeeper Tests
-│   ├── lsp_utils_spec.lua        # Silent LSP Bridge Tests
-│   ├── lsp_manager_spec.lua      # JIT LSP Auto-Setup Tests
-│   ├── tool_runner_lsp_spec.lua  # LSP Routing Tests
+│   ├── archiver_spec.lua         # Relational Compression and RAG Tests
+│   ├── visual_engine_spec.lua    # Native Folds and Conceal Tests
 │   └── ... (plus 40+ files)
 └── examples/
     ├── skills/           # Community Skill Templates (Jira, Pytest, SQL)
@@ -149,6 +150,12 @@ lua/multi_context/
 - **Skill Guardrails & Editing**: A dedicated *Semantic Skills* UI section allows users to create new behaviors, map which System Tools they contain, and press `e` to edit their strict `Purpose`, `Trigger`, and `Protocol` in an isolated Neovim buffer. This completely eliminates the UI's cognitive dissonance and prevents raw tool hallucination.
 - **Dynamic Tool Resolution**: Behind the scenes, the `skills_ontology` compiler resolves the agent's semantic skills down to a flat array of System Tools just-in-time for the API payload, acting as a flawless auto-wrapper.
 
+### 18. Immutable Ledger, Relational Compression & Asynchronous Librarian (Phase 42)
+- **Polymorphic XML Blocks**: The chat history transitioned from destructive string-based garbage collection to an append-only XML ledger. Operations and dialogue are encapsulated in `<block>` tags governed by strict metadata (`id`, `status`, `type`, `covers`), guaranteeing robust parsing and absolute structural integrity.
+- **Asynchronous Librarian (Dynamic Watchdog)**: The Predictive Watchdog now features a `dynamic` mode. It transparently delegates semantic summarization to a secondary, user-selected background API (e.g., a faster/cheaper model). This eliminates UI freezes during context compression and preserves the expensive main model's context window.
+- **Local RAG Capabilities (`deep_dive` tool)**: Swarm Agents are now equipped with a surgical tool to "unfold" compressed context. By executing `deep_dive` on a summary's target ID, the agent retrieves the original raw data from archived blocks on demand.
+- **Native Neovim Visual Engine**: Employs Neovim's built-in `conceal` capabilities to hide raw XML tags from the user, ensuring the interface remains as readable as markdown. It dynamically creates `folds` wrapping archived interactions under their summaries (e.g., `📦 [X archived lines]`), providing a sleek UI experience while ensuring the underlying `.mctx` file remains fully hackable text.
+
 ---
 
 ## Current Development State
@@ -167,4 +174,5 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Unified Diff, Persistent Workspaces, and Meta-Agent Squads.
 - Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
 - Local Git automation via DevOps Agent with atomic security locks.
-- **Plenary Test Coverage:** 223 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- Polymorphic Immutable Ledger with Asynchronous Background Summarization (Dynamic Watchdog), Local RAG (`deep_dive`), and Native Visual Folds/Conceal.
+- **Plenary Test Coverage:** 233 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).

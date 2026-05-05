@@ -69,7 +69,7 @@ M.init_state = function()
     pcall(skills_mgr.load_skills)
     M.state.all_tools = skills_mgr.get_skills() or {}
     
-    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit"}
+    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit", "deep_dive"}
     for _, t in ipairs(native_tools) do M.state.all_tools[t] = { name = t, is_native = true } end
     
     local injectors_mgr = require('multi_context.ecosystem.injectors')
@@ -114,7 +114,7 @@ M.get_footer_hint = function(action)
     if not action then return i18n.t("cc_hint_default") end
     local t = action.type
     if t == "section" or t == "agent_expand" or t == "semantic_skill_expand" then return i18n.t("cc_hint_expand") end
-    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "semantic_skill_tool_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
+    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "semantic_skill_tool_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "wd_bg_api" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
         return i18n.t("cc_hint_toggle")
     end
     if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" or t == "app_width" or t == "app_height" or t == "edit_master_prompt" then
@@ -190,13 +190,18 @@ M.render = function()
                 add_line(lines, format_row(i18n.t("cc_wd_trigger"), M.state.horizon .. " tokens", w), { type = "wd_horizon" })
                 add_line(lines, format_row(i18n.t("cc_wd_tolerance"), tostring(M.state.tolerance), w), { type = "wd_tolerance" })
                 add_line(lines, "", nil)
+                
                 local strat = "Semântico"
-                if wd.strategy == "percent" then strat = "Percentual" elseif wd.strategy == "fixed" then strat = "Fixo" end
+                if wd.strategy == "percent" then strat = "Percentual" elseif wd.strategy == "fixed" then strat = "Fixo" elseif wd.strategy == "dynamic" then strat = "Dinâmico" end
                 add_line(lines, format_row(i18n.t("cc_wd_strategy"), "[ " .. strat .. " ]", w), { type = "wd_strategy" })
+                
                 if wd.strategy == "percent" then
                     add_line(lines, format_row(i18n.t("cc_wd_percent"), math.floor((wd.percent or 0.3) * 100) .. "%", w), { type = "wd_percent" })
                 elseif wd.strategy == "fixed" then
                     add_line(lines, format_row(i18n.t("cc_wd_fixed"), (wd.fixed_target or 1500) .. " tokens", w), { type = "wd_fixed" })
+                elseif wd.strategy == "dynamic" then
+                    local bg_api = wd.background_api or "[ Selecione ]"
+                    add_line(lines, format_row("      └─ Background API", "[ " .. bg_api .. " ]", w), { type = "wd_bg_api" })
                 end
             elseif sec.id == "limits" then
                 add_line(lines, format_row(i18n.t("cc_limit_id"), "[ " .. M.state.identity .. " ]", w), { type = "limit_identity" })
@@ -516,8 +521,16 @@ M.handle_space = function()
         local cycles = { off = "ask", ask = "auto", auto = "off" }
         M.state.watchdog.mode = cycles[M.state.watchdog.mode or "off"] or "off"
     elseif action.type == "wd_strategy" then
-        local cycles = { semantic = "percent", percent = "fixed", fixed = "semantic" }
+        local cycles = { semantic = "percent", percent = "fixed", fixed = "dynamic", dynamic = "semantic" }
         M.state.watchdog.strategy = cycles[M.state.watchdog.strategy or "semantic"] or "semantic"
+    elseif action.type == "wd_bg_api" then
+        local apis = M.state.apis
+        if #apis > 0 then
+            local curr_idx = 0
+            for i, a in ipairs(apis) do if a.name == M.state.watchdog.background_api then curr_idx = i; break end end
+            local next_idx = (curr_idx % #apis) + 1
+            M.state.watchdog.background_api = apis[next_idx].name
+        end
     elseif action.type == "agent_skill_toggle" then
         local ag = M.state.agents[action.agent]
         if not ag.skills then ag.skills = {} end

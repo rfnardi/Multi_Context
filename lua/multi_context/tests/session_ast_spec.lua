@@ -36,13 +36,9 @@ describe("Fase 35 - Etapa 1: Session AST RAM Abstraction", function()
 
     it("Deve serializar a arvore AST a partir de linhas de texto (Backward Compatibility)", function()
         local lines = {
-            "## User >>",
-            "Hello",
-            "## IA >>",
-            "Hi there",
-            "## API atual: mock",
-            "## User >>",
-            "How are you?"
+            '<block id="1" type="raw" role="user" status="active">Hello</block>',
+            '<block id="2" type="raw" role="assistant" status="active">Hi there</block>',
+            '<block id="3" type="raw" role="user" status="active">How are you?</block>'
         }
         Session.sync_from_lines(lines)
         local msgs = Session.get_messages()

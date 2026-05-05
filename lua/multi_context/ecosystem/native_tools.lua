@@ -354,4 +354,13 @@ M.get_git_env = function()
     return table.concat(out, "\n")
 end
 
+
+M.deep_dive = function(target_id)
+    if not target_id or target_id == "" then 
+        return "Erro: Parâmetro target_id é obrigatório." 
+    end
+    local archiver = require('multi_context.core.archiver')
+    return archiver.deep_dive(target_id)
+end
+
 return M
