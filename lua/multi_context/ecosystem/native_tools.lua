@@ -363,4 +363,54 @@ M.deep_dive = function(target_id)
     return archiver.deep_dive(target_id)
 end
 
+
+M.read_block_content = function(ids_str)
+    if not ids_str or ids_str == "" then return "Erro: Nenhum ID fornecido." end
+    local target_ids = vim.split(ids_str, ",", { trimempty = true })
+    local session = require('multi_context.core.session')
+    local msgs = session.get_messages()
+    local found = {}
+    
+    for _, msg in ipairs(msgs) do
+        if msg.metadata and msg.metadata.id then
+            for _, t_id in ipairs(target_ids) do
+                if msg.metadata.id == vim.trim(t_id) then
+                    table.insert(found, string.format("[ID: %s]\n%s\n", msg.metadata.id, msg.content))
+                end
+            end
+        end
+    end
+    
+    if #found == 0 then return "Nenhum bloco correspondente aos IDs fornecidos foi encontrado na memória." end
+    return table.concat(found, "\n")
+end
+
+M.archive_blocks = function(ids_str, macro_summary)
+    if not ids_str or ids_str == "" then return "Erro: Nenhum ID fornecido." end
+    local target_ids = vim.split(ids_str, ",", { trimempty = true })
+    local StateManager = require('multi_context.core.state_manager')
+    local session = require('multi_context.core.session')
+    local msgs = StateManager.get('session_messages') or {}
+    
+    for _, msg in ipairs(msgs) do
+        if msg.metadata and msg.metadata.id then
+            for _, t_id in ipairs(target_ids) do
+                if msg.metadata.id == vim.trim(t_id) then
+                    msg.metadata.status = "archived"
+                end
+            end
+        end
+    end
+    StateManager.set('session_messages', msgs)
+    
+    session.add_message("assistant", macro_summary, {
+        id = "summary_" .. os.date("%H%M%S"),
+        type = "summary",
+        status = "active",
+        covers = ids_str
+    })
+    
+    return "Sucesso: Blocos arquivados e resumo gerado."
+end
+
 return M

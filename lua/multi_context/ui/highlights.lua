@@ -39,9 +39,12 @@ M.apply_chat = function(buf)
         vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
         vim.cmd("highlight default link ContextBold ContextBoldText")
         
-        -- FASE 42.5: Ocultação de XML via Conceal
+        -- Ocultação de XML de Arquivamento
         vim.cmd("syntax match ContextBlockTag \"<block[^>]*>\" conceal")
         vim.cmd("syntax match ContextBlockEndTag \"</block>\" conceal")
+
+        -- FASE 43.5: Ocultação de tags da Ontologia (abstract, content, etc)
+        vim.cmd("syntax match ContextOntologyTag \"<\\/\\?\\(abstract\\|content\\|key_words\\|summary\\)[^>]*>\" conceal")
     end)
 end
 

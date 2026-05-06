@@ -45,7 +45,7 @@ M.sync_from_lines = function(lines)
     local xml_content = table.concat(lines, "\n")
     
     -- Regex tolerante para XML multiline
-    for tag_attrs, content in xml_content:gmatch('<block(.-)>(.-)</block>') do
+    for tag_attrs, raw_inner_content in xml_content:gmatch('<block(.-)>(.-)</block>') do
         local id = tag_attrs:match('id="([^"]+)"')
         local type = tag_attrs:match('type="([^"]+)"')
         local role = tag_attrs:match('role="([^"]+)"')
@@ -55,7 +55,24 @@ M.sync_from_lines = function(lines)
         local meta = { id = id, type = type, status = status }
         if covers and covers ~= "" then meta.covers = covers end
         
-        M.add_message(role, content, meta)
+        local final_content = raw_inner_content
+        local abstract_content = raw_inner_content:match('<abstract>(.-)</abstract>')
+        
+        if abstract_content then
+            local kw = abstract_content:match('<key_words>(.-)</key_words>')
+            local summ = abstract_content:match('<summary>(.-)</summary>')
+            meta.abstract = {
+                key_words = kw and vim.trim(kw) or "",
+                summary = summ and vim.trim(summ) or ""
+            }
+        end
+        
+        local explicit_content = raw_inner_content:match('<content>(.-)</content>')
+        if explicit_content then
+            final_content = explicit_content
+        end
+        
+        M.add_message(role, final_content, meta)
     end
 end
 

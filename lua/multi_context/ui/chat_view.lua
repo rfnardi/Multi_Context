@@ -83,7 +83,7 @@ function M.create_popup(initial_content_or_bufnr)
     })
     M.popup_win = win
     
-    -- FASE 42.5: Ocultação NATIVA do Neovim para XML
+    -- Ocultação NATIVA do Neovim para XML
     vim.wo[win].conceallevel = 2
     vim.wo[win].concealcursor = "nc"
 
@@ -113,16 +113,31 @@ end
 
 function M.fold_text()
     local lines_count = vim.v.foldend - vim.v.foldstart + 1
-    local preview = ""
-    for i = vim.v.foldstart, vim.v.foldend do
-        local l = vim.fn.getline(i)
-        l = l:gsub("<[^>]+>", "") -- Limpa as tags na preview
-        if l:match("%S") then
-            preview = vim.trim(l)
-            break
+    local first_line = vim.fn.getline(vim.v.foldstart)
+    
+    -- FASE 43.5: Distinguindo "Abstracts" Cognitivos de "Arquivos Mortos"
+    if first_line:match("<abstract>") then
+        local summary_text = ""
+        for i = vim.v.foldstart, vim.v.foldend do
+            local l = vim.fn.getline(i)
+            if l:match("<summary>") then
+                summary_text = vim.trim(l:gsub("<[^>]+>", ""))
+                break
+            end
         end
+        return " 🧠 [Cognitive Abstract] " .. summary_text
+    else
+        local preview = ""
+        for i = vim.v.foldstart, vim.v.foldend do
+            local l = vim.fn.getline(i)
+            l = l:gsub("<[^>]+>", "")
+            if l:match("%S") then
+                preview = vim.trim(l)
+                break
+            end
+        end
+        return " 📦[" .. lines_count .. " linhas arquivadas] " .. preview
     end
-    return " 📦 [" .. lines_count .. " linhas arquivadas] " .. preview
 end
 
 function M.create_folds(buf)
@@ -134,26 +149,47 @@ function M.create_folds(buf)
             if api.nvim_win_is_valid(win) then
                 vim.api.nvim_win_call(win, function()
                     vim.wo.foldmethod = "manual"
-                    vim.wo.foldenable = true -- OBRIGATÓRIO PARA TESTES HEADLESS!
+                    vim.wo.foldenable = true
                     vim.wo.foldtext = "v:lua.require('multi_context.ui.chat_view').fold_text()"
                     pcall(vim.cmd, 'normal! zE')
 
                     local total_lines = vim.api.nvim_buf_line_count(buf)
-                    local in_archived = false
-                    local start_fold = -1
+                    local fold_stack = {}
 
+                    -- Iteração segura baseada em pilha (para lidar com tags aninhadas)
                     for lnum = 1, total_lines do
                         local line = vim.api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1]
                         if line then
                             if line:match('<block.-status="archived"') then
-                                in_archived = true
-                                start_fold = lnum
-                            elseif line:match('</block>') and in_archived then
-                                if lnum >= start_fold then
-                                    pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
-                                    pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                table.insert(fold_stack, { type = "block", start = lnum })
+                            elseif line:match('<abstract>') then
+                                table.insert(fold_stack, { type = "abstract", start = lnum })
+                            end
+                            
+                            if line:match('</block>') then
+                                for i = #fold_stack, 1, -1 do
+                                    if fold_stack[i].type == "block" then
+                                        local start_fold = fold_stack[i].start
+                                        if lnum >= start_fold then
+                                            pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
+                                            pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                        end
+                                        table.remove(fold_stack, i)
+                                        break
+                                    end
                                 end
-                                in_archived = false
+                            elseif line:match('</abstract>') then
+                                for i = #fold_stack, 1, -1 do
+                                    if fold_stack[i].type == "abstract" then
+                                        local start_fold = fold_stack[i].start
+                                        if lnum >= start_fold then
+                                            pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
+                                            pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                        end
+                                        table.remove(fold_stack, i)
+                                        break
+                                    end
+                                end
                             end
                         end
                     end

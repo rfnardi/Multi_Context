@@ -61,13 +61,7 @@ end
 
 M.build_system_prompt = function(base_prompt, memory_context, active_agent_name, agents_table, current_tokens)
     if active_agent_name == "archivist" then
-        if active_agent_name == "tech_lead" then
-        local available = {}
-        for k, _ in pairs(agents_table) do table.insert(available, k) end
-        system_prompt = system_prompt .. "\n\n=== AVAILABLE AGENTS FOR DELEGATION ===\nYou MUST ONLY assign tasks to these exact agents: " .. table.concat(available, ", ") .. "\nDo NOT invent new agent names (e.g., no 'frontend-coder', 'qa_contrato'). Use STRICTLY and ONLY the names listed above."
-    end
-    
-    local cfg = require('multi_context.config').options
+        local cfg = require('multi_context.config').options
         local wd = cfg.watchdog or { strategy = "semantic", percent = 0.3, fixed_target = 1500 }
         local prompt = "You are the system's @archivist. Your mission is to structure the verbose chat memory below using EXACTLY 4 tags: <genesis>, <plan>, <journey>, and <now>.\n"
         if wd.strategy == "percent" then
@@ -81,6 +75,7 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         prompt = prompt .. "Reply STRICTLY with the generated XML."
         return prompt
     end
+    
     local system_prompt = base_prompt
 
     if memory_context then
@@ -137,7 +132,6 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         system_prompt = system_prompt .. i18n.t("sys_lang_directive")
     end
 
-    
     local guardrails = [[
 
 === FINAL GUARDRAILS (OBEY STRICTLY) ===
@@ -148,6 +142,40 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
     system_prompt = system_prompt .. guardrails
 
     return system_prompt
+end
+
+M.build_asymmetric_payload = function(system_prompt, messages, memory_tier)
+    local payload = {}
+    if system_prompt then table.insert(payload, { role = "system", content = system_prompt }) end
+
+    local total_msgs = #messages
+    for i, msg in ipairs(messages) do
+        -- Ignora mensagens que estao em armazenamento frio
+        if not msg.metadata or msg.metadata.status ~= "archived" then
+            local is_last = (i == total_msgs)
+            local content = ""
+
+            -- Se for Tier Meta e NAO for a ultima mensagem (ordem atual), entregamos apenas a topologia
+            if memory_tier == "meta" and not is_last then
+                local id = (msg.metadata and msg.metadata.id) or "unknown"
+                
+                if msg.metadata and msg.metadata.type == "summary" then
+                    content = string.format("[ID: %s] SUMMARY OF ARCHIVED BLOCKS: %s\n%s", id, msg.metadata.covers or "none", vim.trim(msg.content))
+                elseif msg.metadata and msg.metadata.abstract then
+                    content = string.format("[ID: %s] Abstract: %s\nKeywords: %s", id, msg.metadata.abstract.summary, msg.metadata.abstract.key_words)
+                else
+                    content = string.format("[ID: %s] RAW CONTENT:\n%s", id, vim.trim(msg.content))
+                end
+            else
+                -- Se for Tier Standard (ou se for a ultima mensagem), entregamos o texto literal e cru
+                content = vim.trim(msg.content)
+            end
+
+            table.insert(payload, { role = msg.role, content = content })
+        end
+    end
+
+    return payload
 end
 
 return M

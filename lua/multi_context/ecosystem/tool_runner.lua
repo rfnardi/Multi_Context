@@ -7,7 +7,8 @@ local valid_tools = {
     list_files = true, read_file = true, search_code = true,
     edit_file = true, run_shell = true, replace_lines = true, apply_diff = true,
     rewrite_chat_buffer = true, get_diagnostics = true, spawn_swarm = true, switch_agent = true,
-    lsp_definition = true, lsp_references = true, lsp_document_symbols = true, git_status = true, git_branch = true, git_commit = true, get_agents_info = true, get_project_stack = true, get_git_env = true
+    lsp_definition = true, lsp_references = true, lsp_document_symbols = true, git_status = true, git_branch = true, git_commit = true, get_agents_info = true, get_project_stack = true, get_git_env = true,
+    read_block_content = true, archive_blocks = true
 }
 
 local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
@@ -151,6 +152,13 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         should_continue_loop = true; result = require('multi_context.ecosystem.lsp_bridge').get_document_symbols(tool_data.path)
     elseif name == "get_diagnostics" then 
         should_continue_loop = true; result = tools.get_diagnostics(tool_data.path)
+    elseif name == "read_block_content" then
+        local ids = tool_data.inner and tool_data.inner:match("<target_ids>(.-)</target_ids>") or clean_inner
+        should_continue_loop = true; result = tools.read_block_content(ids)
+    elseif name == "archive_blocks" then
+        local ids = tool_data.inner and tool_data.inner:match("<target_ids>(.-)</target_ids>") or ""
+        local summary = tool_data.inner and tool_data.inner:match("<macro_summary>(.-)</macro_summary>") or clean_inner
+        should_continue_loop = true; result = tools.archive_blocks(ids, summary)
     elseif name == "spawn_swarm" then
         local swarm = require('multi_context.core.swarm_manager')
         if swarm.init_swarm(clean_inner) then

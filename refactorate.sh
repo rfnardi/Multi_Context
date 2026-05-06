@@ -1,8 +1,95 @@
 #!/bin/bash
 
-# refactorate.sh - Reconstrução Completa do Motor Visual (Fase 42.5)
+echo "🚀 Iniciando Refatoração (GREEN) - Fase 43.5: Visual Engine & Ontology Conceal..."
 
-# 1. Escreve o chat_view.lua COMPLETO, forçando foldenable=true e conceallevel=2
+# 1. Atualizando o arquivo de Highlights para ocultar as novas tags XML (abstract, content, summary, etc)
+cat << 'EOF' > lua/multi_context/ui/highlights.lua
+local api = vim.api
+local M = {}
+
+M.define_groups = function()
+    vim.cmd("highlight default ContextHeader gui=bold guifg=#FF4500 guibg=NONE")
+    vim.cmd("highlight default ContextCurrentBuffer gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextUpdateMessages gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextBoldText gui=bold guifg=#FFA500 guibg=NONE")
+    vim.cmd("highlight default ContextApiInfo gui=bold guifg=#FFA500 guibg=NONE")
+    
+    vim.cmd("highlight default link ContextUITitle ContextApiInfo")
+    vim.cmd("highlight default link ContextUISection ContextHeader")
+    vim.cmd("highlight default link ContextUIActive ContextBoldText")
+    vim.cmd("highlight default link ContextUIData ContextBoldText")
+
+    vim.cmd("highlight default ContextUser gui=bold guifg=#B22222 guibg=NONE")
+    vim.cmd("highlight default link ContextUIInactive ContextUser")
+
+    vim.cmd("highlight default ContextUserAI gui=bold guifg=#0000CD guibg=NONE")
+
+    vim.cmd("highlight default ContextUIHelp guifg=#696969 guibg=NONE")
+    vim.cmd("highlight default ContextUIDot guifg=#404040 guibg=NONE")
+end
+
+M.apply_chat = function(buf)
+    if not api.nvim_buf_is_valid(buf) then return end
+    vim.api.nvim_buf_call(buf, function()
+        M.define_groups()
+        vim.cmd("syntax match ContextHeader '^===.*'")
+        vim.cmd("syntax match ContextHeader '^== Arquivo:.*'")
+        vim.cmd("syntax match ContextCurrentBuffer '^## buffer atual ##'")
+        vim.cmd("syntax match ContextUpdateMessages '\\[mensagem enviada\\]'")
+        vim.cmd("syntax match ContextUpdateMessages '\\[Enviando requisição.*\\]'")
+        vim.cmd("syntax match ContextUser '^## .* >>.*'")
+        vim.cmd("syntax match ContextUserAI '^## IA.*'")
+        vim.cmd("syntax match ContextApiInfo '^## API atual:.*'")
+        vim.cmd("syntax region ContextCodeBlock start='^```' end='^```'")
+        vim.cmd("highlight default link ContextCodeBlock String")
+        vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
+        vim.cmd("highlight default link ContextBold ContextBoldText")
+        
+        -- Ocultação de XML de Arquivamento
+        vim.cmd("syntax match ContextBlockTag \"<block[^>]*>\" conceal")
+        vim.cmd("syntax match ContextBlockEndTag \"</block>\" conceal")
+
+        -- FASE 43.5: Ocultação de tags da Ontologia (abstract, content, etc)
+        vim.cmd("syntax match ContextOntologyTag \"<\\/\\?\\(abstract\\|content\\|key_words\\|summary\\)[^>]*>\" conceal")
+    end)
+end
+
+M.apply_controls = function(buf)
+    if not api.nvim_buf_is_valid(buf) then return end
+    vim.api.nvim_buf_call(buf, function()
+        M.define_groups()
+        vim.cmd("syntax clear")
+        vim.cmd("syntax match ContextUITitle '^===.*==='")
+        vim.cmd("syntax match ContextUITitle 'MultiContext AI.*'")
+        vim.cmd("syntax match ContextUIHelp '^.*<CR>.*<Space>.*'")
+        vim.cmd("syntax match ContextUIHelp '^.*Use j/k para navegar.*'")
+        vim.cmd("syntax match ContextUISection '^▶.*'")
+        vim.cmd("syntax match ContextUISection '^▼.*'")
+        vim.cmd("syntax match ContextUIDot '\\.\\.\\.*'")
+        vim.cmd("syntax match ContextUIDot '··*'")
+        vim.cmd("syntax match ContextUIActive '●'")
+        vim.cmd("syntax match ContextUIActive '\\[ ON \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ ✓ \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Ask \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Auto \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Semântico \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Percentual \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Fixo \\]'")
+        vim.cmd("syntax match ContextUIActive '\\[ Dinâmico \\]'")
+        vim.cmd("syntax match ContextUIInactive '○'")
+        vim.cmd("syntax match ContextUIInactive '\\[ OFF \\]'")
+        vim.cmd("syntax match ContextUIInactive '\\[   \\]'")
+        vim.cmd("syntax match ContextUIInactive '\\[ Off \\]'")
+        vim.cmd("syntax match ContextUIData '\\d\\+ tokens'")
+        vim.cmd("syntax match ContextUIData '\\d\\+%%'")
+        vim.cmd("syntax match ContextUIData '1\\.\\d\\+'")
+    end)
+end
+
+return M
+EOF
+
+# 2. Atualizando o arquivo de Chat View para Auto-Folding da Ontologia
 cat << 'EOF' > lua/multi_context/ui/chat_view.lua
 local api = vim.api
 local M   = {}
@@ -89,7 +176,7 @@ function M.create_popup(initial_content_or_bufnr)
     })
     M.popup_win = win
     
-    -- FASE 42.5: Ocultação NATIVA do Neovim para XML
+    -- Ocultação NATIVA do Neovim para XML
     vim.wo[win].conceallevel = 2
     vim.wo[win].concealcursor = "nc"
 
@@ -119,16 +206,31 @@ end
 
 function M.fold_text()
     local lines_count = vim.v.foldend - vim.v.foldstart + 1
-    local preview = ""
-    for i = vim.v.foldstart, vim.v.foldend do
-        local l = vim.fn.getline(i)
-        l = l:gsub("<[^>]+>", "") -- Limpa as tags na preview
-        if l:match("%S") then
-            preview = vim.trim(l)
-            break
+    local first_line = vim.fn.getline(vim.v.foldstart)
+    
+    -- FASE 43.5: Distinguindo "Abstracts" Cognitivos de "Arquivos Mortos"
+    if first_line:match("<abstract>") then
+        local summary_text = ""
+        for i = vim.v.foldstart, vim.v.foldend do
+            local l = vim.fn.getline(i)
+            if l:match("<summary>") then
+                summary_text = vim.trim(l:gsub("<[^>]+>", ""))
+                break
+            end
         end
+        return " 🧠 [Cognitive Abstract] " .. summary_text
+    else
+        local preview = ""
+        for i = vim.v.foldstart, vim.v.foldend do
+            local l = vim.fn.getline(i)
+            l = l:gsub("<[^>]+>", "")
+            if l:match("%S") then
+                preview = vim.trim(l)
+                break
+            end
+        end
+        return " 📦[" .. lines_count .. " linhas arquivadas] " .. preview
     end
-    return " 📦 [" .. lines_count .. " linhas arquivadas] " .. preview
 end
 
 function M.create_folds(buf)
@@ -140,26 +242,47 @@ function M.create_folds(buf)
             if api.nvim_win_is_valid(win) then
                 vim.api.nvim_win_call(win, function()
                     vim.wo.foldmethod = "manual"
-                    vim.wo.foldenable = true -- OBRIGATÓRIO PARA TESTES HEADLESS!
+                    vim.wo.foldenable = true
                     vim.wo.foldtext = "v:lua.require('multi_context.ui.chat_view').fold_text()"
                     pcall(vim.cmd, 'normal! zE')
 
                     local total_lines = vim.api.nvim_buf_line_count(buf)
-                    local in_archived = false
-                    local start_fold = -1
+                    local fold_stack = {}
 
+                    -- Iteração segura baseada em pilha (para lidar com tags aninhadas)
                     for lnum = 1, total_lines do
                         local line = vim.api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1]
                         if line then
                             if line:match('<block.-status="archived"') then
-                                in_archived = true
-                                start_fold = lnum
-                            elseif line:match('</block>') and in_archived then
-                                if lnum >= start_fold then
-                                    pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
-                                    pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                table.insert(fold_stack, { type = "block", start = lnum })
+                            elseif line:match('<abstract>') then
+                                table.insert(fold_stack, { type = "abstract", start = lnum })
+                            end
+                            
+                            if line:match('</block>') then
+                                for i = #fold_stack, 1, -1 do
+                                    if fold_stack[i].type == "block" then
+                                        local start_fold = fold_stack[i].start
+                                        if lnum >= start_fold then
+                                            pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
+                                            pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                        end
+                                        table.remove(fold_stack, i)
+                                        break
+                                    end
                                 end
-                                in_archived = false
+                            elseif line:match('</abstract>') then
+                                for i = #fold_stack, 1, -1 do
+                                    if fold_stack[i].type == "abstract" then
+                                        local start_fold = fold_stack[i].start
+                                        if lnum >= start_fold then
+                                            pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
+                                            pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                        end
+                                        table.remove(fold_stack, i)
+                                        break
+                                    end
+                                end
                             end
                         end
                     end
@@ -317,124 +440,6 @@ end)
 return M
 EOF
 
-# 2. Escreve o highlights.lua para esconder as tags
-cat << 'EOF' > lua/multi_context/ui/highlights.lua
-local api = vim.api
-local M = {}
-
-M.define_groups = function()
-    vim.cmd("highlight default ContextHeader gui=bold guifg=#FF4500 guibg=NONE")
-    vim.cmd("highlight default ContextCurrentBuffer gui=bold guifg=#FFA500 guibg=NONE")
-    vim.cmd("highlight default ContextUpdateMessages gui=bold guifg=#FFA500 guibg=NONE")
-    vim.cmd("highlight default ContextBoldText gui=bold guifg=#FFA500 guibg=NONE")
-    vim.cmd("highlight default ContextApiInfo gui=bold guifg=#FFA500 guibg=NONE")
-    
-    vim.cmd("highlight default link ContextUITitle ContextApiInfo")
-    vim.cmd("highlight default link ContextUISection ContextHeader")
-    vim.cmd("highlight default link ContextUIActive ContextBoldText")
-    vim.cmd("highlight default link ContextUIData ContextBoldText")
-
-    vim.cmd("highlight default ContextUser gui=bold guifg=#B22222 guibg=NONE")
-    vim.cmd("highlight default link ContextUIInactive ContextUser")
-
-    vim.cmd("highlight default ContextUserAI gui=bold guifg=#0000CD guibg=NONE")
-
-    vim.cmd("highlight default ContextUIHelp guifg=#696969 guibg=NONE")
-    vim.cmd("highlight default ContextUIDot guifg=#404040 guibg=NONE")
-end
-
-M.apply_chat = function(buf)
-    if not api.nvim_buf_is_valid(buf) then return end
-    vim.api.nvim_buf_call(buf, function()
-        M.define_groups()
-        vim.cmd("syntax match ContextHeader '^===.*'")
-        vim.cmd("syntax match ContextHeader '^== Arquivo:.*'")
-        vim.cmd("syntax match ContextCurrentBuffer '^## buffer atual ##'")
-        vim.cmd("syntax match ContextUpdateMessages '\\[mensagem enviada\\]'")
-        vim.cmd("syntax match ContextUpdateMessages '\\[Enviando requisição.*\\]'")
-        vim.cmd("syntax match ContextUser '^## .* >>.*'")
-        vim.cmd("syntax match ContextUserAI '^## IA.*'")
-        vim.cmd("syntax match ContextApiInfo '^## API atual:.*'")
-        vim.cmd("syntax region ContextCodeBlock start='^```' end='^```'")
-        vim.cmd("highlight default link ContextCodeBlock String")
-        vim.cmd("syntax region ContextBold matchgroup=ContextBoldText start='\\*\\*' end='\\*\\*'")
-        vim.cmd("highlight default link ContextBold ContextBoldText")
-        
-        -- FASE 42.5: Ocultação de XML via Conceal
-        vim.cmd("syntax match ContextBlockTag \"<block[^>]*>\" conceal")
-        vim.cmd("syntax match ContextBlockEndTag \"</block>\" conceal")
-    end)
-end
-
-M.apply_controls = function(buf)
-    if not api.nvim_buf_is_valid(buf) then return end
-    vim.api.nvim_buf_call(buf, function()
-        M.define_groups()
-        vim.cmd("syntax clear")
-        vim.cmd("syntax match ContextUITitle '^===.*==='")
-        vim.cmd("syntax match ContextUITitle 'MultiContext AI.*'")
-        vim.cmd("syntax match ContextUIHelp '^.*<CR>.*<Space>.*'")
-        vim.cmd("syntax match ContextUIHelp '^.*Use j/k para navegar.*'")
-        vim.cmd("syntax match ContextUISection '^▶.*'")
-        vim.cmd("syntax match ContextUISection '^▼.*'")
-        vim.cmd("syntax match ContextUIDot '\\.\\.\\.*'")
-        vim.cmd("syntax match ContextUIDot '··*'")
-        vim.cmd("syntax match ContextUIActive '●'")
-        vim.cmd("syntax match ContextUIActive '\\[ ON \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ ✓ \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ Ask \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ Auto \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ Semântico \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ Percentual \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ Fixo \\]'")
-        vim.cmd("syntax match ContextUIActive '\\[ Dinâmico \\]'")
-        vim.cmd("syntax match ContextUIInactive '○'")
-        vim.cmd("syntax match ContextUIInactive '\\[ OFF \\]'")
-        vim.cmd("syntax match ContextUIInactive '\\[   \\]'")
-        vim.cmd("syntax match ContextUIInactive '\\[ Off \\]'")
-        vim.cmd("syntax match ContextUIData '\\d\\+ tokens'")
-        vim.cmd("syntax match ContextUIData '\\d\\+%%'")
-        vim.cmd("syntax match ContextUIData '1\\.\\d\\+'")
-    end)
-end
-
-return M
-EOF
-
-# 3. Recriamos os testes para garantir a contagem de 233
-cat << 'EOF' > lua/multi_context/tests/visual_engine_spec.lua
-local chat_view = require('multi_context.ui.chat_view')
-
-describe("Fase 42.5: Motor Visual Neovim (Folds e Conceal)", function()
-    
-    it("deve configurar conceallevel=2 na janela para ocultar as tags XML", function()
-        local buf, win = chat_view.create_popup()
-        assert.are.same(2, vim.wo[win].conceallevel, "conceallevel deve ser 2")
-        assert.are.same("nc", vim.wo[win].concealcursor, "concealcursor deve ser 'nc'")
-    end)
-
-    it("deve criar um fold fechado ao redor de blocos arquivados", function()
-        local buf, win = chat_view.create_popup()
-        
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
-            '<block id="b1" status="archived" type="raw">',
-            'Texto super longo arquivado',
-            '</block>',
-            '<block id="s1" status="active" type="summary" covers="b1">',
-            'Resumo',
-            '</block>'
-        })
-        
-        chat_view.create_folds(buf)
-        vim.wait(200, function() return false end) -- Aguarda a execução da schedule queue do Neovim
-        
-        local fold_closed = vim.api.nvim_win_call(win, function()
-            return vim.fn.foldclosed(2)
-        end)
-        
-        assert.truthy(fold_closed ~= -1, "A linha arquivada deve estar dobrada (folded)")
-    end)
-end)
-EOF
-
-echo "Arquivos UI refeitos com perfeição!"
+echo "✅ Motor Visual Atualizado!"
+echo "👉 Rode os testes para fechar a Fase 43 com chave de ouro:"
+echo "PlenaryBustedFile lua/multi_context/tests/visual_ontology_spec.lua"
