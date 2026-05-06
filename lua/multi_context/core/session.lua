@@ -27,17 +27,26 @@ M.get_messages = function()
 end
 
 M.build_payload = function(system_prompt)
+    local config = require('multi_context.config')
+    local utils = require('multi_context.utils.utils')
+    local final_sys = system_prompt or ''
+    if config.options.auto_inject_context_md then
+        local ctx_path = utils.get_context_md_path()
+        if ctx_path then
+            local lines = vim.fn.readfile(ctx_path)
+            local ctx_content = table.concat(lines, '\n')
+            final_sys = final_sys .. '\n\n=== CONTEXT.md (Active Memory) ===\n' .. ctx_content
+        end
+    end
     local payload = {}
-    if system_prompt then table.insert(payload, { role = "system", content = system_prompt }) end
-    
+    if final_sys ~= '' then table.insert(payload, { role = 'system', content = final_sys }) end
     for _, m in ipairs(M.get_messages()) do 
-        if not m.metadata or m.metadata.status ~= "archived" then
+        if not m.metadata or m.metadata.status ~= 'archived' then
             table.insert(payload, { role = m.role, content = m.content })
         end
     end
     return payload
 end
-
 M.sync_from_lines = function(lines)
     M.clear()
     if not lines or #lines == 0 then return end

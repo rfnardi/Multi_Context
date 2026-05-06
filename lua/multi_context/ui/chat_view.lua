@@ -230,6 +230,10 @@ function M.update_title()
         else
             new_title = require("multi_context.i18n").t("chat_title", tokens)
         end
+        local config = require("multi_context.config")
+        if config.options.auto_inject_context_md and utils.get_context_md_path() then
+            new_title = new_title .. "[📖 CONTEXT.md: Active] "
+        end
         pcall(vim.api.nvim_win_set_config, M.popup_win, { title = new_title, title_pos = 'center' })
     end
 end

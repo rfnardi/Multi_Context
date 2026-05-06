@@ -5,6 +5,8 @@ local archiver = require('multi_context.core.archiver')
 describe("Fase 42.2 e 42.3: Motor de Compressão e Recuperação Relacional", function()
 
     before_each(function()
+        require("multi_context.config").options.auto_inject_context_md = false
+        require("multi_context.config").options.auto_inject_context_md = false
         StateManager.reset()
         session.clear()
     end)

@@ -1,27 +1,21 @@
 #!/bin/fish
 
-gitgo "feat(core): fase 44 - Load Balancer Cognitivo e Indexação Semântica Ativa
+gitgo "
+feat(memory): implementa Ecossistema CONTEXT.md Orgânico e The Harvester
 
-Nesta fase evoluímos a injeção de contexto de um simples 'copiar e colar' 
-para um motor robusto de indexação RAG em tempo real distribuída.
+Este commit resolve a amnésia da IA entre sessões (Feitiço do Tempo), transformando o arquivo CONTEXT.md no 'Córtex Frontal Compartilhado' (Memória de Longo Prazo) entre o usuário e o Swarm.
 
-Detalhes da implementação:
-- Motor de Injetores Tabulares (`injectors.lua`): Injetores agora retornam 
-  arrays estruturados (`title`, `content`), que são encapsulados em blocos 
-  XML `<block>` individuais.
-- Zero-Freeze UX & Popcorn Patching: Arquivos pesados (como `project_dump`) 
-  são injetados instantaneamente com um `<abstract>` provisório (ex: 
-  'Indexando: src/main.lua...'), eliminando travamentos de UI. Quando as 
-  APIs retornam, o texto é atualizado assincronamente.
-- Load Balancer Cognitivo (`dynamic_watchdog.lua`): Nova função 
-  `dispatch_parallel_jit_tasks` que adota um algoritmo Round-Robin para 
-  distribuir requisições pesadas entre um pool de APIs de background, 
-  evitando rate limits.
-- UI do Command Center (`controls_view.lua`): Adicionado o toggle 
-  `[ ON / OFF ] Background Pool` para o usuário gerenciar o esquadrão 
-  de APIs de indexação.
-- Refatoração do `project_dump.lua`: Adaptado para a nova engine tabular.
-- Documentação (`README.md`, `CONTEXT.md`): Atualizada para v2.4 com 
-  exemplos das novas capabilities.
-- Cobertura de Testes: Atingimos a marca de 257 testes unitários e de 
-  integração isolados via Plenary (100% Passing)."
+Principais implementações (Fase 45):
+- **Injeção AST Silenciosa (Zero-Click):** Anexa o CONTEXT.md passivamente no payload do LLM sem poluir o buffer visual do usuário. Gerenciado pelo novo toggle `[ ON ] Auto-Inject` no Painel de Controle.
+- **Feedback Visual (Badge):** Adiciona o indicador dinâmico `[📖 CONTEXT.md: Active]` no título do popup de chat.
+- **Nova MCP Skill & Tool:** Cria a skill semântica `manage_project_knowledge` e a system tool `update_context_md`, dando autonomia aos agentes para documentar bugs crônicos cirurgicamente.
+- **The Harvester (Colheitadeira em Background):** Acoplado ao evento `WORKSPACE_SAVED`. Delega a uma API em background a tarefa de ler o histórico da sessão, extrair decisões arquiteturais e injetar os aprendizados organicamente no CONTEXT.md sem travar o Neovim.
+- **Self-Healing Ontology:** Lógica de merge no `skills_ontology.lua` para atualizar automaticamente o arquivo JSON de usuários legados com as novas skills padrão.
+
+Cobertura: Mais de 250 testes Plenary passando com sucesso (TDD Green Phase).
+"
+
+# Alexandro agência BB Jaguaré
+# protocolo atendimento BB: 202635367468/12 
+# número do dispositivo: ****-9058 (samsung A16)
+# Ricardo Dutra gerente vai entrar em contato comigo

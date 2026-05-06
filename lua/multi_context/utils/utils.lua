@@ -2,6 +2,14 @@
 local M   = {}
 local api = vim.api
 
+M.get_context_md_path = function()
+    local root = vim.fn.system("git rev-parse --show-toplevel")
+    if vim.v.shell_error == 0 then root = root:gsub("\n", "") else root = vim.fn.getcwd() end
+    local path = root .. "/CONTEXT.md"
+    if vim.fn.filereadable(path) == 1 then return path end
+    return nil
+end
+
 M.estimate_tokens = function(buf)
     if not buf or not api.nvim_buf_is_valid(buf) then return 0 end
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -156,6 +164,7 @@ M.export_to_workspace = function(content, existing_filename)
     vim.api.nvim_buf_set_keymap(new_buf, "n", "<A-x>", "<Cmd>lua require('multi_context.core.react_orchestrator').ExecuteTools(nil, vim.api.nvim_get_current_buf())<CR>", km)
     vim.api.nvim_buf_set_keymap(new_buf, "i", "<A-x>", "<Esc><Cmd>lua require('multi_context.core.react_orchestrator').ExecuteTools(nil, vim.api.nvim_get_current_buf())<CR>", km)
 
+    require('multi_context.core.event_bus').emit("WORKSPACE_SAVED", { file = filename })
     return filename
 end
 

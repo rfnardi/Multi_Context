@@ -188,4 +188,64 @@ M.dispatch_parallel_jit_tasks = function(buf, blocks)
     end
 end
 
+M.build_harvester_payload = function()
+    local payload = {}
+    table.insert(payload, {
+        role = "system",
+        content = "Você é o 'The Harvester'. Analise o histórico da sessão e extraia fatos arquiteturais, regras de negócio e resoluções de bugs. Retorne um texto limpo e direto para compor o arquivo CONTEXT.md."
+    })
+    local session = require("multi_context.core.session")
+    local msgs = session.get_messages()
+    local to_summarize = {}
+    for _, m in ipairs(msgs) do
+        if m.metadata and m.metadata.status ~= "archived" and m.metadata.type ~= "summary" then
+            table.insert(to_summarize, string.format("[%s]: %s", m.role, m.content))
+        end
+    end
+    table.insert(payload, { role = "user", content = table.concat(to_summarize, "\n\n") })
+    return payload
+end
+
+M.run_harvester = function()
+    local config = require('multi_context.config')
+    if not config.options.auto_inject_context_md then return end
+    local wd_cfg = config.options.watchdog or {}
+    local api_cfg = config.load_api_config()
+    if not api_cfg or not api_cfg.apis then return end
+    local target_api = nil
+    for _, a in ipairs(api_cfg.apis) do
+        if a.name == wd_cfg.background_api then target_api = a; break end
+    end
+    if not target_api then
+        for _, a in ipairs(api_cfg.apis) do
+            if a.allow_background then target_api = a; break end
+        end
+    end
+    if not target_api then target_api = api_cfg.apis[1] end
+    if not target_api then return end
+    local payload = M.build_harvester_payload()
+    local api_client = require('multi_context.llm.api_client')
+    local accumulated = ""
+    vim.notify("[Harvester] 🌾 Analisando a sessão em background para colher aprendizados...", vim.log.levels.INFO)
+    api_client.execute(payload, function() end,
+        function(chunk) if chunk then accumulated = accumulated .. chunk end end,
+        function()
+            local tools = require('multi_context.ecosystem.native_tools')
+            local clean = accumulated:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
+            if clean and clean ~= "" then
+                local header = "\n\n### 🌾 Harvester Insight (" .. os.date("%Y-%m-%d %H:%M") .. ")\n"
+                local res = tools.update_context_md(header .. clean)
+                if res:match("SUCESSO") then
+                    vim.notify("[Harvester] ✅ CONTEXT.md atualizado organicamente!", vim.log.levels.INFO)
+                end
+            end
+        end,
+        function(err) vim.notify("[Harvester] Erro: " .. tostring(err), vim.log.levels.WARN) end,
+    target_api)
+end
+
+EventBus.on("WORKSPACE_SAVED", function()
+    M.run_harvester()
+end)
+
 return M

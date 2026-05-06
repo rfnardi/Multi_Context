@@ -54,6 +54,7 @@ M.init_state = function()
     M.state.watchdog = vim.deepcopy(config.options.watchdog or {})
     M.state.horizon = config.options.cognitive_horizon or 4000
     M.state.tolerance = config.options.user_tolerance or 1.0
+    M.state.auto_inject_context_md = config.options.auto_inject_context_md == true
     M.state.identity = config.options.user_name or "User"
     M.state.max_loops = 15
     M.state.appearance = vim.deepcopy(config.options.appearance or { width = 0.8, height = 0.8, border = "rounded" })
@@ -69,7 +70,7 @@ M.init_state = function()
     pcall(skills_mgr.load_skills)
     M.state.all_tools = skills_mgr.get_skills() or {}
     
-    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit", "deep_dive"}
+    local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit", "deep_dive", "update_context_md", "update_context_md"}
     for _, t in ipairs(native_tools) do M.state.all_tools[t] = { name = t, is_native = true } end
     
     local injectors_mgr = require('multi_context.ecosystem.injectors')
@@ -210,6 +211,7 @@ M.render = function()
             elseif sec.id == "limits" then
                 add_line(lines, format_row(i18n.t("cc_limit_id"), "[ " .. M.state.identity .. " ]", w), { type = "limit_identity" })
                 add_line(lines, format_row(i18n.t("cc_limit_loops"), M.state.max_loops, w), { type = "limit_loops" })
+                add_line(lines, format_row(i18n.t("cc_auto_inject_ctx"), M.state.auto_inject_context_md and "[ ON ]" or "[ OFF ]", w), { type = "toggle_auto_inject" })
             elseif sec.id == "gatekeeper" then
                 add_line(lines, i18n.t("cc_gk_hint"), nil)
                 local agent_names = {}
@@ -552,6 +554,8 @@ M.handle_space = function()
     elseif action.type == "app_border" then
         local borders = { rounded = "single", single = "double", double = "solid", solid = "shadow", shadow = "none", none = "rounded" }
         M.state.appearance.border = borders[M.state.appearance.border or "rounded"] or "rounded"
+    elseif action.type == "toggle_auto_inject" then
+        M.state.auto_inject_context_md = not M.state.auto_inject_context_md
     elseif action.type == "toggle_debug" then
         M.state.debug_mode = not M.state.debug_mode
     end
@@ -644,6 +648,7 @@ M.save_config = function()
     cfg.watchdog = vim.deepcopy(M.state.watchdog)
     cfg.cognitive_horizon = M.state.horizon
     cfg.user_tolerance = M.state.tolerance
+    cfg.auto_inject_context_md = M.state.auto_inject_context_md
     cfg.appearance = vim.deepcopy(M.state.appearance)
     cfg.master_prompt = M.state.master_prompt
     cfg.debug_mode = M.state.debug_mode
@@ -656,6 +661,7 @@ M.save_config = function()
     config.options.watchdog = vim.deepcopy(M.state.watchdog)
     config.options.cognitive_horizon = M.state.horizon
     config.options.user_tolerance = M.state.tolerance
+    config.options.auto_inject_context_md = M.state.auto_inject_context_md
     
     local agents_file = vim.fn.stdpath("config") .. "/mctx_agents.json"
     local raw_json = vim.fn.json_encode(M.state.agents)

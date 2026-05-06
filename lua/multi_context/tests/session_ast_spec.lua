@@ -3,6 +3,8 @@ local StateManager = require('multi_context.core.state_manager')
 
 describe("Fase 35 - Etapa 1: Session AST RAM Abstraction", function()
     before_each(function()
+        require("multi_context.config").options.auto_inject_context_md = false
+        require("multi_context.config").options.auto_inject_context_md = false
         StateManager.reset()
         Session.clear()
     end)

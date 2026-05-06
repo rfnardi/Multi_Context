@@ -413,4 +413,38 @@ M.archive_blocks = function(ids_str, macro_summary)
     return "Sucesso: Blocos arquivados e resumo gerado."
 end
 
+M.update_context_md = function(content)
+    if not content or content == "" then return "Erro: Conteudo vazio." end
+    local root = get_repo_root()
+    if not root then return "Erro: Nao foi possivel determinar a raiz do projeto." end
+    local path = root .. "/CONTEXT.md"
+    local lines = {}
+    if vim.fn.filereadable(path) == 1 then
+        lines = vim.fn.readfile(path)
+    end
+    table.insert(lines, "")
+    for _, l in ipairs(vim.split(content, "\n", {plain=true})) do
+        table.insert(lines, l)
+    end
+    vim.fn.writefile(lines, path)
+    return "SUCESSO: CONTEXT.md atualizado em " .. path
+end
+
+M.update_context_md = function(content)
+    if not content or content == "" then return "Erro: Conteudo vazio." end
+    local root = get_repo_root()
+    if not root then return "Erro: Nao foi possivel determinar a raiz do projeto." end
+    local path = root .. "/CONTEXT.md"
+    local lines = {}
+    if vim.fn.filereadable(path) == 1 then
+        lines = vim.fn.readfile(path)
+    end
+    table.insert(lines, "")
+    for _, l in ipairs(vim.split(content, "\n", {plain=true})) do
+        table.insert(lines, l)
+    end
+    vim.fn.writefile(lines, path)
+    return "SUCESSO: CONTEXT.md atualizado em " .. path
+end
+
 return M
