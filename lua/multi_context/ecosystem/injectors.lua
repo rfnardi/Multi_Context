@@ -152,6 +152,8 @@ M._select = function()
             content = injector.execute() or ""
         end
         
+        local target_buf = api.nvim_win_get_buf(M.parent_win)
+        content = M.process_injection(content, target_buf)
         local content_lines = vim.split(content, "\n", {plain = true})
         local row, col = unpack(api.nvim_win_get_cursor(0))
         local line = api.nvim_get_current_line()
@@ -181,5 +183,33 @@ M._close = function()
         api.nvim_set_current_win(M.parent_win)
         vim.cmd("startinsert") 
     end
+end
+M.process_injection = function(content_returned, bufnr)
+    if type(content_returned) == "string" then
+        return content_returned
+    elseif type(content_returned) == "table" then
+        local lines = {}
+        local watchdog = require("multi_context.core.dynamic_watchdog")
+        local blocks_to_dispatch = {}
+        for _, item in ipairs(content_returned) do
+            if item.title and item.content then
+                local block_id = "inj_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+                table.insert(lines, "<block id=\"" .. block_id .. "\" type=\"context_injection\">")
+                table.insert(lines, "<abstract>")
+                table.insert(lines, "<summary>Indexando: " .. item.title .. "...</summary>")
+                table.insert(lines, "</abstract>")
+                table.insert(lines, "<content>")
+                for _, l in ipairs(vim.split(item.content, "\n", {plain=true})) do table.insert(lines, l) end
+                table.insert(lines, "</content>")
+                table.insert(lines, "</block>")
+                table.insert(blocks_to_dispatch, { id = block_id, content = item.content })
+            end
+        end
+        if #blocks_to_dispatch > 0 then
+            vim.schedule(function() watchdog.dispatch_parallel_jit_tasks(bufnr, blocks_to_dispatch) end)
+        end
+        return table.concat(lines, "\n")
+    end
+    return ""
 end
 return M

@@ -114,7 +114,7 @@ M.get_footer_hint = function(action)
     if not action then return i18n.t("cc_hint_default") end
     local t = action.type
     if t == "section" or t == "agent_expand" or t == "semantic_skill_expand" then return i18n.t("cc_hint_expand") end
-    if t == "toggle_fallback" or t == "api_spawn" or t == "agent_skill_toggle" or t == "semantic_skill_tool_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "wd_bg_api" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
+    if t == "toggle_fallback" or t == "api_spawn" or t == "api_bg_pool" or t == "agent_skill_toggle" or t == "semantic_skill_tool_toggle" or t == "api_select" or t == "wd_mode" or t == "wd_strategy" or t == "wd_bg_api" or t == "toggle_debug" or t == "api_level_swarm" or t == "app_border" then
         return i18n.t("cc_hint_toggle")
     end
     if t == "wd_horizon" or t == "wd_tolerance" or t == "wd_percent" or t == "wd_fixed" or t == "limit_identity" or t == "limit_loops" or t == "agent_level" or t == "app_width" or t == "app_height" or t == "edit_master_prompt" then
@@ -175,6 +175,10 @@ M.render = function()
                 for i, a in ipairs(M.state.apis) do
                     local mark = (a.name == M.state.default_api) and "[ ✓ ]" or "[   ]"
                     add_line(lines, format_row("    ├─ " .. a.name, mark, w), { type = "api_select", name = a.name, idx = i })
+                    local bg_mark = a.allow_background and "[ ON ]" or "[ OFF ]"
+                    add_line(lines, format_row("      └─ " .. i18n.t("cc_bg_pool_title"), bg_mark, w), { type = "api_bg_pool", idx = i })
+                    local bg_mark = a.allow_background and "[ ON ]" or "[ OFF ]"
+                    add_line(lines, format_row("      └─ " .. i18n.t("cc_bg_pool_title"), bg_mark, w), { type = "api_bg_pool", idx = i })
                 end
             elseif sec.id == "swarm" then
                 add_line(lines, i18n.t("cc_swarm_perm"), nil)
@@ -512,6 +516,8 @@ M.handle_space = function()
 
     if action.type == "api_select" then M.state.default_api = action.name
     elseif action.type == "toggle_fallback" then M.state.fallback_mode = not M.state.fallback_mode
+    elseif action.type == "api_bg_pool" then M.state.apis[action.idx].allow_background = not M.state.apis[action.idx].allow_background
+    elseif action.type == "api_bg_pool" then M.state.apis[action.idx].allow_background = not M.state.apis[action.idx].allow_background
     elseif action.type == "api_spawn" then M.state.apis[action.idx].allow_spawn = not M.state.apis[action.idx].allow_spawn
     elseif action.type == "api_level_swarm" then
         local cycles = { high = "medium", medium = "low", low = "high" }

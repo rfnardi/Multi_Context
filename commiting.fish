@@ -1,9 +1,27 @@
 #!/bin/fish
 
-gitgo "feat(core): implement JIT micro-archiving with background cognitive librarian (Phase 44)
+gitgo "feat(core): fase 44 - Load Balancer Cognitivo e Indexação Semântica Ativa
 
-- **JIT Dispatcher**: Added `dispatch_jit_task` to `dynamic_watchdog.lua` to trigger a lightweight summarization prompt asynchronously using a secondary fast/cheap background API.
-- **Surgical Patching**: Implemented `patch_block_abstract` to seamlessly inject `<abstract>` and `<content>` tags into Neovim buffers and RAM state without disturbing the user's cursor or typing flow.
-- **Orchestrator Hook**: Embedded the JIT hook directly into `react_orchestrator.lua` (`TerminateTurn`), ensuring the Cognitive Librarian wakes up seamlessly at the end of each interaction.
-- **Testing**: Added BDD specifications for JIT behavior and `api_client` overriding, bringing the absolute test suite to 251 green tests.
-"
+Nesta fase evoluímos a injeção de contexto de um simples 'copiar e colar' 
+para um motor robusto de indexação RAG em tempo real distribuída.
+
+Detalhes da implementação:
+- Motor de Injetores Tabulares (`injectors.lua`): Injetores agora retornam 
+  arrays estruturados (`title`, `content`), que são encapsulados em blocos 
+  XML `<block>` individuais.
+- Zero-Freeze UX & Popcorn Patching: Arquivos pesados (como `project_dump`) 
+  são injetados instantaneamente com um `<abstract>` provisório (ex: 
+  'Indexando: src/main.lua...'), eliminando travamentos de UI. Quando as 
+  APIs retornam, o texto é atualizado assincronamente.
+- Load Balancer Cognitivo (`dynamic_watchdog.lua`): Nova função 
+  `dispatch_parallel_jit_tasks` que adota um algoritmo Round-Robin para 
+  distribuir requisições pesadas entre um pool de APIs de background, 
+  evitando rate limits.
+- UI do Command Center (`controls_view.lua`): Adicionado o toggle 
+  `[ ON / OFF ] Background Pool` para o usuário gerenciar o esquadrão 
+  de APIs de indexação.
+- Refatoração do `project_dump.lua`: Adaptado para a nova engine tabular.
+- Documentação (`README.md`, `CONTEXT.md`): Atualizada para v2.4 com 
+  exemplos das novas capabilities.
+- Cobertura de Testes: Atingimos a marca de 257 testes unitários e de 
+  integração isolados via Plenary (100% Passing)."

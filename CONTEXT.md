@@ -3,13 +3,13 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V2.3.1+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, and a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data.
+In its **V2.3.1+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, and a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **233 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **257 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`).
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -156,11 +156,17 @@ lua/multi_context/
 - **Local RAG Capabilities (`deep_dive` tool)**: Swarm Agents are now equipped with a surgical tool to "unfold" compressed context. By executing `deep_dive` on a summary's target ID, the agent retrieves the original raw data from archived blocks on demand.
 - **Native Neovim Visual Engine**: Employs Neovim's built-in `conceal` capabilities to hide raw XML tags from the user, ensuring the interface remains as readable as markdown. It dynamically creates `folds` wrapping archived interactions under their summaries (e.g., `📦 [X archived lines]`), providing a sleek UI experience while ensuring the underlying `.mctx` file remains fully hackable text.
 
+### 19. Active Semantic Indexing & Cognitive Load Balancer (Phase 44)
+- **Structured Multi-Block Injectors**: Context macros (like `project_dump`) now return structured arrays of files instead of massive raw strings, automatically encapsulating each file into its own distinct XML `<block>`.
+- **Zero-Freeze UX (Provisional Abstracts)**: Massive file dumps no longer clutter the screen or freeze the UI. Files are instantly injected with a provisional `<abstract>` (e.g., `Indexing: src/main.lua...`), which is immediately folded by Neovim's visual engine.
+- **Cognitive Load Balancer**: A background routing engine (`dynamic_watchdog`) distributes semantic summarization tasks (RAG) across a designated pool of secondary APIs using a Round-Robin algorithm. This enables massive parallel indexing without hitting rate limits on a single provider.
+- **Asynchronous Popcorn Patching**: As the background APIs complete their tasks, the system asynchronously patches the buffer in real-time, replacing the provisional tags with true semantic abstracts (`🧠 [Cognitive Abstract] ...`), without interrupting the user's typing.
+
 ---
 
 ## Current Development State
 
-### ✅ Implemented, Stable, and Tested (V1.4+ Architecture)
+### ✅ Implemented, Stable, and Tested (V2.3+ Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
 - 100% Internationalized System (i18n) and Cognitive Backend.
 - `LazyVim`-like interface with Anchored Dynamic Footer and 13 Master Modules.
@@ -175,4 +181,5 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Deep integration with Neovim LSP and Ripgrep for deterministic navigation.
 - Local Git automation via DevOps Agent with atomic security locks.
 - Polymorphic Immutable Ledger with Asynchronous Background Summarization (Dynamic Watchdog), Local RAG (`deep_dive`), and Native Visual Folds/Conceal.
-- **Plenary Test Coverage:** 233 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- Active Semantic Indexing with Zero-Freeze UX, Popcorn Patching, and Cognitive Load Balancer.
+- **Plenary Test Coverage:** 257 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).

@@ -1,6 +1,6 @@
 ![Neovim](https://img.shields.io/badge/Neovim-0.8+-green.svg?style=for-the-badge&logo=neovim)
 ![Lua](https://img.shields.io/badge/Lua-100%25-blue.svg?style=for-the-badge&logo=lua)
-![Release](https://img.shields.io/badge/Version-v2.3--Final-blue.svg?style=for-the-badge)
+![Release](https://img.shields.io/badge/Version-v2.4--Final-blue.svg?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 ## 📖 Overview
@@ -11,7 +11,7 @@ Unlike conventional autocomplete plugins, MultiContext acts as a cutting-edge so
 
 All of this is supported by an asynchronous multithreaded **Swarm Architecture** and governed by a virtual **Master Command Center** inside your Neovim. 
 
-In its **v2.3+** release, it achieves true **Model Context Protocol (MCP)** alignment, introducing a Semantic Ontology that cleanly separates Agent Behaviors from Raw System Tools, dynamic **Meta-Agent Squads**, and **Just-in-Time LSP Setup** for a zero-friction development experience.
+In its **v2.4+** release, it achieves true **Model Context Protocol (MCP)** alignment, introducing a Semantic Ontology that cleanly separates Agent Behaviors from Raw System Tools, dynamic **Meta-Agent Squads**, **Just-in-Time LSP Setup** for a zero-friction development experience, and **Active Semantic Indexing with a Cognitive Load Balancer** to parse massive contexts without UI freezes.
 
 ---
 
@@ -26,6 +26,8 @@ In its **v2.3+** release, it achieves true **Model Context Protocol (MCP)** alig
 | 🐝 | **Swarm Architecture** | The `@tech_lead` invokes specialized teams (@coder, @qa, @devops) operating in a parallel asynchronous carousel. Includes **On-the-fly Choreography** (`--queue` and `--moa` flags). |
 | 👥 | **Meta-Agent Squads** | Trigger predefined groups of agents (e.g., `@squad_dev`) that follow strict execution pipelines (e.g., Tech Lead ➔ Coder ➔ QA). |
 | 🛡️ | **Context Watchdog 2.0** | A predictive tracker (EMA) monitors tokens. If the limit is breached, the `@archivist` performs an aggressive Quadripartite Compression via XML. |
+| ⚖️ | **Cognitive Load Balancer** | Distributes semantic background tasks (RAG) across multiple APIs in a Round-Robin pool, enabling massive parallel indexing without hitting rate limits. |
+| 🍿 | **Zero-Freeze UX (Popcorn Patching)** | Massive file dumps are injected instantly as provisional `<abstract>` tags. The background APIs process the files and asynchronously patch the UI in real-time. |
 | 🔍 | **LSP & Ripgrep Navigation** | We abandoned noisy RAG. The AI tracks down code with ultra-fast `rg` and jumps into functions via **Go To Definition** using Neovim's own LSP for maximum token efficiency. |
 | 🛠️ | **Just-in-Time LSP Setup** | The AI proactively checks if the target file has an active LSP. If missing, it uses `Mason.nvim` to auto-install and attach it silently before parsing code diagnostics. |
 | 👨‍💻 | **Git Automation (@devops)** | At the end of a task, the AI creates branches and surgically commits specific files through a strict Security Gatekeeper (blocking remote pushes). |
@@ -96,6 +98,19 @@ At any time during your work, type `:ContextControls` to pop up the Master Comma
 - Edit your API Fallback list (if Claude fails, OpenAI assumes control).
 - Toggle specific Cognitive Levels (high/medium/low) for your Swarm routers.
 
+### 8. Massive Parallel Indexing (Zero-Freeze UX)
+If you need the AI to analyze your entire codebase without freezing the editor, simply press `\` and select `project_dump`. It will instantly insert provisional abstract tags into your chat while the Cognitive Load Balancer distributes the files to your background APIs.
+```text
+## User >>
+@tech_lead Please review the architecture of these files:
+<block id="inj_123" type="context_injection">
+  <abstract>
+    <summary>Indexing: src/main.lua...</summary>
+  </abstract>
+...
+```
+*As you type the rest of your prompt, the tags will asynchronously "pop" and update to their true semantic abstracts in real-time!*
+
 ---
 
 ## 📦 Installation and Bootstrapping (Lazy.nvim)
@@ -123,7 +138,7 @@ MultiContext features an **Auto-Setup**. Upon running it for the first time, it 
 
 ## 🧪 Automated Testing and Reliability (TDD)
 
-The engine of this plugin was strictly developed under TDD and is maintained with military-grade resilience (**223 isolated tests passing at 100%**).
+The engine of this plugin was strictly developed under TDD and is maintained with military-grade resilience (**257 isolated tests passing at 100%**).
 ```bash
 make test_agregate_results
 ```
@@ -136,7 +151,7 @@ make test_agregate_results
 ======================================================================
 📊 AGGREGATED GLOBAL SUMMARY (MULTI-CONTEXT)
 ======================================================================
-✅ Success: 223
+✅ Success: 257
 ❌ Failed : 0
 💥 Errors : 0
 ======================================================================
