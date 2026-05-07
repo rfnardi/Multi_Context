@@ -51,7 +51,7 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
 
     it("Deve injetar a definicao da skill customizada no prompt do sistema", function()
         skills.reset()
-        skills.skills["calc_especial"] = {
+        skills.tools["calc_especial"] = {
             name = "calc_especial",
             description = "Calculo complexo customizado",
             parameters = { { name = "valor", type = "number", desc = "O valor base" } }
@@ -66,7 +66,7 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
 
     it("Deve rotear e executar uma skill customizada atraves do tool_runner", function()
         skills.reset()
-        skills.skills["echo_skill"] = {
+        skills.tools["echo_skill"] = {
             name = "echo_skill",
             description = "Skill que repete uma mensagem",
             parameters = { { name = "message", type = "string" } },
@@ -82,7 +82,7 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
 
     it("Deve limpar skills apagadas e recarregar a lista (Hot-Reload)", function()
         skills.reset()
-        skills.skills["skill_apagada"] = { name = "skill_apagada", description = "Old", execute = function() end }
+        skills.tools["skill_apagada"] = { name = "skill_apagada", description = "Old", execute = function() end }
 
         local valid_skill = "return { name = 'skill_nova', description = 'Nova', execute = function() return 'ok' end }"
         local f = io.open(test_dir .. "/skill_nova.lua", "w")

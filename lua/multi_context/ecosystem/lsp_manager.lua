@@ -66,7 +66,7 @@ M.ensure_lsp_for_file = function(path)
 
     -- Segura o Event Loop sincronamente (mas permitindo background jobs do Mason rodarem)
     -- Timeout de 60 segundos
-    vim.wait(60000, function() return pkg:is_installed() end, 200, false)
+    
 
     if pkg:is_installed() then
         vim.notify(i18n.t("lsp_installed", lsp_name), vim.log.levels.INFO)

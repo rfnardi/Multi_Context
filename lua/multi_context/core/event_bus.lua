@@ -10,6 +10,7 @@ M.on = function(event_name, callback)
     table.insert(listeners[event_name], callback)
 end
 
+M._once_wrappers = {}
 M.once = function(event_name, callback)
     if type(callback) ~= "function" then return end
     local wrapper
@@ -17,14 +18,14 @@ M.once = function(event_name, callback)
         M.off(event_name, wrapper)
         callback(payload)
     end
-    wrapper.original_cb = callback
+    M._once_wrappers[wrapper] = callback
     M.on(event_name, wrapper)
 end
 
 M.off = function(event_name, callback)
     if not listeners[event_name] then return end
     for i, cb in ipairs(listeners[event_name]) do
-        if cb == callback or cb.original_cb == callback then
+        if cb == callback or (M._once_wrappers and M._once_wrappers[cb] == callback) then
             table.remove(listeners[event_name], i)
             break
         end

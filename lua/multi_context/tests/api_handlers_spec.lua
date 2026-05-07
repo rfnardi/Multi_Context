@@ -1,13 +1,12 @@
--- lua/multi_context/tests/api_handlers_spec.lua
--- transport.lua carrega normalmente em headless nvim.
--- O único mock necessário é vim.fn.jobstart, chamado em runtime.
 local handlers = require('multi_context.llm.api_handlers')
+local transport = require('multi_context.llm.transport')
 
 describe("API Handlers Module (Prompt Caching)", function()
     local original_jobstart
     local intercepted_cmd
     local intercepted_opts
     local payload_content
+    local orig_write_payload
 
     before_each(function()
         intercepted_cmd  = nil
@@ -18,18 +17,20 @@ describe("API Handlers Module (Prompt Caching)", function()
         vim.fn.jobstart = function(cmd, opts)
             intercepted_cmd  = cmd
             intercepted_opts = opts
-            for _, arg in ipairs(cmd) do
-                if type(arg) == "string" and arg:match("^@") then
-                    local f = io.open(arg:sub(2), "r")
-                    if f then payload_content = f:read("*a"); f:close() end
-                end
-            end
             return 1
+        end
+
+        -- Intercepta o payload puro antes dele ir para a RAM / HD
+        orig_write_payload = transport.write_payload_to_tmp
+        transport.write_payload_to_tmp = function(payload)
+            payload_content = vim.fn.json_encode(payload)
+            return orig_write_payload(payload)
         end
     end)
 
     after_each(function()
         vim.fn.jobstart = original_jobstart
+        transport.write_payload_to_tmp = orig_write_payload
     end)
 
     it("Deve incluir stream_options e extrair metricas de cache (OpenAI / DeepSeek)", function()
@@ -100,9 +101,3 @@ describe("API Handlers Module (Prompt Caching)", function()
         assert.are.same(4048, callback_metrics.cache_read_input_tokens)
     end)
 end)
-
-
-
-
-
-

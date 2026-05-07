@@ -11,11 +11,11 @@ local valid_tools = {
     read_block_content = true, archive_blocks = true
 }
 
-local dangerous_commands = {"rm%s+-rf", "mkfs", "sudo ", ">%s*/dev", "chmod ", "chown "}
+local allowed_commands = {"^ls", "^cat", "^npm", "^cargo", "^pytest", "^git status"}
 local function is_dangerous(cmd)
     if not cmd then return false end
-    for _, pat in ipairs(dangerous_commands) do if cmd:match(pat) then return true end end
-    return false
+    for _, pat in ipairs(allowed_commands) do if cmd:match(pat) then return false end end
+    return true -- Se não estiver na whitelist estrita, é bloqueado.
 end
 
 M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)

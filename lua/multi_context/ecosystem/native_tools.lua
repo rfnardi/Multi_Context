@@ -197,6 +197,8 @@ end
 M.apply_diff = function(path, diff_content)
     local full_path = resolve_path(path)
     if not full_path then return i18n.t("err_path_req") end
+    if vim.fn.executable("patch") == 0 then return "ERRO: O comando patch nao esta instalado no sistema local. Use as ferramentas replace_lines ou edit_file em vez disso." end
+    if vim.fn.executable("patch") == 0 then return "ERRO: O comando patch nao esta instalado no sistema local. Use as ferramentas replace_lines ou edit_file em vez disso." end
     
     -- Fase 39: JIT Provisioning de LSP
     require("multi_context.ecosystem.lsp_manager").ensure_lsp_for_file(full_path)

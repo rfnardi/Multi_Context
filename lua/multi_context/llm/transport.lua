@@ -44,7 +44,7 @@ local function build_curl_cmd(api_config, api_key, tmp_file, stream)
         table.insert(cmd, k .. ": " .. v:gsub("{API_KEY}", api_key))
     end
     table.insert(cmd, "-d")
-    table.insert(cmd, "@" .. tmp_file)
+    table.insert(cmd, "@-")
     return cmd
 end
 
@@ -66,6 +66,16 @@ M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callb
     
     local full_response = ""
     local context = { buffer = "", metrics = nil }
+    local payload_str = ""
+    if tmp_file and vim.fn.filereadable(tmp_file) == 1 then
+        payload_str = table.concat(vim.fn.readfile(tmp_file), "\n")
+        pcall(os.remove, tmp_file)
+    end
+    local payload_str = ""
+    if tmp_file and vim.fn.filereadable(tmp_file) == 1 then
+        payload_str = table.concat(vim.fn.readfile(tmp_file), "\n")
+        pcall(os.remove, tmp_file)
+    end
     local job_id = vim.fn.jobstart(cmd, {
         on_stdout = function(_, data)
             if not data then return end
@@ -82,6 +92,16 @@ M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callb
             callback(nil, nil, true, context.metrics)
         end
     })
+    
+    if job_id > 0 and payload_str ~= "" then
+        vim.fn.chansend(job_id, payload_str)
+        vim.fn.chanclose(job_id, "stdin")
+    end
+    
+    if job_id and job_id > 0 and payload_str ~= "" then
+        pcall(vim.fn.chansend, job_id, payload_str)
+        pcall(vim.fn.chanclose, job_id, "stdin")
+    end
     callback(nil, nil, false, nil, job_id)
 end
 

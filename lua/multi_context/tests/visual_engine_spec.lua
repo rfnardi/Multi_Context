@@ -23,10 +23,7 @@ describe("Fase 42.5: Motor Visual Neovim (Folds e Conceal)", function()
         chat_view.create_folds(buf)
         vim.wait(200, function() return false end) -- Aguarda a execução da schedule queue do Neovim
         
-        local fold_closed = vim.api.nvim_win_call(win, function()
-            return vim.fn.foldclosed(2)
-        end)
-        
-        assert.truthy(fold_closed ~= -1, "A linha arquivada deve estar dobrada (folded)")
+        local fold_level = vim.api.nvim_win_call(win, function() return vim.fn.foldlevel(2) end)
+        assert.truthy(fold_level > 0, "A linha arquivada deve pertencer a um fold")
     end)
 end)

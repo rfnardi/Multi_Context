@@ -141,12 +141,12 @@ function M.fold_text()
 end
 
 function M.create_folds(buf)
-    if not buf or not api.nvim_buf_is_valid(buf) then return end
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
     vim.schedule(function()
-        if not api.nvim_buf_is_valid(buf) then return end
+        if not vim.api.nvim_buf_is_valid(buf) then return end
         local windows = vim.fn.win_findbuf(buf)
         for _, win in ipairs(windows) do
-            if api.nvim_win_is_valid(win) then
+            if vim.api.nvim_win_is_valid(win) then
                 vim.api.nvim_win_call(win, function()
                     vim.wo.foldmethod = "manual"
                     vim.wo.foldenable = true
@@ -155,8 +155,8 @@ function M.create_folds(buf)
 
                     local total_lines = vim.api.nvim_buf_line_count(buf)
                     local fold_stack = {}
+                    local fold_cmds = {}
 
-                    -- Iteração segura baseada em pilha (para lidar com tags aninhadas)
                     for lnum = 1, total_lines do
                         local line = vim.api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1]
                         if line then
@@ -170,9 +170,9 @@ function M.create_folds(buf)
                                 for i = #fold_stack, 1, -1 do
                                     if fold_stack[i].type == "block" then
                                         local start_fold = fold_stack[i].start
-                                        if lnum >= start_fold then
-                                            pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
-                                            pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                        if lnum > start_fold then
+                                            table.insert(fold_cmds, string.format("%d,%dfold", start_fold, lnum))
+                                            table.insert(fold_cmds, string.format("%dfoldclose", start_fold))
                                         end
                                         table.remove(fold_stack, i)
                                         break
@@ -182,9 +182,9 @@ function M.create_folds(buf)
                                 for i = #fold_stack, 1, -1 do
                                     if fold_stack[i].type == "abstract" then
                                         local start_fold = fold_stack[i].start
-                                        if lnum >= start_fold then
-                                            pcall(vim.cmd, string.format("%d,%dfold", start_fold, lnum))
-                                            pcall(vim.cmd, string.format("%dfoldclose", start_fold))
+                                        if lnum > start_fold then
+                                            table.insert(fold_cmds, string.format("%d,%dfold", start_fold, lnum))
+                                            table.insert(fold_cmds, string.format("%dfoldclose", start_fold))
                                         end
                                         table.remove(fold_stack, i)
                                         break
@@ -192,6 +192,11 @@ function M.create_folds(buf)
                                 end
                             end
                         end
+                    end
+                    
+                    -- Agrupa dezenas de dobras em uma única execução em C para performance extrema
+                    if #fold_cmds > 0 then
+                        pcall(vim.cmd, table.concat(fold_cmds, " | "))
                     end
 
                     local win_height = vim.api.nvim_win_get_height(win)

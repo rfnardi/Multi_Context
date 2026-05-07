@@ -9,6 +9,17 @@ local tool_runner = require('multi_context.ecosystem.tool_runner')
 
 local M = {}
 
+local function dispatch_jit_archiving(buf)
+    pcall(function()
+        local session = require("multi_context.core.session")
+        local msgs = session.get_messages()
+        local last_msg = msgs[#msgs]
+        if last_msg and last_msg.metadata and last_msg.metadata.id then
+            require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
+        end
+    end)
+end
+
 local function get_state()
     local st = StateManager.get("react")
     if st.is_autonomous == nil then st.is_autonomous = false end
@@ -240,16 +251,7 @@ M.ProcessTurn = function(buf)
     )
 end
 
-local function dispatch_jit_archiving(buf)
-    pcall(function()
-        local session = require("multi_context.core.session")
-        local msgs = session.get_messages()
-        local last_msg = msgs[#msgs]
-        if last_msg and last_msg.metadata and last_msg.metadata.id then
-            require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
-        end
-    end)
-end
+
 
 M.ExecuteTools = function(ia_idx, buf)
     local react_state = get_state()
