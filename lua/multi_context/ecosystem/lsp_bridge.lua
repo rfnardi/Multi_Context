@@ -91,8 +91,6 @@ M.get_definition = function(path, line, symbol)
     return "Falha ao processar definição via LSP."
 end
 
-return M
-
 M.get_references = function(path, line, symbol)
     local full_path = vim.fn.fnamemodify(path, ":p")
     local root = vim.fn.system("git rev-parse --show-toplevel")
@@ -196,3 +194,6 @@ M.get_document_symbols = function(path)
     end
     return table.concat(output, "\n")
 end
+
+
+return M

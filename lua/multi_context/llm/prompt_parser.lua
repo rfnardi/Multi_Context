@@ -1,5 +1,5 @@
 local M = {}
-local registry = require('multi_context.skills.registry')
+local registry = require('multi_context.tools.registry')
 local i18n = require('multi_context.i18n')
 
 M.parse_user_input = function(raw_text, agents_table)
@@ -91,9 +91,9 @@ M.build_system_prompt = function(base_prompt, memory_context, active_agent_name,
         system_prompt = system_prompt .. active_agent_prompt
     end
 
-    local ok, skills_manager = pcall(require, 'multi_context.ecosystem.skills_manager')
-    if ok and skills_manager and skills_manager.get_skills then
-        local user_skills = skills_manager.get_skills()
+    local ok, skills_manager = pcall(require, 'multi_context.ecosystem.tools_manager')
+    if ok and skills_manager and skills_manager.get_tools then
+        local user_skills = skills_manager.get_tools()
         local has_user_skills = false
         local user_skills_xml = "\n\n=== CUSTOM TOOLS ===\nYou have access to user-customized tools. You can invoke them by returning an XML block in the format <tool_call name=\"name\">\n<tools>\n"
         

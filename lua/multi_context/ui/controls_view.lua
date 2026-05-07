@@ -63,12 +63,12 @@ M.init_state = function()
     local agents = require('multi_context.agents')
     M.state.agents = agents.load_agents() or {}
     
-    local ontology = require('multi_context.ecosystem.skills_ontology')
+    local ontology = require('multi_context.ecosystem.ontology')
     pcall(function() M.state.semantic_skills = ontology.load_semantic_skills() or {} end)
 
-    local skills_mgr = require('multi_context.ecosystem.skills_manager')
-    pcall(skills_mgr.load_skills)
-    M.state.all_tools = skills_mgr.get_skills() or {}
+    local skills_mgr = require('multi_context.ecosystem.tools_manager')
+    pcall(skills_mgr.load_tools)
+    M.state.all_tools = skills_mgr.get_tools() or {}
     
     local native_tools = {"list_files", "read_file", "search_code", "edit_file", "run_shell", "replace_lines", "apply_diff", "rewrite_chat_buffer", "get_diagnostics", "spawn_swarm", "switch_agent", "lsp_definition", "lsp_references", "lsp_document_symbols", "git_status", "git_branch", "git_commit", "deep_dive", "update_context_md", "update_context_md"}
     for _, t in ipairs(native_tools) do M.state.all_tools[t] = { name = t, is_native = true } end
@@ -178,9 +178,7 @@ M.render = function()
                     add_line(lines, format_row("    ├─ " .. a.name, mark, w), { type = "api_select", name = a.name, idx = i })
                     local bg_mark = a.allow_background and "[ ON ]" or "[ OFF ]"
                     add_line(lines, format_row("      └─ " .. i18n.t("cc_bg_pool_title"), bg_mark, w), { type = "api_bg_pool", idx = i })
-                    local bg_mark = a.allow_background and "[ ON ]" or "[ OFF ]"
-                    add_line(lines, format_row("      └─ " .. i18n.t("cc_bg_pool_title"), bg_mark, w), { type = "api_bg_pool", idx = i })
-                end
+                                    end
             elseif sec.id == "swarm" then
                 add_line(lines, i18n.t("cc_swarm_perm"), nil)
                 for i, a in ipairs(M.state.apis) do
@@ -393,11 +391,11 @@ M._edit_skill_prompt = function(name)
         buffer = api.nvim_get_current_buf(),
         callback = function()
             local lines = vim.fn.readfile(tmp_path)
-            local ontology = require('multi_context.ecosystem.skills_ontology')
+            local ontology = require('multi_context.ecosystem.ontology')
             local skills_v2 = ontology.load_semantic_skills()
             if skills_v2[name] then
                 skills_v2[name].purpose = table.concat(lines, "\n")
-                local skills_file = vim.fn.stdpath("config") .. "/mctx_skills_v2.json"
+                local skills_file = vim.fn.stdpath("config") .. "/mctx_semantic_skills.json"
                 vim.fn.writefile({vim.fn.json_encode(skills_v2)}, skills_file)
                 vim.notify(i18n.t("cc_sys_prompt_updated", name), vim.log.levels.INFO)
             end
@@ -435,7 +433,7 @@ M.handle_cr = function()
         vim.ui.input({ prompt = i18n.t("cc_create_skill_pmpt") }, function(input)
             if not input or input == "" then return end
             input = input:gsub("%.lua$", "")
-            local dir = vim.fn.stdpath("config") .. "/mctx_skills"
+            local dir = vim.fn.stdpath("config") .. "/mctx_tools"
             if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
             local path = dir .. "/" .. input .. ".lua"
             
@@ -519,8 +517,7 @@ M.handle_space = function()
     if action.type == "api_select" then M.state.default_api = action.name
     elseif action.type == "toggle_fallback" then M.state.fallback_mode = not M.state.fallback_mode
     elseif action.type == "api_bg_pool" then M.state.apis[action.idx].allow_background = not M.state.apis[action.idx].allow_background
-    elseif action.type == "api_bg_pool" then M.state.apis[action.idx].allow_background = not M.state.apis[action.idx].allow_background
-    elseif action.type == "api_spawn" then M.state.apis[action.idx].allow_spawn = not M.state.apis[action.idx].allow_spawn
+        elseif action.type == "api_spawn" then M.state.apis[action.idx].allow_spawn = not M.state.apis[action.idx].allow_spawn
     elseif action.type == "api_level_swarm" then
         local cycles = { high = "medium", medium = "low", low = "high" }
         local ap = M.state.apis[action.idx]
@@ -605,7 +602,7 @@ M.handle_open_file = function()
         if M.state.all_tools[action.name].is_native then
             vim.notify(i18n.t("cc_core_tool_warn"), vim.log.levels.WARN); return
         end
-        path = vim.fn.stdpath("config") .. "/mctx_skills/" .. action.name .. ".lua"
+        path = vim.fn.stdpath("config") .. "/mctx_tools/" .. action.name .. ".lua"
     elseif action.type == "edit_injector" then
         if M.state.all_injectors[action.name].is_native then
             vim.notify(i18n.t("cc_core_inj_warn"), vim.log.levels.WARN); return
@@ -668,7 +665,7 @@ M.save_config = function()
     vim.fn.writefile({raw_json}, agents_file)
     pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw_json), agents_file)) end)
 
-    local skills_file = vim.fn.stdpath("config") .. "/mctx_skills_v2.json"
+    local skills_file = vim.fn.stdpath("config") .. "/mctx_semantic_skills.json"
     local raw_skills = vim.fn.json_encode(M.state.semantic_skills)
     vim.fn.writefile({raw_skills}, skills_file)
     pcall(function() vim.fn.system(string.format("echo %s | jq . > %s", vim.fn.shellescape(raw_skills), skills_file)) end)

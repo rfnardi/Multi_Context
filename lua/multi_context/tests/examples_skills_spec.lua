@@ -1,4 +1,4 @@
-local skills = require('multi_context.ecosystem.skills_manager')
+local skills = require('multi_context.ecosystem.tools_manager')
 
 describe("Fase 27 - Ecossistema da Comunidade (V1.0):", function()
     -- Usa o diretório root do projeto (assumindo que o Neovim abriu na raiz)
@@ -8,8 +8,8 @@ describe("Fase 27 - Ecossistema da Comunidade (V1.0):", function()
         skills.reset()
         
         -- Tenta carregar a pasta que será distribuída no GitHub
-        skills.load_skills(examples_dir)
-        local loaded = skills.get_skills()
+        skills.load_tools(examples_dir)
+        local loaded = skills.get_tools()
 
         -- Validando estruturalmente se as skills de demonstração foram escritas sem erros de sintaxe Lua
         assert.is_not_nil(loaded["read_jira"], "O catálogo deve conter a skill de exemplo: read_jira")

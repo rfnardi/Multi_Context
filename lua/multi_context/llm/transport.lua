@@ -74,6 +74,9 @@ M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callb
         end,
         on_exit = function()
             pcall(os.remove, tmp_file)
+            for i, f in ipairs(_G.MultiContextTempFiles) do
+                if f == tmp_file then table.remove(_G.MultiContextTempFiles, i); break end
+            end
             local err_msg = extract_error(full_response, context, callback)
             if err_msg then callback("\n\n" .. err_msg .. "\n", nil, false) end
             callback(nil, nil, true, context.metrics)

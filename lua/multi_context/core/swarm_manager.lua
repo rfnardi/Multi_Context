@@ -96,7 +96,7 @@ M.dispatch_next = function()
                 system_prompt = system_prompt .. "\n\n=== YOUR GUIDELINES ===\n" .. loaded_agents[task.agent].system_prompt
             end
             
-            local registry = require('multi_context.skills.registry')
+            local registry = require('multi_context.tools.registry')
             local agent_def_for_skills = loaded_agents[task.agent] or loaded_agents["coder"] or {skills={}}
             system_prompt = system_prompt .. "\n\n" .. registry.build_manual_for_skills(agent_def_for_skills.skills)
             

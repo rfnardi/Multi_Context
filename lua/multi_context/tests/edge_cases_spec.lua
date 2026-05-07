@@ -260,12 +260,12 @@ describe("Chat View - Edge Cases", function()
 end)
 
 describe("Skills Manager e Injectors - Edge Cases", function()
-    local skills = require('multi_context.ecosystem.skills_manager')
+    local skills = require('multi_context.ecosystem.tools_manager')
     local injectors = require('multi_context.ecosystem.injectors')
     
-    it("load_skills lida graciosamente com diretorio inexistente", function()
+    it("load_tools lida graciosamente com diretorio inexistente", function()
         assert.has_no.errors(function()
-            skills.load_skills("/caminho/nao/existe/12345")
+            skills.load_tools("/caminho/nao/existe/12345")
         end)
     end)
 

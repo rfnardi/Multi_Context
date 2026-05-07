@@ -1,11 +1,11 @@
 local M = {}
-M.skills = {}
+M.tools = {}
 
-M.reset = function() M.skills = {} end
+M.reset = function() M.tools = {} end
 
-M.load_skills = function(dir_path)
+M.load_tools = function(dir_path)
     M.reset()
-    if not dir_path then dir_path = vim.fn.stdpath("config") .. "/mctx_skills" end
+    if not dir_path then dir_path = vim.fn.stdpath("config") .. "/mctx_tools" end
     if vim.fn.isdirectory(dir_path) == 0 then return end
 
     local files = vim.fn.globpath(dir_path, "*", false, true)
@@ -16,7 +16,7 @@ M.load_skills = function(dir_path)
             if chunk then
                 local ok, result = pcall(chunk)
                 if ok and type(result) == "table" and type(result.name) == "string" and type(result.execute) == "function" then
-                    M.skills[result.name] = result
+                    M.tools[result.name] = result
                 end
             end
         elseif vim.fn.executable(file) == 1 then
@@ -39,7 +39,7 @@ M.load_skills = function(dir_path)
                 end
             end
             
-            M.skills[name] = {
+            M.tools[name] = {
                 name = name,
                 description = desc,
                 parameters = params,
@@ -57,5 +57,5 @@ M.load_skills = function(dir_path)
     end
 end
 
-M.get_skills = function() return M.skills end
+M.get_tools = function() return M.tools end
 return M

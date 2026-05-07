@@ -17,13 +17,14 @@ M.once = function(event_name, callback)
         M.off(event_name, wrapper)
         callback(payload)
     end
+    wrapper.original_cb = callback
     M.on(event_name, wrapper)
 end
 
 M.off = function(event_name, callback)
     if not listeners[event_name] then return end
     for i, cb in ipairs(listeners[event_name]) do
-        if cb == callback then
+        if cb == callback or cb.original_cb == callback then
             table.remove(listeners[event_name], i)
             break
         end

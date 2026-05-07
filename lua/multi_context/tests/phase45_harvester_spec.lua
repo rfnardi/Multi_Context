@@ -5,7 +5,7 @@ describe("Fase 45.3 e 45.4 - O Harvester e a Skill de Conhecimento", function()
 
     describe("45.3: skills_ontology.lua - manage_project_knowledge", function()
         it("deve carregar a skill semantica manage_project_knowledge com a tool update_context_md", function()
-            local ontology = require("multi_context.ecosystem.skills_ontology")
+            local ontology = require("multi_context.ecosystem.ontology")
             local skills = ontology.load_semantic_skills()
             assert.is_not_nil(skills.manage_project_knowledge, "Skill manage_project_knowledge não encontrada")
             

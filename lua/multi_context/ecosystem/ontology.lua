@@ -1,5 +1,5 @@
 local M = {}
-M.skills_file = vim.fn.stdpath("config") .. "/mctx_skills_v2.json"
+M.skills_file = vim.fn.stdpath("config") .. "/mctx_semantic_skills.json"
 
 M.load_semantic_skills = function()
     local defaults = {

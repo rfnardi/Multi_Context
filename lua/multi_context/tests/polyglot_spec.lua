@@ -1,4 +1,4 @@
-local skills = require('multi_context.ecosystem.skills_manager')
+local skills = require('multi_context.ecosystem.tools_manager')
 
 describe("Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python)", function()
     local test_dir = "/tmp/mctx_polyglot_test"
@@ -23,8 +23,8 @@ describe("Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python)", function()
         vim.fn.writefile(bash_content, script_path)
         vim.fn.system("chmod +x " .. script_path)
 
-        skills.load_skills(test_dir)
-        local loaded = skills.get_skills()
+        skills.load_tools(test_dir)
+        local loaded = skills.get_tools()
 
         assert.is_not_nil(loaded["meu_script_bash"], "A skill bash deve ser registrada com o nome do arquivo")
         assert.are.same("Um script teste", loaded["meu_script_bash"].description)

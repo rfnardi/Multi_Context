@@ -1,5 +1,5 @@
 local prompt_parser = require('multi_context.llm.prompt_parser')
-local registry = require('multi_context.skills.registry')
+local registry = require('multi_context.tools.registry')
 local config = require('multi_context.config')
 
 describe("Fase 36 - Prompt Hardening e Anti-Alucinação:", function()

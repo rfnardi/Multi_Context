@@ -1,4 +1,4 @@
-local skills = require('multi_context.ecosystem.skills_manager')
+local skills = require('multi_context.ecosystem.tools_manager')
 local prompt_parser = require('multi_context.llm.prompt_parser')
 local tool_runner = require('multi_context.ecosystem.tool_runner')
 
@@ -21,8 +21,8 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
         f:write(valid_skill)
         f:close()
 
-        skills.load_skills(test_dir)
-        local loaded = skills.get_skills()
+        skills.load_tools(test_dir)
+        local loaded = skills.get_tools()
 
         assert.is_not_nil(loaded["minha_skill"])
         assert.are.same("minha_skill", loaded["minha_skill"].name)
@@ -40,8 +40,8 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
         f2:write(not_lua)
         f2:close()
 
-        skills.load_skills(test_dir)
-        local loaded = skills.get_skills()
+        skills.load_tools(test_dir)
+        local loaded = skills.get_tools()
 
         assert.is_nil(loaded["skill_quebrada"])
         local count = 0
@@ -89,8 +89,8 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
         f:write(valid_skill)
         f:close()
 
-        skills.load_skills(test_dir)
-        local loaded = skills.get_skills()
+        skills.load_tools(test_dir)
+        local loaded = skills.get_tools()
 
         assert.is_nil(loaded["skill_apagada"], "A skill antiga deve ser removida da memoria no reload")
         assert.is_not_nil(loaded["skill_nova"], "A nova skill deve ser carregada imediatamente")

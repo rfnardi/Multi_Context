@@ -87,7 +87,7 @@ lua/multi_context/
 ### 5. Meta-Agent Squads and Pluggable Skills (Community V1.0)
 - Transparent compilation of squad mentions (e.g., `@squad_dev`).
 - Full Squad management through the panel, visualizing the execution chain and editing the `.json` file.
-- Pluggable custom scripts via `~/.config/nvim/mctx_skills/` with Gatekeeper validation, autonomous hot-reload, and scope isolation.
+- Pluggable custom scripts via `~/.config/nvim/mctx_tools/` with Gatekeeper validation, autonomous hot-reload, and scope isolation.
 
 ### 6. Unified Diff and Workspace Persistence
 - **Visual Resurrection**: The `History and Workspaces` section in the panel automatically lists the latest `.mctx` files saved in the project, allowing users to load complex conversations (and their background Swarm state) with a single `<CR>`.

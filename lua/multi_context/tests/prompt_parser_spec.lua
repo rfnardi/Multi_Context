@@ -1,4 +1,4 @@
-package.loaded['multi_context.skills.registry'] = {
+package.loaded['multi_context.tools.registry'] = {
     build_manual_for_skills = function(skills) return "=== SKILLS ===" end
 }
 

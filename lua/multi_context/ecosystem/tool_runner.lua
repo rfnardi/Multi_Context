@@ -32,8 +32,8 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         return out, false, false, nil, nil
     end
 
-    local skills_manager = require('multi_context.ecosystem.skills_manager')
-    local custom_skills = skills_manager.get_skills()
+    local skills_manager = require('multi_context.ecosystem.tools_manager')
+    local custom_skills = skills_manager.get_tools()
     local is_custom_skill = custom_skills[name] ~= nil
 
     if not valid_tools[name] and not is_custom_skill then

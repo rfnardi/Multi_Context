@@ -157,36 +157,6 @@ M.dispatch_parallel_jit_tasks = function(buf, blocks)
     end
 end
 
-M.dispatch_parallel_jit_tasks = function(buf, blocks)
-    local config = require('multi_context.config')
-    local api_cfg = config.load_api_config()
-    if not api_cfg or not api_cfg.apis then return end
-    
-    local pool = {}
-    for _, a in ipairs(api_cfg.apis) do
-        if a.allow_background then
-            table.insert(pool, a)
-        end
-    end
-    
-    if #pool == 0 then return end
-    
-    local api_client = require('multi_context.llm.api_client')
-    
-    for i, block in ipairs(blocks) do
-        local target_api = pool[((i - 1) % #pool) + 1]
-        local payload = M.build_jit_payload(block.content)
-        local accumulated = ""
-        
-        api_client.execute(payload,
-            function() end, 
-            function(chunk) if chunk then accumulated = accumulated .. chunk end end,
-            function() M.patch_block_abstract(buf, block.id, accumulated) end,
-            function(err) vim.notify("[Watchdog] JIT Erro (Pool): " .. tostring(err), vim.log.levels.WARN) end,
-            target_api
-        )
-    end
-end
 
 M.build_harvester_payload = function()
     local payload = {}

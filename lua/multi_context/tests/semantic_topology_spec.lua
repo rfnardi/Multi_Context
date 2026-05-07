@@ -3,7 +3,7 @@ local assert = require("luassert")
 describe("Fase 40: Ontologia Hierarquica e Roteamento Semantico", function()
     
     it("Contrato 1.2 e 5.1: Skill Loader e Auto-Wrapper", function()
-        local ontology = require('multi_context.ecosystem.skills_ontology')
+        local ontology = require('multi_context.ecosystem.ontology')
         local resolved = ontology.resolve_agent_skills({"code_refactoring", "unknown_custom_tool"})
         
         assert.is_true(#resolved.semantic_skills >= 2)
@@ -40,7 +40,7 @@ describe("Fase 40: Ontologia Hierarquica e Roteamento Semantico", function()
     end)
     
     it("Contrato 2.3: Deduplicacao de Tools", function()
-        local registry = require('multi_context.skills.registry')
+        local registry = require('multi_context.tools.registry')
         registry.get_skill_doc = function(name) return "<doc>"..name.."</doc>" end
         
         local manual = registry.build_manual_for_skills({"code_refactoring", "code_investigation"})

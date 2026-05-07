@@ -87,7 +87,7 @@ local function get_context_md_content()
 end
 
 M.ProcessTurn = function(buf)
-    pcall(function() require('multi_context.ecosystem.skills_manager').load_skills() end)
+    pcall(function() require('multi_context.ecosystem.tools_manager').load_tools() end)
     if not buf or not api.nvim_buf_is_valid(buf) then return end
     
     local start_idx, _ = utils.find_last_user_line(buf)
@@ -205,15 +205,7 @@ M.ProcessTurn = function(buf)
             
             if react_state.user_aborted then
                 EventBus.emit("UI_APPEND_LINES", { buf = buf, lines = { "", require("multi_context.i18n").t("gen_aborted") } })
-                -- FASE 44: Disparo JIT Micro-Archiving
-                pcall(function()
-                    local session = require("multi_context.core.session")
-                    local msgs = session.get_messages()
-                    local last_msg = msgs[#msgs]
-                    if last_msg and last_msg.metadata and last_msg.metadata.id then
-                        require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
-                    end
-                end)
+                dispatch_jit_archiving(buf)
                 M.TerminateTurn()
                 return
             end
@@ -235,15 +227,7 @@ M.ProcessTurn = function(buf)
             elseif has_tool then
                 vim.defer_fn(function() M.ExecuteTools(current_ia_start_idx, buf) end, 100)
             else
-                -- FASE 44: Disparo JIT Micro-Archiving
-                pcall(function()
-                    local session = require("multi_context.core.session")
-                    local msgs = session.get_messages()
-                    local last_msg = msgs[#msgs]
-                    if last_msg and last_msg.metadata and last_msg.metadata.id then
-                        require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
-                    end
-                end)
+                dispatch_jit_archiving(buf)
                 M.TerminateTurn()
             end
         end,
@@ -254,6 +238,17 @@ M.ProcessTurn = function(buf)
             react_state.is_autonomous = false
         end
     )
+end
+
+local function dispatch_jit_archiving(buf)
+    pcall(function()
+        local session = require("multi_context.core.session")
+        local msgs = session.get_messages()
+        local last_msg = msgs[#msgs]
+        if last_msg and last_msg.metadata and last_msg.metadata.id then
+            require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
+        end
+    end)
 end
 
 M.ExecuteTools = function(ia_idx, buf)
@@ -335,15 +330,7 @@ M.ExecuteTools = function(ia_idx, buf)
         cursor = parsed_tag.close_end + 1
     end
 
-    if not has_changes or abort_all then -- FASE 44: Disparo JIT Micro-Archiving
-                pcall(function()
-                    local session = require("multi_context.core.session")
-                    local msgs = session.get_messages()
-                    local last_msg = msgs[#msgs]
-                    if last_msg and last_msg.metadata and last_msg.metadata.id then
-                        require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
-                    end
-                end)
+    if not has_changes or abort_all then dispatch_jit_archiving(buf)
                 M.TerminateTurn(); return end
 
     if pending_rewrite_content then
@@ -357,28 +344,12 @@ M.ExecuteTools = function(ia_idx, buf)
     end
 
     if pending_rewrite_content or (not should_continue_loop and not react_state.is_autonomous) then
-        -- FASE 44: Disparo JIT Micro-Archiving
-                pcall(function()
-                    local session = require("multi_context.core.session")
-                    local msgs = session.get_messages()
-                    local last_msg = msgs[#msgs]
-                    if last_msg and last_msg.metadata and last_msg.metadata.id then
-                        require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
-                    end
-                end)
+        dispatch_jit_archiving(buf)
                 M.TerminateTurn(); return
     end
 
     if M.check_circuit_breaker() then
-        -- FASE 44: Disparo JIT Micro-Archiving
-                pcall(function()
-                    local session = require("multi_context.core.session")
-                    local msgs = session.get_messages()
-                    local last_msg = msgs[#msgs]
-                    if last_msg and last_msg.metadata and last_msg.metadata.id then
-                        require("multi_context.core.dynamic_watchdog").dispatch_jit_task(buf, last_msg.metadata.id, last_msg.content)
-                    end
-                end)
+        dispatch_jit_archiving(buf)
                 M.TerminateTurn(); return
     end
 

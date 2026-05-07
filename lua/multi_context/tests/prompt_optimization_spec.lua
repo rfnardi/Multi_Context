@@ -16,10 +16,10 @@ describe("Fase 24 - Otimização de System Prompt (Token Saving):", function()
     end)
 
     it("O cabeçalho do manual de habilidades deve ser altamente sintetizado", function()
-        local registry = require('multi_context.skills.registry')
+        local registry = require('multi_context.tools.registry')
         
         -- Simulando um ambiente onde a ontologia resolve para 1 ferramenta
-        package.loaded['multi_context.ecosystem.skills_ontology'] = {
+        package.loaded['multi_context.ecosystem.ontology'] = {
             resolve_agent_skills = function()
                 return {
                     semantic_skills = { { name = "test_skill", purpose = "To test." } },

@@ -123,7 +123,7 @@ command! -nargs=0 ContextApis lua require('multi_context').ContextControls()
 command! -nargs=0 ContextTree lua require('multi_context').ContextTree()
 command! -nargs=0 ContextBuffers lua require('multi_context').ContextBuffers()
 command! -nargs=0 ContextToggle lua require('multi_context').TogglePopup()
-command! -nargs=0 ContextReloadSkills lua require('multi_context.ecosystem.skills_manager').load_skills(); vim.notify('Skills customizadas recarregadas!', vim.log.levels.INFO)
+command! -nargs=0 ContextReloadTools lua require('multi_context.ecosystem.tools_manager').load_tools(); vim.notify('Skills customizadas recarregadas!', vim.log.levels.INFO)
 ]])
 
 return M

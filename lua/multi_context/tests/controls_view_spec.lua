@@ -8,7 +8,7 @@ local mock_test_dir = "/tmp/mctx_test_env_" .. tostring(math.random(100000))
 
 local function isolate_environment()
     backup_opts = vim.deepcopy(config.options)
-    vim.fn.mkdir(mock_test_dir .. "/mctx_skills", "p")
+    vim.fn.mkdir(mock_test_dir .. "/mctx_tools", "p")
     vim.fn.mkdir(mock_test_dir .. "/mctx_injectors", "p")
     vim.fn.mkdir(mock_test_dir .. "/.mctx_chats", "p")
     
@@ -38,9 +38,9 @@ describe("Fase 26 - Passo 1: Expansão do Motor Virtual e IAM", function()
         package.loaded['multi_context.agents'] = {
             load_agents = function() return { tech_lead = { skills = {"run_shell"} } } end
         }
-        package.loaded['multi_context.ecosystem.skills_manager'] = {
-            load_skills = function() end,
-            get_skills = function() return { minha_skill = {} } end
+        package.loaded['multi_context.ecosystem.tools_manager'] = {
+            load_tools = function() end,
+            get_tools = function() return { minha_skill = {} } end
         }
     end)
     after_each(restore_environment)
@@ -257,7 +257,7 @@ describe("Fase H - Correcoes UX Avançadas (Edicao, Footer Dinâmico, Agentes e 
     it("Abertura de arquivos deve fechar a janela do painel ANTES de dar o edit (evita E37)", function()
         controls.line_map = { [1] = { type = "edit_tool", name = "skill_teste" } }
         controls.state.all_tools = { skill_teste = { is_native = false } }
-        vim.fn.writefile({"-- teste"}, mock_test_dir .. "/mctx_skills/skill_teste.lua")
+        vim.fn.writefile({"-- teste"}, mock_test_dir .. "/mctx_tools/skill_teste.lua")
         
         local execution_order = {}
         
@@ -361,14 +361,14 @@ describe("Fase 41 - UI Semantica (MoA e MCP)", function()
         package.loaded['multi_context.agents'] = {
             load_agents = function() return { coder = { skills = {"code_refactoring"} } } end
         }
-        package.loaded['multi_context.ecosystem.skills_ontology'] = {
+        package.loaded['multi_context.ecosystem.ontology'] = {
             load_semantic_skills = function() return { 
                 code_refactoring = { purpose = "Refatorar codigo com seguranca.", tools = {"read_file", "edit_file"} } 
             } end
         }
-        package.loaded['multi_context.ecosystem.skills_manager'] = {
-            load_skills = function() end,
-            get_skills = function() return { read_file = {is_native = true}, edit_file = {is_native = true}, run_shell = {is_native = true} } end
+        package.loaded['multi_context.ecosystem.tools_manager'] = {
+            load_tools = function() end,
+            get_tools = function() return { read_file = {is_native = true}, edit_file = {is_native = true}, run_shell = {is_native = true} } end
         }
     end)
     after_each(restore_environment)

@@ -11,7 +11,7 @@ end
 M.get_skill_doc = function(skill_name)
     local base_path = get_plugin_base_path()
     if not base_path then return nil end
-    local skill_file = vim.fn.join({ base_path, "lua", "multi_context", "skills", "docs", skill_name .. ".md" }, "/")
+    local skill_file = vim.fn.join({ base_path, "lua", "multi_context", "tools", "docs", skill_name .. ".md" }, "/")
     if vim.fn.filereadable(skill_file) == 0 then
         local curr_file = debug.getinfo(1, "S").source:sub(2)
         skill_file = vim.fn.fnamemodify(curr_file, ":h") .. "/docs/" .. skill_name .. ".md"
@@ -21,7 +21,7 @@ M.get_skill_doc = function(skill_name)
 end
 
 M.build_manual_for_skills = function(skills_array)
-    local ok, ontology = pcall(require, 'multi_context.ecosystem.skills_ontology')
+    local ok, ontology = pcall(require, 'multi_context.ecosystem.ontology')
     if not ok then return "" end
     
     local resolved = ontology.resolve_agent_skills(skills_array)
