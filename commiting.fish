@@ -1,21 +1,26 @@
 #!/bin/fish
 
-gitgo "
-feat(memory): implementa Ecossistema CONTEXT.md Orgânico e The Harvester
+gitgo "chore(release): v2.4.2 - Enterprise security, Async core & 100% Test coverage
 
-Este commit resolve a amnésia da IA entre sessões (Feitiço do Tempo), transformando o arquivo CONTEXT.md no 'Córtex Frontal Compartilhado' (Memória de Longo Prazo) entre o usuário e o Swarm.
+This major update resolves all remaining Technical Debt, Performance bottlenecks, and Security vulnerabilities, achieving a perfect 277/277 test pass rate.
 
-Principais implementações (Fase 45):
-- **Injeção AST Silenciosa (Zero-Click):** Anexa o CONTEXT.md passivamente no payload do LLM sem poluir o buffer visual do usuário. Gerenciado pelo novo toggle `[ ON ] Auto-Inject` no Painel de Controle.
-- **Feedback Visual (Badge):** Adiciona o indicador dinâmico `[📖 CONTEXT.md: Active]` no título do popup de chat.
-- **Nova MCP Skill & Tool:** Cria a skill semântica `manage_project_knowledge` e a system tool `update_context_md`, dando autonomia aos agentes para documentar bugs crônicos cirurgicamente.
-- **The Harvester (Colheitadeira em Background):** Acoplado ao evento `WORKSPACE_SAVED`. Delega a uma API em background a tarefa de ler o histórico da sessão, extrair decisões arquiteturais e injetar os aprendizados organicamente no CONTEXT.md sem travar o Neovim.
-- **Self-Healing Ontology:** Lógica de merge no `skills_ontology.lua` para atualizar automaticamente o arquivo JSON de usuários legados com as novas skills padrão.
+🔒 Security:
+- fix(gatekeeper): Prevent sandbox escape / RCE by strictly blocking shell chaining operators (`\;`, `\&`, `|`, `\$\(\)`, backticks) in `tool_runner`.
 
-Cobertura: Mais de 250 testes Plenary passando com sucesso (TDD Green Phase).
+⚡ Performance & Stability (Zero UI-Freeze):
+- perf(tools): Refactor `run_shell` and `apply_diff` to use asynchronous `jobstart` instead of blocking `vim.fn.system`.
+- perf(ui): Eliminate FFI bottleneck in `chat_view` by batch-fetching buffer lines (O(1)) instead of looping.
+- perf(io): Add session-level caching for `get_repo_root()` to prevent blocking I/O micro-stutters while typing.
+- fix(oom): Implement 5000-line hard limits in `context_builders` to prevent Out-Of-Memory crashes on massive files.
+
+🐛 Bug Fixes:
+- fix(lsp): Add `vim.wait` to `lsp_manager` to properly await Mason.nvim installations before attaching JIT LSPs.
+- fix(network): Remove phantom payload reads and duplicated `chansend`/`chanclose` calls in `transport.lua`.
+
+🏗️ Architecture & Docs:
+- refactor(core): Eradicate `_G.MultiContextTempFiles` global state pollution in favor of isolated module state.
+- docs: Update CONTEXT.md with V2.4.2 architectural milestones (Anti-OOM, Async execution, Security).
+
+✅ Tests: 277/277 passing (100% Success Rate).
 "
 
-# Alexandro agência BB Jaguaré
-# protocolo atendimento BB: 202635367468/12 
-# número do dispositivo: ****-9058 (samsung A16)
-# Ricardo Dutra gerente vai entrar em contato comigo

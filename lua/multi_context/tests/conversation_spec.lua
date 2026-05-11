@@ -7,7 +7,7 @@ describe("Conversation Module:", function()
     before_each(function()
         StateManager.reset()
         session.clear()
-        config.options.user_name = "Nardi"
+        config.options.user_name = "User"
     end)
 
     it("Deve encontrar a última linha de comando do usuário", function()

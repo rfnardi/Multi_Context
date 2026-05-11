@@ -6,7 +6,7 @@ if vim.fn.isdirectory(plenary_dir) == 1 then
     vim.cmd("set runtimepath+=" .. plenary_dir)
 end
 
-require('multi_context.config').setup({ user_name = "Nardi", language = "pt-BR" })
+require('multi_context.config').setup({ user_name = "User", language = "pt-BR" })
 
 
 

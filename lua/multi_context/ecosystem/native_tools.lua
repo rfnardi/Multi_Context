@@ -1,10 +1,13 @@
 local M = {}
 local i18n = require('multi_context.i18n')
 
+local _cached_root = nil
 local function get_repo_root()
+    if _cached_root ~= nil then return _cached_root == false and nil or _cached_root end
     vim.fn.system("git rev-parse --show-toplevel")
-    if vim.v.shell_error ~= 0 then return nil end
-    return vim.fn.system("git rev-parse --show-toplevel"):gsub("\n", "")
+    if vim.v.shell_error ~= 0 then _cached_root = false; return nil end
+    _cached_root = vim.fn.system("git rev-parse --show-toplevel"):gsub("\n", "")
+    return _cached_root
 end
 
 local function resolve_path(path)
@@ -69,8 +72,17 @@ M.run_shell = function(cmd)
     local root = get_repo_root() or vim.fn.getcwd()
     cmd = vim.trim(cmd)
     local bash_script = string.format("cd %s && %s", vim.fn.shellescape(root), cmd)
-    local out = vim.fn.system({'bash', '-c', bash_script})
-    local status = vim.v.shell_error ~= 0 and i18n.t("fail_code", vim.v.shell_error) or i18n.t("success")
+        local out_t = {}
+    local status_code = 0
+    local job_id = vim.fn.jobstart({'bash', '-c', bash_script}, {
+        stdout_buffered = true, stderr_buffered = true,
+        on_stdout = function(_, data) if data then for _, l in ipairs(data) do if l ~= "" then table.insert(out_t, l) end end end end,
+        on_stderr = function(_, data) if data then for _, l in ipairs(data) do if l ~= "" then table.insert(out_t, l) end end end end,
+        on_exit = function(_, code) status_code = code end
+    })
+    if job_id > 0 then vim.wait(60000, function() return vim.fn.jobwait({job_id}, 0)[1] ~= -1 end, 50) end
+    local out = table.concat(out_t, "\n")
+    local status = status_code ~= 0 and i18n.t("fail_code", status_code) or i18n.t("success")
     return i18n.t("shell_output", cmd, status, out)
 end
 
@@ -219,9 +231,17 @@ M.apply_diff = function(path, diff_content)
     local tmp_patch = os.tmpname()
     vim.fn.writefile(vim.split(diff_content, "\n", {plain=true}), tmp_patch)
     
-    local cmd = string.format("patch --force -u %s -i %s", vim.fn.shellescape(full_path), vim.fn.shellescape(tmp_patch))
-    local out = vim.fn.system(cmd)
-    local status = vim.v.shell_error
+        local cmd = {"patch", "--force", "-u", full_path, "-i", tmp_patch}
+    local out_t = {}
+    local status = 0
+    local job_id = vim.fn.jobstart(cmd, {
+        stdout_buffered = true, stderr_buffered = true,
+        on_stdout = function(_, data) if data then for _, l in ipairs(data) do if l ~= "" then table.insert(out_t, l) end end end end,
+        on_stderr = function(_, data) if data then for _, l in ipairs(data) do if l ~= "" then table.insert(out_t, l) end end end end,
+        on_exit = function(_, code) status = code end
+    })
+    if job_id > 0 then vim.wait(15000, function() return vim.fn.jobwait({job_id}, 0)[1] ~= -1 end, 50) end
+    local out = table.concat(out_t, "\n")
     
     os.remove(tmp_patch)
     os.remove(full_path .. ".orig")

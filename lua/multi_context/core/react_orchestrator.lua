@@ -76,7 +76,7 @@ M.TerminateTurn = function()
     
     EventBus.emit("UI_TERMINATE_TURN", {
         current_api = cfg.get_current_api(),
-        user_name = cfg.options.user_name or "Nardi",
+        user_name = cfg.options.user_name or "User",
         queued_tasks = react_state.queued_tasks,
         is_queue_mode = react_state.is_queue_mode,
         auto_trigger = auto_trigger
@@ -105,7 +105,7 @@ M.ProcessTurn = function(buf)
     if not start_idx then return end
 
     local cfg = require('multi_context.config')
-    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    local user_prefix = "## " .. (cfg.options.user_name or "User") .. " >>"
     local lines = api.nvim_buf_get_lines(buf, start_idx, -1, false)
     if lines[1] then lines[1] = lines[1]:gsub("^" .. user_prefix .. "%s*", "") end
 
@@ -356,7 +356,7 @@ M.ExecuteTools = function(ia_idx, buf)
     end
 
     local cfg = require('multi_context.config')
-    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    local user_prefix = "## " .. (cfg.options.user_name or "User") .. " >>"
     
     local sys_msg = require("multi_context.i18n").t("sys_info_collected")
     if not should_continue_loop and react_state.is_autonomous then
@@ -380,7 +380,7 @@ M.HandleArchivistCompression = function(ia_idx, buf)
     vim.fn.writefile(lines, backup_file)
     
     local cfg = require('multi_context.config')
-    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    local user_prefix = "## " .. (cfg.options.user_name or "User") .. " >>"
     
     local new_lines = { require("multi_context.i18n").t("quad_memory") }
     

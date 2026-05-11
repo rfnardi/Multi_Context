@@ -11,7 +11,7 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
     local api_client = require('multi_context.llm.api_client')
 
     before_each(function()
-        require('multi_context.config').options.user_name = "Nardi"
+        require('multi_context.config').options.user_name = "User"
         react_orchestrator.reset_turn()
         StateManager.get('react').is_queue_mode = false
         StateManager.get('react').queued_tasks = nil

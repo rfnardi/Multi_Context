@@ -7,8 +7,8 @@ describe("Config Module:", function()
   end)
 
   it("Deve carregar as opções default corretamente", function()
-    config.setup({ user_name = "Nardi" })
-    assert.are.same("Nardi", config.options.user_name)
+    config.setup({ user_name = "User" })
+    assert.are.same("User", config.options.user_name)
   end)
 
   it("Deve mesclar opções do usuário usando setup() sem perder os defaults", function()

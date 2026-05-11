@@ -29,7 +29,7 @@ M.OnSwarmComplete = function(summary)
     end
 
     local cfg = require('multi_context.config')
-    local user_prefix = "## " .. (cfg.options.user_name or "Nardi") .. " >>"
+    local user_prefix = "## " .. (cfg.options.user_name or "User") .. " >>"
     
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
     table.insert(lines, "")
@@ -108,7 +108,7 @@ end
 
 vim.api.nvim_create_autocmd("VimLeavePre", {
     callback = function()
-        if _G.MultiContextTempFiles then for _, f in ipairs(_G.MultiContextTempFiles) do pcall(os.remove, f) end end
+        if require('multi_context.llm.transport')._temp_files then for _, f in ipairs(require('multi_context.llm.transport')._temp_files) do pcall(os.remove, f) end end
     end
 })
 

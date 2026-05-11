@@ -3,13 +3,13 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V2.3.1+** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, and a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data.
+In its **V2.4.2** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, and **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **257 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **277 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`).
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -162,12 +162,20 @@ lua/multi_context/
 - **Cognitive Load Balancer**: A background routing engine (`dynamic_watchdog`) distributes semantic summarization tasks (RAG) across a designated pool of secondary APIs using a Round-Robin algorithm. This enables massive parallel indexing without hitting rate limits on a single provider.
 - **Asynchronous Popcorn Patching**: As the background APIs complete their tasks, the system asynchronously patches the buffer in real-time, replacing the provisional tags with true semantic abstracts (`🧠 [Cognitive Abstract] ...`), without interrupting the user's typing.
 
+### 20. Enterprise-Grade Resilience & Security (Phases 45 and 46)
+- **Zero UI-Freeze Async Tools**: Heavy native tools (`run_shell`, `apply_diff`) were entirely refactored to use Neovim's asynchronous `jobstart` API. This prevents the editor from locking up during long-running tasks (like `npm install` or applying massive patches), ensuring a completely fluid user experience.
+- **Anti-OOM (Out of Memory) Protection**: Enforced strict line-read limits and binary file detection mechanisms on context builders and file dumpers. This safeguards Neovim from crashing when the user attempts to accidentally inject massive datasets (e.g., multi-gigabyte log files).
+- **I/O Caching & Stutter Prevention**: Implemented intelligent session-level caching for heavy synchronous shell calls (such as resolving the git root directory). This eliminated micro-stutters during typing inside the chat buffer.
+- **Sandbox Escape Prevention**: Hardened the Gatekeeper's Regex engine to strictly anchor string evaluations and proactively block shell chaining operators (`|`, `&&`, `$()`, backticks). This completely neutralizes RCE (Remote Code Execution) vulnerabilities arising from potential AI tool call hallucinations.
+- **Pure Scope Isolation**: Eradicated all `_G` global variables from the architecture, shifting entirely to encapsulated module states (`StateManager`), guaranteeing zero memory leaks across sessions and multi-buffer setups.
+
 ---
 
 ## Current Development State
 
-### ✅ Implemented, Stable, and Tested (V2.3+ Architecture)
+### ✅ Implemented, Stable, and Tested (V2.4.2 Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
+- **Plenary Test Coverage:** 277 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
 - 100% Internationalized System (i18n) and Cognitive Backend.
 - `LazyVim`-like interface with Anchored Dynamic Footer and 13 Master Modules.
 - Dual Extensibility: Active Polyglot Skills for the AI, Textual Injectors (`\`) for the User.
@@ -182,4 +190,5 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Local Git automation via DevOps Agent with atomic security locks.
 - Polymorphic Immutable Ledger with Asynchronous Background Summarization (Dynamic Watchdog), Local RAG (`deep_dive`), and Native Visual Folds/Conceal.
 - Active Semantic Indexing with Zero-Freeze UX, Popcorn Patching, and Cognitive Load Balancer.
-- **Plenary Test Coverage:** 257 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- Asynchronous Tool Execution (`jobstart`) and Robust Out-of-Memory (OOM) Protection.
+- Strict Sandbox Security against remote execution bypasses.

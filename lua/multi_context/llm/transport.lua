@@ -1,6 +1,6 @@
 local M = {}
 
-_G.MultiContextTempFiles = _G.MultiContextTempFiles or {}
+M._temp_files = M._temp_files or {}
 
 local function decode_json_string(s)
     s = s:gsub("\\n", "\n"):gsub("\\t", "\t"):gsub("\\r", "\r"):gsub('\\"', '"')
@@ -50,7 +50,7 @@ end
 
 local function write_payload_to_tmp(payload)
     local tmp_file = os.tmpname()
-    table.insert(_G.MultiContextTempFiles, tmp_file)
+    table.insert(M._temp_files, tmp_file)
     local f = io.open(tmp_file, "w")
     if f then f:write(vim.fn.json_encode(payload)); f:close() end
     return tmp_file
@@ -71,11 +71,6 @@ M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callb
         payload_str = table.concat(vim.fn.readfile(tmp_file), "\n")
         pcall(os.remove, tmp_file)
     end
-    local payload_str = ""
-    if tmp_file and vim.fn.filereadable(tmp_file) == 1 then
-        payload_str = table.concat(vim.fn.readfile(tmp_file), "\n")
-        pcall(os.remove, tmp_file)
-    end
     local job_id = vim.fn.jobstart(cmd, {
         on_stdout = function(_, data)
             if not data then return end
@@ -84,19 +79,14 @@ M.run_http_stream = function(cmd, tmp_file, process_stdout, extract_error, callb
         end,
         on_exit = function()
             pcall(os.remove, tmp_file)
-            for i, f in ipairs(_G.MultiContextTempFiles) do
-                if f == tmp_file then table.remove(_G.MultiContextTempFiles, i); break end
+            for i, f in ipairs(M._temp_files) do
+                if f == tmp_file then table.remove(M._temp_files, i); break end
             end
             local err_msg = extract_error(full_response, context, callback)
             if err_msg then callback("\n\n" .. err_msg .. "\n", nil, false) end
             callback(nil, nil, true, context.metrics)
         end
     })
-    
-    if job_id > 0 and payload_str ~= "" then
-        vim.fn.chansend(job_id, payload_str)
-        vim.fn.chanclose(job_id, "stdin")
-    end
     
     if job_id and job_id > 0 and payload_str ~= "" then
         pcall(vim.fn.chansend, job_id, payload_str)

@@ -10,8 +10,8 @@ describe("Fase 25 - Passo 2: Alimentando a EMA", function()
     local orig_execute, orig_defer, buf
     
     before_each(function()
-        require('multi_context.config').options.user_name = "Nardi"
-        config.options.user_name = "Nardi"
+        require('multi_context.config').options.user_name = "User"
+        config.options.user_name = "User"
         memory_tracker.reset()
         config.options.watchdog = { mode = "off" } -- Garantindo que a compressao não ative e sequestre a chamada
         

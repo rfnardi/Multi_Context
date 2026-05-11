@@ -14,8 +14,9 @@ local valid_tools = {
 local allowed_commands = {"^ls", "^cat", "^npm", "^cargo", "^pytest", "^git status"}
 local function is_dangerous(cmd)
     if not cmd then return false end
+    if cmd:match("[;&|]") or cmd:match("`") or cmd:match("$(") then return true end
     for _, pat in ipairs(allowed_commands) do if cmd:match(pat) then return false end end
-    return true -- Se não estiver na whitelist estrita, é bloqueado.
+    return true
 end
 
 M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)

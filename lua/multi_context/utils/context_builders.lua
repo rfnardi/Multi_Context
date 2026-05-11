@@ -59,7 +59,10 @@ M.get_all_buffers_content = function()
         -- Proteção: Ignorar o buffer do próprio chat para evitar recursão
         if api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype ~= 'multicontext_chat' then
             local name = api.nvim_buf_get_name(bufnr)
-            local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+                        local line_count = api.nvim_buf_line_count(bufnr)
+            local limit = math.min(line_count, 5000)
+            local lines = api.nvim_buf_get_lines(bufnr, 0, limit, false)
+            if line_count > 5000 then table.insert(lines, "--- [TRUNCADO: Máximo de 5000 linhas atingido para evitar OOM] ---") end
             if #lines > 0 and name ~= "" then
                 table.insert(result, "=== Buffer: " .. name .. " ===")
                 for i, l in ipairs(lines) do
