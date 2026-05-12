@@ -48,9 +48,9 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     local is_authorized = false
 
     if active_agent and agents[active_agent] and agents[active_agent].skills then
-        for _, skill in ipairs(agents[active_agent].skills) do
-            if skill == name then is_authorized = true; break end
-        end
+        local ontology = require('multi_context.ecosystem.ontology')
+        local resolved = ontology.resolve_agent_skills(agents[active_agent].skills)
+        if resolved.tools_set[name] then is_authorized = true end
     else
         is_authorized = true 
     end
@@ -162,13 +162,14 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
         should_continue_loop = true; result = tools.archive_blocks(ids, summary)
     elseif name == "spawn_swarm" then
         local swarm = require('multi_context.core.swarm_manager')
-        if swarm.init_swarm(clean_inner) then
+        local swarm_ok, swarm_err = swarm.init_swarm(clean_inner)
+        if swarm_ok then
             swarm.on_swarm_complete = require('multi_context').OnSwarmComplete
             vim.defer_fn(function() swarm.dispatch_next() end, 100)
             result = i18n.t("swarm_started")
             should_continue_loop = false
         else
-            result = i18n.t("swarm_err_json")
+            result = swarm_err or i18n.t("swarm_err_json")
         end
     elseif name == "switch_agent" then
         local target = clean_inner:match("<target_agent>(.-)</target_agent>")

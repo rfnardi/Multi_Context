@@ -4,11 +4,13 @@ local config = require('multi_context.config')
 
 describe("Fase 44.2: JIT Micro-Archiving Dispatcher", function()
     local orig_execute
+    local orig_load_api_config
     local execute_called = false
     local passed_force_cfg = nil
     
     before_each(function()
         orig_execute = api_client.execute
+        orig_load_api_config = config.load_api_config
         execute_called = false
         passed_force_cfg = nil
         
@@ -44,6 +46,7 @@ describe("Fase 44.2: JIT Micro-Archiving Dispatcher", function()
     
     after_each(function()
         api_client.execute = orig_execute
+        config.load_api_config = orig_load_api_config
     end)
     
     it("deve despachar a task JIT forcando o uso da background_api especificada", function()

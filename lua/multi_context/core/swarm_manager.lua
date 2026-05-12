@@ -15,8 +15,16 @@ M.reset = function() M.state.queue = {}; M.state.workers = {}; M.state.reports =
 M.init_swarm = function(json_payload)
     M.reset()
     if not json_payload or json_payload == "" then return false end
-    local ok, decoded = pcall(vim.fn.json_decode, vim.trim(json_payload))
-    if not ok or type(decoded) ~= "table" or type(decoded.tasks) ~= "table" then return false end
+    local clean_payload = vim.trim(json_payload)
+    local ok, decoded = pcall(vim.fn.json_decode, clean_payload)
+    if not ok then
+        -- A Mágica de Extração: Ignora tudo e pega do primeiro { até o último }
+        local json_match = clean_payload:match("%b{}")
+        if json_match then ok, decoded = pcall(vim.fn.json_decode, json_match) end
+    end
+    if not ok or type(decoded) ~= "table" or type(decoded.tasks) ~= "table" then 
+        return false, "ERRO JSON: Formato inválido. Use apenas chaves { } e o array 'tasks'." 
+    end
     local ok_sq, squads_manager = pcall(require, "multi_context.ecosystem.squads")
     local squads = ok_sq and squads_manager.load_squads() or {}
     local new_tasks = {}

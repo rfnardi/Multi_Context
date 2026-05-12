@@ -33,9 +33,11 @@ end)
 
 describe("Fase 37 - TEMA 1: Fallback e Roteamento (API Client):", function()
     local orig_handlers
+    local orig_load_api_config
 
     before_each(function()
         orig_handlers = vim.deepcopy(require('multi_context.llm.api_handlers'))
+        orig_load_api_config = config.load_api_config
         config.options.config_path = "/tmp/mctx_fake_config.json"
         
         -- Simulando a configuração com 2 APIs
@@ -53,6 +55,7 @@ describe("Fase 37 - TEMA 1: Fallback e Roteamento (API Client):", function()
 
     after_each(function()
         package.loaded['multi_context.llm.api_handlers'] = orig_handlers
+        config.load_api_config = orig_load_api_config
     end)
 
     it("O Motor deve pular silenciosamente para a proxima API se a primeira falhar", function()

@@ -8,6 +8,8 @@ local mock_test_dir = "/tmp/mctx_test_env_" .. tostring(math.random(100000))
 
 local function isolate_environment()
     backup_opts = vim.deepcopy(config.options)
+    config.options.config_path = mock_test_dir .. "/context_apis.json"
+    config.options.api_keys_path = mock_test_dir .. "/api_keys.json"
     vim.fn.mkdir(mock_test_dir .. "/mctx_tools", "p")
     vim.fn.mkdir(mock_test_dir .. "/mctx_injectors", "p")
     vim.fn.mkdir(mock_test_dir .. "/.mctx_chats", "p")

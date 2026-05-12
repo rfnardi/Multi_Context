@@ -302,6 +302,22 @@ M.ExecuteTools = function(ia_idx, buf)
             goto continue
         end
 
+        react_state._temp_sig = (parsed_tag.name or "") .. ":" .. vim.trim(parsed_tag.inner or "")
+        if react_state.last_tool_sig == react_state._temp_sig then
+            react_state.tool_loop_count = (react_state.tool_loop_count or 0) + 1
+        else
+            react_state.last_tool_sig = react_state._temp_sig
+            react_state.tool_loop_count = 1
+        end
+
+        if react_state.tool_loop_count >= 3 then
+            abort_all = true
+            new_content = new_content .. parsed_tag.raw_tag .. (parsed_tag.inner or "") .. "</tool_call>\n\n>[Sistema]: 🛑 ERRO FATAL - LOOP INFINITO DETECTADO (Você repetiu a mesma ação 3 vezes). Autonomia suspensa."
+            react_state.is_autonomous = false
+            should_continue_loop = false
+            goto continue
+        end
+
         has_changes = true
 
         do
@@ -321,7 +337,7 @@ M.ExecuteTools = function(ia_idx, buf)
                 new_content = new_content .. parsed_tag.raw_tag .. parsed_tag.inner .. "</tool_call>"
             else
                 new_content = new_content .. tag_output
-                if tag_output:match(">%[Sistema%]: ERRO %- Ferramenta") then
+                if tag_output:match(">%[Sistema%]:.*ERRO") then
                     react_state.is_autonomous = false
                     should_continue_loop = false
                 end
