@@ -29,6 +29,7 @@ describe("API Handlers Module (Prompt Caching)", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.jobstart = original_jobstart
         transport.write_payload_to_tmp = orig_write_payload
     end)

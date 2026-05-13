@@ -9,6 +9,7 @@ describe("Fase 20 - Passo 1 (Abstraction Levels):", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.json_decode = orig_json_decode
     end)
 

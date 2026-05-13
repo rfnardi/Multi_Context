@@ -23,6 +23,7 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
     end)
 
     after_each(function()
+        if _G.AwaitForBackground then _G.AwaitForBackground() end
         api_client.execute = orig_execute
     end)
 
@@ -91,15 +92,14 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
     
     it("Deve confirmar a presença do agente @qa no acervo e sua descrição traduzida", function()
         local loaded = agents.load_agents()
-        assert.is_not_nil(loaded["qa"], "O agente QA deve existir")
-        -- CORREÇÃO: Busca por "Quality Assurance" (Inglês) em vez de "Qualidade" (Português)
-        assert.truthy(loaded["qa"].system_prompt:match("Quality Assurance"), "A descrição deve corresponder a um QA em Inglês")
+        assert.is_not_nil(loaded["qa"])
+        assert.truthy(loaded["qa"].system_prompt:match("Quality Assurance"))
     end)
 
     it("Deve confirmar a presença do novo agente @architect no acervo", function()
         local loaded = agents.load_agents()
-        assert.is_not_nil(loaded["architect"], "O agente architect deve existir")
-        assert.truthy(loaded["architect"].system_prompt:match("SOLID"), "Deve focar em princípios de arquitetura (SOLID)")
-        assert.truthy(loaded["architect"].system_prompt:match("TDD"), "Deve focar em Test-Driven Development")
+        assert.is_not_nil(loaded["architect"])
+        assert.truthy(loaded["architect"].system_prompt:match("SOLID"))
+        assert.truthy(loaded["architect"].system_prompt:match("TDD"))
     end)
 end)

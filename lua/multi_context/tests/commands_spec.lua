@@ -21,6 +21,7 @@ describe("Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         popup.create_popup = orig_create_popup
     end)
 
@@ -85,6 +86,7 @@ describe("Fase 37 - TEMA 4: Desfazer Seguro (ContextUndo)", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.notify = orig_notify
     end)
 
@@ -123,6 +125,7 @@ describe("Fase 37 - TEMA 4: TogglePopup", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.api.nvim_win_hide = orig_hide
     end)
 

@@ -10,15 +10,7 @@ M.add_message = function(role, content, metadata)
     if safe_content == "" then return end
     
     local msgs = StateManager.get('session_messages') or {}
-    metadata = metadata or {}
-    
-    -- REGRA DE OURO: Se tem ID, é um bloco discreto XML, NUNCA concatena.
-    -- Se não tem ID, é fluxo antigo (gerado pelo user programaticamente), então concatena se for o mesmo role.
-    if not metadata.id and #msgs > 0 and msgs[#msgs].role == role then
-        msgs[#msgs].content = msgs[#msgs].content .. "\n\n" .. safe_content
-    else
-        table.insert(msgs, { role = role, content = safe_content, metadata = metadata })
-    end
+    table.insert(msgs, { role = role, content = safe_content, metadata = metadata or {} })
     StateManager.set('session_messages', msgs)
 end
 
@@ -47,13 +39,13 @@ M.build_payload = function(system_prompt)
     end
     return payload
 end
+
 M.sync_from_lines = function(lines)
     M.clear()
     if not lines or #lines == 0 then return end
     
     local xml_content = table.concat(lines, "\n")
     
-    -- Regex tolerante para XML multiline
     for tag_attrs, raw_inner_content in xml_content:gmatch('<block(.-)>(.-)</block>') do
         local id = tag_attrs:match('id="([^"]+)"')
         local type = tag_attrs:match('type="([^"]+)"')

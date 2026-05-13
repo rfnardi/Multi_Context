@@ -16,6 +16,7 @@ describe("Fase 33 - Motor de Internacionalização (i18n)", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         config.options.language = orig_lang
         i18n.dict = orig_dict
     end)

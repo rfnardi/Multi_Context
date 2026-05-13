@@ -34,6 +34,7 @@ describe("Fase 22 - Passo 3: A Persona @archivist e a Compressao", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         require('multi_context.core.react_orchestrator').ProcessTurn = orig_send
         vim.defer_fn = orig_defer
         vim.api.nvim_buf_delete(buf, { force = true })

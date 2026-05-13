@@ -13,6 +13,7 @@ describe("Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         math.random = snap_math_random
     end)
 

@@ -31,6 +31,7 @@ describe("Fase 31 - Passo 1: Automação Git (Agente DevOps)", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.system = orig_system
     end)
 

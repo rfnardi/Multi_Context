@@ -12,6 +12,7 @@ describe("Fase 19 - Sistema de Skills (Extensibilidade):", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.delete(test_dir, "rf")
     end)
 

@@ -28,6 +28,7 @@ describe("Fase 35 - Pre-Processador Global de Flags (--queue e --moa)", function
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         api_client.execute = orig_execute
         vim.api.nvim_buf_delete(buf, { force = true })
     end)

@@ -15,6 +15,7 @@ describe("Fase 44: Context Injectors com Indexação Semântica Ativa", function
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         config.options = snap_config
         if vim.notify.revert then vim.notify:revert() end
     end)

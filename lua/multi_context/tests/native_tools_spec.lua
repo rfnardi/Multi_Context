@@ -36,7 +36,6 @@ describe("Tools Module (Agentes Autônomos):", function()
         -- O parser da ferramenta deve ter removido as crases
         assert.are.same({"local a = 1"}, lines)
     end)
-end)
 
     it("Deve retornar erro amigavel ao ler arquivo que nao existe (read_file)", function()
         local res = tools.read_file("caminho_inexistente_alucinacao.txt")
@@ -55,6 +54,7 @@ end)
         local res = tools.replace_lines("arquivo.txt", "nao_sou_numero", 15, "conteudo")
         assert.truthy(res:match("ERRO: 'start' e 'end' devem ser números"))
     end)
+end)
 
 describe("Tools Module (Execucao de Shell):", function()
     local tools = require('multi_context.ecosystem.native_tools')
@@ -68,15 +68,8 @@ describe("Tools Module (Execucao de Shell):", function()
     it("Deve retornar status de FALHA se o comando shell nao existir", function()
         local res = tools.run_shell("comando_bizarro_que_nao_existe_123")
         assert.truthy(res:match("FALHA"))
-        -- O erro exato do bash varia entre sistemas, mas a tag FALHA deve estar lá.
     end)
 end)
-
-
-
-
-
-
 
 describe("Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep)", function()
     local tools = require('multi_context.ecosystem.native_tools')
@@ -112,8 +105,8 @@ describe("Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep)", function()
         end
 
         local res = tools.search_code("frete")
-        assert.truthy(captured_cmd:match("rg %-n %-i"), "Deveria ter invocado o rg com flags -n -i")
-        assert.truthy(res:match("mocked_rg_result"), "Deveria retornar o resultado do rg")
+        assert.truthy(captured_cmd:match("rg %-n %-i"))
+        assert.truthy(res:match("mocked_rg_result"))
     end)
 
     it("Deve usar git grep como fallback se 'rg' nao existir", function()
@@ -134,8 +127,8 @@ describe("Fase 30 - Passo 1: Motor de Busca Ultrarrápido (Ripgrep)", function()
         end
 
         local res = tools.search_code("login")
-        assert.truthy(captured_cmd:match("git %-C.*grep"), "Deveria ter invocado o fallback do git grep")
-        assert.truthy(res:match("mocked_git_grep_result"), "Deveria retornar o resultado do git grep")
+        assert.truthy(captured_cmd:match("git %-C.*grep"))
+        assert.truthy(res:match("mocked_git_grep_result"))
     end)
 end)
 

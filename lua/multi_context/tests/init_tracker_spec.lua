@@ -31,6 +31,7 @@ describe("Fase 25 - Passo 2: Alimentando a EMA", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         api_client.execute = orig_execute
         vim.defer_fn = orig_defer
         vim.api.nvim_buf_delete(buf, { force = true })

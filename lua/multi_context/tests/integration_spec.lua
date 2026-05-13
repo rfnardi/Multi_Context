@@ -26,6 +26,7 @@ describe("Integracao - Consumo das Configs do Painel pelo Motor", function()
     end)
     
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         api_client.execute = orig_execute
         vim.api.nvim_open_win = orig_open_win
     end)

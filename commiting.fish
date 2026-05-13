@@ -1,26 +1,27 @@
 #!/bin/fish
 
-gitgo "chore(release): v2.4.2 - Enterprise security, Async core & 100% Test coverage
+gitgo "
+test(core): estabiliza suíte (100% determinística) e reforça encapsulamento AST (v2.4.3)
 
-This major update resolves all remaining Technical Debt, Performance bottlenecks, and Security vulnerabilities, achieving a perfect 277/277 test pass rate.
+Esta atualização resolve definitivamente as flutuações na quantidade de testes
+e vazamentos de estado global, além de blindar a estrutura de memória do chat
+(AST) contra ambiguidades de texto livre.
 
-🔒 Security:
-- fix(gatekeeper): Prevent sandbox escape / RCE by strictly blocking shell chaining operators (`\;`, `\&`, `|`, `\$\(\)`, backticks) in `tool_runner`.
-
-⚡ Performance & Stability (Zero UI-Freeze):
-- perf(tools): Refactor `run_shell` and `apply_diff` to use asynchronous `jobstart` instead of blocking `vim.fn.system`.
-- perf(ui): Eliminate FFI bottleneck in `chat_view` by batch-fetching buffer lines (O(1)) instead of looping.
-- perf(io): Add session-level caching for `get_repo_root()` to prevent blocking I/O micro-stutters while typing.
-- fix(oom): Implement 5000-line hard limits in `context_builders` to prevent Out-Of-Memory crashes on massive files.
-
-🐛 Bug Fixes:
-- fix(lsp): Add `vim.wait` to `lsp_manager` to properly await Mason.nvim installations before attaching JIT LSPs.
-- fix(network): Remove phantom payload reads and duplicated `chansend`/`chanclose` calls in `transport.lua`.
-
-🏗️ Architecture & Docs:
-- refactor(core): Eradicate `_G.MultiContextTempFiles` global state pollution in favor of isolated module state.
-- docs: Update CONTEXT.md with V2.4.2 architectural milestones (Anti-OOM, Async execution, Security).
-
-✅ Tests: 277/277 passing (100% Success Rate).
+Detalhes técnicos:
+- **Async Barrier (Queue Draining)**: Interceptação global de `vim.schedule` e 
+  `vim.defer_fn` no `minimal_init.lua`. Garante que todas as promises em background
+  sejam resolvidas antes do teardown dos testes, eliminando crashes silenciosos no Plenary.
+- **Restore-Before-Assert**: Implementado o padrão seguro de restauração de mocks
+  (`vim.fn.system`, `vim.fn.executable`) antes de `asserts`, evitando que uma falha 
+  corrompa o kernel de testes subsequentes (Global State Bleeding).
+- **Escopo de Testes**: Realocação de blocos `it()` órfãos para dentro de seus 
+  respectivos `describe()`, garantindo que o Plenary carregue exatamente 281 testes 
+  de forma totalmente determinística.
+- **Idempotent AST Encapsulation**: Refatoração do `react_orchestrator` e `session.lua`
+  para abandonar o parser híbrido. Agora todo input de usuário, respostas da IA 
+  e resultados de ferramentas são envelopados de forma estrita e idempotente em 
+  tags `<block>`, erradicando bugs de *Double-Wrapping*.
+- **Docs**: Atualização do `CONTEXT.md` para a versão 2.4.3 documentando a nova
+  arquitetura de testes e isolamento de AST.
 "
 

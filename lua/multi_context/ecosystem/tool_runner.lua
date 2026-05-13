@@ -23,13 +23,11 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     local name = tool_data.name
     local clean_inner = tool_data.inner
 
-    -- ==========================================
-    -- HARD BLOCK: Segurança Git (Gatekeeper Autônomo)
-    -- ==========================================
     if name == "git_push" or name == "git_reset" or name == "git_rebase" or
        (name == "run_shell" and (clean_inner:match("git push") or clean_inner:match("git reset") or clean_inner:match("git rebase"))) then
         local err_msg = i18n.t("err_git_destructive")
-        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
+        local b_id = "err_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+        local out = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: ⛔ ERRO - %s\n</content>\n</block>', b_id, err_msg)
         return out, false, false, nil, nil
     end
 
@@ -39,7 +37,8 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
 
     if not valid_tools[name] and not is_custom_skill then
         local err_msg = i18n.t("tool_not_found", tostring(name))
-        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, err_msg)
+        local b_id = "err_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+        local out = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: ERRO - %s\n</content>\n</block>', b_id, err_msg)
         return out, false, false, nil, nil
     end
 
@@ -57,7 +56,8 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
 
     if not is_authorized then
         local err_msg = i18n.t("op_denied", tostring(active_agent), tostring(name))
-        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ⛔ ERRO - %s', tostring(name), clean_inner, err_msg)
+        local b_id = "err_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+        local out = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: ⛔ ERRO - %s\n</content>\n</block>', b_id, err_msg)
         return out, false, false, nil, nil
     end
 
@@ -77,7 +77,8 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
 
     if choice == 3 then approve_all_ref.value = true; choice = 1 end
     if choice == 4 or choice == 0 then
-        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>', tostring(tool_data.raw_tag), clean_inner)
+        local b_id = "err_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+        local out = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: Cancelado pelo usuário.\n</content>\n</block>', b_id)
         return out, true, false, nil, nil
     end
 
@@ -88,7 +89,8 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
 
     if choice == 2 then
         result = i18n.t("denied_user")
-        local out = string.format('<tool_call name="%s">\n%s\n</tool_call>\n\n>[Sistema]: ERRO - %s', tostring(name), clean_inner, result)
+        local b_id = "err_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+        local out = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: ERRO - %s\n</content>\n</block>', b_id, result)
         return out, false, false, nil, nil
     end
 
@@ -181,7 +183,8 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
 
     local output = ""
     if not pending_rewrite_content then
-        output = string.format('<tool_call name="%s" path="%s">\n%s\n</tool_call>\n\n>[Sistema]: Resultado:\n```text\n%s\n```', tostring(name), tostring(tool_data.path or ""), clean_inner, result)
+        local block_id = "tool_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(1000, 9999))
+        output = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: Resultado:\n```text\n%s\n```\n</content>\n</block>', block_id, result)
     end
 
     return output, false, should_continue_loop, pending_rewrite_content, backup_made

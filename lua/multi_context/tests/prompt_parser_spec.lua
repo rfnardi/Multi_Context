@@ -1,17 +1,20 @@
-package.loaded['multi_context.tools.registry'] = {
-    build_manual_for_skills = function(skills) return "=== SKILLS ===" end
-}
-
 local prompt_parser = require('multi_context.llm.prompt_parser')
 local config = require('multi_context.config')
+local registry = require('multi_context.tools.registry')
 
 describe("Fase 25 - Passo 2: O System Agent @archivist", function()
-    local mock_agents = { 
-        coder = { system_prompt = "Você programa." } 
-    }
+    local mock_agents = { coder = { system_prompt = "Você programa." } }
+    local orig_build_manual
 
     before_each(function()
         config.options.watchdog = { mode = "auto", strategy = "semantic", fixed_target = 1500, percent = 0.3 }
+        orig_build_manual = registry.build_manual_for_skills
+        registry.build_manual_for_skills = function(skills) return "=== SKILLS ===" end
+    end)
+
+    after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
+        registry.build_manual_for_skills = orig_build_manual
     end)
 
     it("Deve carregar o System Prompt de Compressao com limite Semântico", function()

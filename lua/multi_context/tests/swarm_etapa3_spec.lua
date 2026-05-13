@@ -31,6 +31,7 @@ describe("Swarm Etapa 3 - Manager e Fila:", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         -- Restaurando os originais
         popup.create_swarm_buffer = orig_popup_create
         api_client.execute = orig_api_execute

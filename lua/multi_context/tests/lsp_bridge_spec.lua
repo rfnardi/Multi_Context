@@ -8,6 +8,7 @@ describe("Fase 30 - Passo 2: A Ponte Silenciosa do LSP", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.lsp.buf_request_sync = orig_request_sync
     end)
 

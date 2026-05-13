@@ -3,15 +3,15 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V2.4.2** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, and **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention.
+In its **V2.4.3** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention, and a **100% Deterministic Asynchronous Testing Architecture** guaranteeing absolute stability across the entire codebase.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **277 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network).
+- **Testing Framework**: `plenary.nvim` (busted) - **281 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network), a custom **Async Barrier** (Queue Draining) for Neovim's Event Loop, and a strict **Restore-Before-Assert** pattern preventing Global State Bleeding.
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
-- **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`).
+- **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`). All ReAct loops and user interactions are strictly and idempotently wrapped to preserve AST integrity.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
 - **State Serialization & Visual Engine**: Metadata Envelopes and JSON-in-XML injection to save and restore Swarm sessions. Leverages Neovim's native `conceallevel` and `foldexpr` to invisibly render XML metadata while cleanly grouping archived history under semantic summaries.
 
@@ -168,14 +168,22 @@ lua/multi_context/
 - **I/O Caching & Stutter Prevention**: Implemented intelligent session-level caching for heavy synchronous shell calls (such as resolving the git root directory). This eliminated micro-stutters during typing inside the chat buffer.
 - **Sandbox Escape Prevention**: Hardened the Gatekeeper's Regex engine to strictly anchor string evaluations and proactively block shell chaining operators (`|`, `&&`, `$()`, backticks). This completely neutralizes RCE (Remote Code Execution) vulnerabilities arising from potential AI tool call hallucinations.
 - **Pure Scope Isolation**: Eradicated all `_G` global variables from the architecture, shifting entirely to encapsulated module states (`StateManager`), guaranteeing zero memory leaks across sessions and multi-buffer setups.
+- **Idempotent AST Encapsulation**: The ReAct orchestrator now enforces strict XML `<block>` wrapping for all user and AI interactions, completely eliminating hybrid parsing ambiguities and Double-Wrapping bugs.
+
+### 21. Deterministic Test Architecture & State Isolation (Phase 47)
+- **Async Barrier (Queue Draining)**: Intercepts Neovim's native event loop APIs (`vim.schedule` and `vim.defer_fn`) globally across the test suite. This guarantees that all background asynchronous promises resolve before a test buffer is torn down, eliminating silent `Plenary.busted` crashes and phantom leakage.
+- **Global State Anti-Bleeding**: Implementation of a strict *Restore-Before-Assert* pattern ensuring global Neovim I/O and Kernel mocks (e.g., `vim.fn.system`, `vim.fn.executable`) are unfailingly restored to their original state even when `assert` exceptions interrupt the runtime flow.
+- **Deterministic Suite Execution**: Ensured 100% stability in test counts (abolishing hash-based directory loading inconsistencies in Linux environments) by structurally confining every `it` evaluation within meticulously scoped `describe` lifecycle bounds.
 
 ---
 
 ## Current Development State
 
-### ✅ Implemented, Stable, and Tested (V2.4.2 Architecture)
+### ✅ Implemented, Stable, and Tested (V2.4.3 Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
-- **Plenary Test Coverage:** 277 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 281 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- 100% Deterministic Asynchronous Test Suite with custom Async Barriers and State Leakage Prevention.
+- Idempotent XML AST enforcing strict `<block>` encapsulation for all UI and LLM I/O.
 - 100% Internationalized System (i18n) and Cognitive Backend.
 - `LazyVim`-like interface with Anchored Dynamic Footer and 13 Master Modules.
 - Dual Extensibility: Active Polyglot Skills for the AI, Textual Injectors (`\`) for the User.

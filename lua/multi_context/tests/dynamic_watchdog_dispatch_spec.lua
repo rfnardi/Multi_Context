@@ -45,6 +45,7 @@ describe("Fase 44.2: JIT Micro-Archiving Dispatcher", function()
     end)
     
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         api_client.execute = orig_execute
         config.load_api_config = orig_load_api_config
     end)

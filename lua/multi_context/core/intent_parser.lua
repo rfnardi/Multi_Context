@@ -9,46 +9,36 @@ M.parse = function(raw_text)
     
     if intent.clean_text == "" then return intent end
 
-    -- Extração de flags usando regex robustos (lidando com espaços)
+    -- Extração de flags booleanas rígidas
     if intent.clean_text:match("%-%-queue") then 
         intent.flags.is_queue = true 
     end
-    
     if intent.clean_text:match("%-%-moa") then 
         intent.flags.is_moa = true 
     end
     
-    -- Limpa as flags do texto para não poluir o prompt enviado à IA
     intent.clean_text = intent.clean_text:gsub("%s*%-%-queue", ""):gsub("%s*%-%-moa", "")
     intent.clean_text = vim.trim(intent.clean_text)
 
-    -- Extração do Agente
+    -- Extração do Agente com override forçado para MOA
     if intent.flags.is_moa then
-        -- Se for MOA, o tech_lead assume forçadamente, e mantemos o texto inteiro
-        -- para que ele saiba quais sub-agentes o usuário mencionou (ex: @coder, @qa)
         intent.agent = "tech_lead"
     else
-        -- Procura a primeira menção de @agente no início do texto
         local possible_agent = intent.clean_text:match("^@([%w_]+)")
         if possible_agent then
             intent.agent = possible_agent
-            -- Remove apenas o @agente inicial para limpar a intent do LLM
-            intent.clean_text = intent.clean_text:gsub("^@" .. possible_agent .. "%s*", "")
-            intent.clean_text = vim.trim(intent.clean_text)
+            intent.clean_text = vim.trim(intent.clean_text:gsub("^@" .. possible_agent .. "%s*", ""))
         else
-            -- Procura @agente em qualquer lugar caso não esteja no início
             possible_agent = intent.clean_text:match("@([%w_]+)")
             if possible_agent then
                 intent.agent = possible_agent
-                intent.clean_text = intent.clean_text:gsub("@" .. possible_agent .. "%s*", "")
-                intent.clean_text = vim.trim(intent.clean_text)
+                intent.clean_text = vim.trim(intent.clean_text:gsub("@" .. possible_agent .. "%s*", ""))
             end
         end
     end
 
     return intent
 end
-
 
 M.parse_lines = function(lines, agents_table)
     agents_table = agents_table or {}
@@ -60,6 +50,7 @@ M.parse_lines = function(lines, agents_table)
         flags = { is_queue = false, is_moa = false }
     }
     
+    -- O Lua match retorna a string. Convertendo explicitamente para booleano:
     if raw_full_text:match("%-%-queue") then intent.flags.is_queue = true end
     if raw_full_text:match("%-%-moa") then intent.flags.is_moa = true end
     

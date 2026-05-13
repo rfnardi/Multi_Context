@@ -10,6 +10,7 @@ describe("Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas):", functio
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         os.remove(tmp_file)
     end)
 
@@ -57,6 +58,7 @@ describe("Fase 37 - TEMA 2: Gatekeeper (Comandos Destrutivos):", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.confirm = orig_confirm
     end)
 

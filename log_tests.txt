@@ -74,22 +74,11 @@ Scheduling: lua/multi_context/tests/regression_spec.lua
 Scheduling: lua/multi_context/tests/memory_tracker_spec.lua
 Scheduling: lua/multi_context/tests/tools_diff_spec.lua
 Scheduling: lua/multi_context/tests/swarm_routing_spec.lua
-Limite de 15 loops atingido. Pausando por segurança.
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/react_orchestrator_spec.lua	
-[32mSuccess[0m	||	ReAct Loop Module: Deve resetar o estado corretamente	
-[32mSuccess[0m	||	ReAct Loop Module: Deve interromper a execução quando atingir 15 loops (Circuit Breaker)	
-	
-[32mSuccess: [0m	2	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/prompt_optimization_spec.lua	
-[32mSuccess[0m	||	Fase 24 - Otimização de System Prompt (Token Saving): O system prompt base deve ser limpo e não possuir gorduras	
-[32mSuccess[0m	||	Fase 24 - Otimização de System Prompt (Token Saving): O cabeçalho do manual de habilidades deve ser altamente sintetizado	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa3_spec.lua	
+[32mSuccess[0m	||	Swarm Etapa 3 - Manager e Fila: Deve inicializar a fila lendo o JSON do Tech Lead	
+[32mSuccess[0m	||	Swarm Etapa 3 - Manager e Fila: Deve transferir tarefas da fila para workers respeitando o limite (Dispatch)	
 	
 [32mSuccess: [0m	2	
 [31mFailed : [0m	0	
@@ -109,6 +98,16 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/ui_menu
 [32mSuccess[0m	||	Fase 37 - TEMA 3: Interatividade Visual e Menus (Fuzzy Finder): Módulo injectors.lua Deve renderizar a lista de injetores corretamente	
 	
 [32mSuccess: [0m	9	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/squads_spec.lua	
+[32mSuccess[0m	||	Fase 23 - Passo 1: Loader de Squads Deve criar o arquivo padrao caso nao exista e carregar corretamente	
+[32mSuccess[0m	||	Fase 23 - Passo 1: Loader de Squads Deve extrair a lista de nomes dos squads	
+	
+[32mSuccess: [0m	2	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
@@ -157,7 +156,6 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/event_b
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
-🧠 Contexto hiper-comprimido pelo @archivist. Retomando tarefa...
 
 ========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/archivist_spec.lua	
@@ -175,16 +173,6 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/i18n_sp
 [32mSuccess[0m	||	Fase 33 - Motor de Internacionalização (i18n) Deve retornar a propria chave caso a string não exista em nenhum dicionário	
 	
 [32mSuccess: [0m	3	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/visual_ontology_spec.lua	
-[32mSuccess[0m	||	Fase 43.5: Visual Engine & Ontology Conceal/Folds deve conter regras de conceal para as tags de ontologia (abstract, content, etc)	
-[32mSuccess[0m	||	Fase 43.5: Visual Engine & Ontology Conceal/Folds deve gerar fold de 1 linha amigavel para as regioes de <abstract>	
-	
-[32mSuccess: [0m	2	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
@@ -251,11 +239,22 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session
 [32mSuccess[0m	||	Fase 35 - Etapa 1: Session AST RAM Abstraction Deve adicionar mensagens e mesclar papéis sequenciais nativamente	
 [32mSuccess[0m	||	Fase 35 - Etapa 1: Session AST RAM Abstraction Deve construir o payload purificado acoplando o system prompt	
 [32mSuccess[0m	||	Fase 35 - Etapa 1: Session AST RAM Abstraction Deve serializar a arvore AST a partir de linhas de texto (Backward Compatibility)	
+[31mFail[0m	||	Fase 35 - Etapa 1: Session AST RAM Abstraction Fase 46 - Hybrid Parser: Deve extrair conversas padroes intercaladas com XML blocks	
+            ...text_plugin/lua/multi_context/tests/session_ast_spec.lua:55: Expected objects to be the same.
+            Passed in:
+            (number) 1
+            Expected:
+            (number) 4
+            
+            stack traceback:
+            	...text_plugin/lua/multi_context/tests/session_ast_spec.lua:55: in function <...text_plugin/lua/multi_context/tests/session_ast_spec.lua:44>
+            	
 	
 [32mSuccess: [0m	4	
-[31mFailed : [0m	0	
+[31mFailed : [0m	1	
 [31mErrors : [0m	0	
 ========================================	
+Tests Failed. Exit: 1	
 
 ========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session_ontology_spec.lua	
@@ -463,11 +462,58 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/utils_s
 ========================================	
 
 ========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/memory_tracker_spec.lua	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve inicializar a EMA perfeitamente com o primeiro valor	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve calcular a EMA absorvendo picos sem enviesar totalmente	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve prever os tokens ignorando a dupla contagem do prompt	
+[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve garantir Imunidade de Primeiro Turno (Cold Start)	
+	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/network_resilience_spec.lua	
 [32mSuccess[0m	||	Fase 37 - TEMA 1: Resiliência de Rede (Transport & Chunking): Deve extrair um chunk JSON perfeito	
 [32mSuccess[0m	||	Fase 37 - TEMA 1: Resiliência de Rede (Transport & Chunking): Deve preservar chunks quebrados pela metade (Bufferização de Stream HTTP)	
 [32mSuccess[0m	||	Fase 37 - TEMA 1: Resiliência de Rede (Transport & Chunking): Deve extrair multiplos chunks de uma vez e lidar com quebras de linha escapadas	
 [32mSuccess[0m	||	Fase 37 - TEMA 1: Fallback e Roteamento (API Client): O Motor deve pular silenciosamente para a proxima API se a primeira falhar	
+	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session_polymorphic_spec.lua	
+[32mSuccess[0m	||	Fase 42.1: AST Polimórfica de Blocos deve carregar blocos XML com atributos id, type, role e status	
+[32mSuccess[0m	||	Fase 42.1: AST Polimórfica de Blocos deve ignorar blocos marcados como archived durante a build do payload	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+✅ Arquivo criado/salvo: /tmp/lua_rWGIQF
+✅ Diff aplicado: /tmp/lua_rWGIQF
+✅ Arquivo criado/salvo: /tmp/lua_rWGIQF
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tools_diff_spec.lua	
+[32mSuccess[0m	||	Tools Module (Unified Diff): Deve aplicar um Unified Diff a um arquivo (apply_diff)	
+[32mSuccess[0m	||	Tools Module (Unified Diff): Deve lidar com falhas graciosamente (patch rejeitado)	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/context_builders_spec.lua	
+[32mSuccess[0m	||	Context Builders Module: Deve extrair o contexto do buffer atual corretamente	
+[32mSuccess[0m	||	Context Builders Module: Deve incluir o nome do arquivo no cabecalho do get_current_buffer	
+[32mSuccess[0m	||	Context Builders Module: Deve extrair apenas as linhas da selecao visual (com range)	
+[32mSuccess[0m	||	Context Builders Module: Deve corrigir a ordem se o range for passado invertido (baixo pra cima)	
 	
 [32mSuccess: [0m	4	
 [31mFailed : [0m	0	
@@ -488,79 +534,6 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/intent_
 ========================================	
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa3_spec.lua	
-[32mSuccess[0m	||	Swarm Etapa 3 - Manager e Fila: Deve inicializar a fila lendo o JSON do Tech Lead	
-[32mSuccess[0m	||	Swarm Etapa 3 - Manager e Fila: Deve transferir tarefas da fila para workers respeitando o limite (Dispatch)	
-	
-[32mSuccess: [0m	2	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/squads_spec.lua	
-[32mSuccess[0m	||	Fase 23 - Passo 1: Loader de Squads Deve criar o arquivo padrao caso nao exista e carregar corretamente	
-[32mSuccess[0m	||	Fase 23 - Passo 1: Loader de Squads Deve extrair a lista de nomes dos squads	
-	
-[32mSuccess: [0m	2	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session_polymorphic_spec.lua	
-[32mSuccess[0m	||	Fase 42.1: AST Polimórfica de Blocos deve carregar blocos XML com atributos id, type, role e status	
-[32mSuccess[0m	||	Fase 42.1: AST Polimórfica de Blocos deve ignorar blocos marcados como archived durante a build do payload	
-	
-[32mSuccess: [0m	2	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/memory_tracker_spec.lua	
-[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve inicializar a EMA perfeitamente com o primeiro valor	
-[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve calcular a EMA absorvendo picos sem enviesar totalmente	
-[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve prever os tokens ignorando a dupla contagem do prompt	
-[32mSuccess[0m	||	Fase 25 - Passo 1: O Guardião Preditivo 2.0 (Fundações): Deve garantir Imunidade de Primeiro Turno (Cold Start)	
-	
-[32mSuccess: [0m	4	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/prompt_squads_spec.lua	
-[32mSuccess[0m	||	Fase 23 - Passo 2: O Compilador de Meta-Agentes Deve detectar a invocacao de um squad e transpilar para spawn_swarm JSON	
-	
-[32mSuccess: [0m	1	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/dynamic_watchdog_spec.lua	
-[32mSuccess[0m	||	Fase 42.4: O Bibliotecário Assíncrono (Dynamic Watchdog) Deve extrair apenas blocos ativos e formatar o prompt para a API de background	
-[32mSuccess[0m	||	Fase 42.4: O Bibliotecário Assíncrono (Dynamic Watchdog) A callback assíncrona deve aplicar o archiver.compress na RAM e emitir evento para a UI	
-	
-[32mSuccess: [0m	2	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/context_builders_spec.lua	
-[32mSuccess[0m	||	Context Builders Module: Deve extrair o contexto do buffer atual corretamente	
-[32mSuccess[0m	||	Context Builders Module: Deve incluir o nome do arquivo no cabecalho do get_current_buffer	
-[32mSuccess[0m	||	Context Builders Module: Deve extrair apenas as linhas da selecao visual (com range)	
-[32mSuccess[0m	||	Context Builders Module: Deve corrigir a ordem se o range for passado invertido (baixo pra cima)	
-	
-[32mSuccess: [0m	4	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_routing_spec.lua	
 [32mSuccess[0m	||	Fase 20 - Passo 2 (Fallback Direcional): Deve bloquear a tarefa se não houver API com capacidade suficiente (Starvation)	
 [32mSuccess[0m	||	Fase 20 - Passo 2 (Fallback Direcional): Deve permitir que uma API poderosa resolva uma tarefa simples (Fallback Direcional)	
@@ -571,35 +544,23 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_r
 ========================================	
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session_spec.lua	
-[32mSuccess[0m	||	Fase 18.5 - Session & State Management: Deve gerar tag de sessao e injetar o swarm_state	
-[32mSuccess[0m	||	Fase 18.5 - Session & State Management: Deve desserializar e reconstruir o enxame ao carregar o chat	
-[32mSuccess[0m	||	Deve orquestrar o load pelo comando ToggleWorkspaceView (init.lua)	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/config_spec.lua	
+[32mSuccess[0m	||	Config Module: Deve carregar as opções default corretamente	
+[32mSuccess[0m	||	Config Module: Deve mesclar opções do usuário usando setup() sem perder os defaults	
+[32mSuccess[0m	||	Config Module (Manipulacao de Arquivo JSON): Deve ler e alterar APIs usando um JSON em disco	
+[32mSuccess[0m	||	Fase 25 - Configurações do Guardião 2.0: Deve carregar as opções default de Compressao e Modos	
 	
-[32mSuccess: [0m	3	
+[32mSuccess: [0m	4	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/phase44_injectors_spec.lua	
-[32mSuccess[0m	||	Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos 44.3: O Motor de Injectors processa Arrays de Blocos deve transformar array de tabelas em string XML e disparar o watchdog	
-[32mSuccess[0m	||	Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos 44.3: O Motor de Injectors processa Arrays de Blocos deve manter o comportamento antigo para strings puras (retrocompatibilidade)	
-[32mSuccess[0m	||	Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos 44.4: Atualização do project_dump deve retornar um array de tabelas para injeção	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/chat_view_spec.lua	
+[32mSuccess[0m	||	UI View Arquitetura 2.0 (popup.lua): Deve injetar texto no buffer ao escutar o evento UI_APPEND_CHUNK	
+[32mSuccess[0m	||	UI View Arquitetura 2.0 (popup.lua): Deve atualizar o buffer do worker do Swarm ao escutar UI_SWARM_WORKER_UPDATE	
 	
-[32mSuccess: [0m	3	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-vim.tbl_islist is deprecated. Run ":checkhealth vim.deprecated" for 
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/lsp_bridge_spec.lua	
-[32mSuccess[0m	||	Fase 30 - Passo 2: A Ponte Silenciosa do LSP Deve encontrar a coluna correta de um simbolo numa linha	
-[32mSuccess[0m	||	Fase 30 - Passo 2: A Ponte Silenciosa do LSP Deve retornar erro se não encontrar o simbolo na linha	
-[32mSuccess[0m	||	Fase 30 - Passo 2: A Ponte Silenciosa do LSP Deve realizar a requisicao de definicao e extrair o codigo (Go to Definition)	
-	
-[32mSuccess: [0m	3	
+[32mSuccess: [0m	2	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
@@ -648,6 +609,17 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/edge_ca
 ========================================	
 
 ========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/phase44_injectors_spec.lua	
+[32mSuccess[0m	||	Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos 44.3: O Motor de Injectors processa Arrays de Blocos deve transformar array de tabelas em string XML e disparar o watchdog	
+[32mSuccess[0m	||	Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos 44.3: O Motor de Injectors processa Arrays de Blocos deve manter o comportamento antigo para strings puras (retrocompatibilidade)	
+[32mSuccess[0m	||	Fase 44.3 e 44.4: Injectors Tabulares e Múltiplos Blocos 44.4: Atualização do project_dump deve retornar um array de tabelas para injeção	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/phase45_context_md_spec.lua	
 [32mSuccess[0m	||	Fase 45.1 e 45.2 - Ecossistema de Contexto Vivo (CONTEXT.md) 45.1: Configuração e UI (controls_view & i18n) deve inicializar auto_inject_context_md como true por padrão	
 [32mSuccess[0m	||	Fase 45.1 e 45.2 - Ecossistema de Contexto Vivo (CONTEXT.md) 45.1: Configuração e UI (controls_view & i18n) deve exibir o toggle 'Auto-Inject CONTEXT.md' no painel de controle (Seção Limits)	
@@ -661,36 +633,24 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/phase45
 ========================================	
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/config_spec.lua	
-[32mSuccess[0m	||	Config Module: Deve carregar as opções default corretamente	
-[32mSuccess[0m	||	Config Module: Deve mesclar opções do usuário usando setup() sem perder os defaults	
-[32mSuccess[0m	||	Config Module (Manipulacao de Arquivo JSON): Deve ler e alterar APIs usando um JSON em disco	
-[32mSuccess[0m	||	Fase 25 - Configurações do Guardião 2.0: Deve carregar as opções default de Compressao e Modos	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/session_spec.lua	
+[32mSuccess[0m	||	Fase 18.5 - Session & State Management: Deve gerar tag de sessao e injetar o swarm_state	
+[32mSuccess[0m	||	Fase 18.5 - Session & State Management: Deve desserializar e reconstruir o enxame ao carregar o chat	
+[32mSuccess[0m	||	Deve orquestrar o load pelo comando ToggleWorkspaceView (init.lua)	
 	
-[32mSuccess: [0m	4	
+[32mSuccess: [0m	3	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
+vim.tbl_islist is deprecated. Run ":checkhealth vim.deprecated" for 
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/injectors_spec.lua	
-[32mSuccess[0m	||	Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement Deve filtrar as opcoes usando o fuzzy finder via _update_filter	
-[32mSuccess[0m	||	Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement Deve injetar o texto NA LINHA DE BAIXO do cursor preservando o prompt	
-[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve carregar a lista combinada de injetores nativos e custom	
-[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve disponibilizar o novo injetor 'current_buffer' nativamente	
-[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve carregar um injetor customizado valido a partir do diretorio local	
-[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve disponibilizar os exemplos base de injetores na pasta examples	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/lsp_bridge_spec.lua	
+[32mSuccess[0m	||	Fase 30 - Passo 2: A Ponte Silenciosa do LSP Deve encontrar a coluna correta de um simbolo numa linha	
+[32mSuccess[0m	||	Fase 30 - Passo 2: A Ponte Silenciosa do LSP Deve retornar erro se não encontrar o simbolo na linha	
+[32mSuccess[0m	||	Fase 30 - Passo 2: A Ponte Silenciosa do LSP Deve realizar a requisicao de definicao e extrair o codigo (Go to Definition)	
 	
-[32mSuccess: [0m	6	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/polyglot_spec.lua	
-[32mSuccess[0m	||	Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python) Deve ler e envelopar um script bash executavel extraindo parametros do cabecalho	
-	
-[32mSuccess: [0m	1	
+[32mSuccess: [0m	3	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
@@ -713,112 +673,41 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/init_tr
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
-Error detected while processing command line:
-🛡️ Comando PERIGOSO detectado.
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/regression_spec.lua	
-[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 4: Sandbox Escape Whitelist (Impede RCE)	
-[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 5: Fallback Preventivo da ferramenta Diff (Sem Comando Patch)	
-[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 6: Proteção contra Ping-Pong Infinito no Swarm Manager	
-[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 8: CURL Pipe via STDIN (Remoção de Tmp Files Leak)	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/polyglot_spec.lua	
+[32mSuccess[0m	||	Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python) Deve ler e envelopar um script bash executavel extraindo parametros do cabecalho	
 	
-[32mSuccess: [0m	4	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-✅ Arquivo criado/salvo: /tmp/lua_dDUQmd
-✅ Diff aplicado: /tmp/lua_dDUQmd
-✅ Arquivo criado/salvo: /tmp/lua_dDUQmd
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tools_diff_spec.lua	
-[32mSuccess[0m	||	Tools Module (Unified Diff): Deve aplicar um Unified Diff a um arquivo (apply_diff)	
-[32mSuccess[0m	||	Tools Module (Unified Diff): Deve lidar com falhas graciosamente (patch rejeitado)	
-	
-[32mSuccess: [0m	2	
+[32mSuccess: [0m	1	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
 
 ========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/chat_view_spec.lua	
-[32mSuccess[0m	||	UI View Arquitetura 2.0 (popup.lua): Deve injetar texto no buffer ao escutar o evento UI_APPEND_CHUNK	
-[32mSuccess[0m	||	UI View Arquitetura 2.0 (popup.lua): Deve atualizar o buffer do worker do Swarm ao escutar UI_SWARM_WORKER_UPDATE	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/injectors_spec.lua	
+[32mSuccess[0m	||	Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement Deve filtrar as opcoes usando o fuzzy finder via _update_filter	
+[32mSuccess[0m	||	Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement Deve injetar o texto NA LINHA DE BAIXO do cursor preservando o prompt	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve carregar a lista combinada de injetores nativos e custom	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve disponibilizar o novo injetor 'current_buffer' nativamente	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve carregar um injetor customizado valido a partir do diretorio local	
+[32mSuccess[0m	||	Testes Restaurados da Fase 28 - Integridade de Extensoes Deve disponibilizar os exemplos base de injetores na pasta examples	
 	
-[32mSuccess: [0m	2	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/integration_spec.lua	
-[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor popup.lua deve aplicar a largura e borda customizadas do config	
-[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor init.lua deve enviar o master_prompt customizado na requisicao	
-[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor transport.lua deve gerar um arquivo de log quando debug_mode for true	
-	
-[32mSuccess: [0m	3	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-✅ Edição aplicada: /tmp/lua_8Xnauv
-Error detected while processing command line:
-🛡️ Comando PERIGOSO detectado.
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tools_boundary_spec.lua	
-[32mSuccess[0m	||	Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas): replace_lines: Deve suportar parâmetros fora dos limites (Out of Bounds) sem crashar	
-[32mSuccess[0m	||	Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas): native_tools: Não deve quebrar ao receber strings vazias ou nulas	
-[32mSuccess[0m	||	Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas): context_builders: Deve abortar silenciosamente a leitura de arquivos gigantes (>100KB)	
-[32mSuccess[0m	||	Fase 37 - TEMA 2: Gatekeeper (Comandos Destrutivos): O Tool Runner deve bloquear comandos perigosos em modo autonomo	
-	
-[32mSuccess: [0m	4	
+[32mSuccess: [0m	6	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
 
 ========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tdd_fixes_spec.lua	
-[31mFail[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 1.1: Transport - Deve fechar o canal de stdin do curl apenas UMA vez	
-            ...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:27: chansend foi chamado mais de uma vez (Duplicação)
-            Expected objects to be the same.
-            Passed in:
-            (number) 0
-            Expected:
-            (number) 1
-            
-            stack traceback:
-            	...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:27: in function <...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:9>
-            	
+[32mSuccess[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 1.1: Transport - Deve fechar o canal de stdin do curl apenas UMA vez	
 [32mSuccess[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 1.3: Swarm - Nao deve dar starvation no worker se a API falhar silenciosamente (Throw Error)	
-[31mFail[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 2.1: Native Tools - run_shell e apply_diff DEVEM rodar de forma Assíncrona (Evitar UI Freeze)	
-            ...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:77: A ferramenta executou vim.fn.system síncrono (Isso congela a UI!)
-            Expected objects to be the same.
-            Passed in:
-            (boolean) true
-            Expected:
-            (boolean) false
-            
-            stack traceback:
-            	...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:77: in function <...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:54>
-            	
-[31mFail[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 2.2: Chat View - create_folds DEVE recuperar todas as linhas em batch (Gargalo FFI)	
-            ...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:110: nvim_buf_get_lines foi chamado 1 vez por linha (100x). Isso gera gargalo absurdo de FFI C->Lua!
-            Expected objects to be the same.
-            Passed in:
-            (boolean) false
-            Expected:
-            (boolean) true
-            
-            stack traceback:
-            	...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:110: in function <...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:84>
-            	
+[32mSuccess[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 2.1: Native Tools - run_shell e apply_diff DEVEM rodar de forma Assíncrona (Evitar UI Freeze)	
+[32mSuccess[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 2.2: Chat View - create_folds DEVE recuperar todas as linhas em batch (Gargalo FFI)	
 	
-[32mSuccess: [0m	1	
-[31mFailed : [0m	3	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
-Tests Failed. Exit: 1	
 
 ========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_etapa5_spec.lua	
@@ -839,6 +728,65 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/visual_
 [32mSuccess[0m	||	Fase 42.5: Motor Visual Neovim (Folds e Conceal) deve criar um fold fechado ao redor de blocos arquivados	
 	
 [32mSuccess: [0m	2	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+✅ Edição aplicada: /tmp/lua_qT3NJM
+Error detected while processing command line:
+🛡️ Comando PERIGOSO detectado.
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/tools_boundary_spec.lua	
+[32mSuccess[0m	||	Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas): replace_lines: Deve suportar parâmetros fora dos limites (Out of Bounds) sem crashar	
+[32mSuccess[0m	||	Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas): native_tools: Não deve quebrar ao receber strings vazias ou nulas	
+[32mSuccess[0m	||	Fase 37 - TEMA 2: Boundary Testing (Limites de Ferramentas): context_builders: Deve abortar silenciosamente a leitura de arquivos gigantes (>100KB)	
+[32mSuccess[0m	||	Fase 37 - TEMA 2: Gatekeeper (Comandos Destrutivos): O Tool Runner deve bloquear comandos perigosos em modo autonomo	
+	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+Error detected while processing command line:
+🛡️ Comando PERIGOSO detectado.
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/regression_spec.lua	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 4: Sandbox Escape Whitelist (Impede RCE)	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 5: Fallback Preventivo da ferramenta Diff	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 6: Proteção contra Ping-Pong Infinito no Swarm Manager	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug 8: CURL Pipe via STDIN e remoção de Tmp Leak	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug do Architect: O Gatekeeper MCP deve resolver Skills Semanticas nativamente	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug do Loop Infinito: O Motor ReAct deve abortar autonomia (--auto) se receber erro do Gatekeeper	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Bug do Payload Sujo: Swarm Manager deve extrair JSON embutido em texto	
+[32mSuccess[0m	||	MultiContext V2.4 - Security & Regression Tests Fase 46 - Integridade Arquitetural: Resultados de Tools devem ser envelopados em <block>	
+	
+[32mSuccess: [0m	8	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/integration_spec.lua	
+[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor popup.lua deve aplicar a largura e borda customizadas do config	
+[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor init.lua deve enviar o master_prompt customizado na requisicao	
+[32mSuccess[0m	||	Integracao - Consumo das Configs do Painel pelo Motor transport.lua deve gerar um arquivo de log quando debug_mode for true	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/git_tools_spec.lua	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve retornar o git status formatado (git_status)	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve realizar checkout e criar nova branch se requisitado (git_branch)	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve proibir explicitamente git add em massa como '.' ou '*' (git_commit)	
+[32mSuccess[0m	||	Fase 31 - Passo 1: Automação Git (Agente DevOps) Deve fazer add e commit apenas dos arquivos especificos (git_commit)	
+[32mSuccess[0m	||	Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML Deve existir a persona @devops com ferramentas Git	
+[32mSuccess[0m	||	Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML O Gatekeeper deve interceptar comandos git destrutivos (push, reset, rebase)	
+[32mSuccess[0m	||	Fase 31 - Passo 2: O Agente DevOps, Gatekeeper e Swarm XML O swarm_manager deve exigir detalhamento estruturado das operações Git no <final_report>	
+	
+[32mSuccess: [0m	7	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
@@ -874,29 +822,10 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/swarm_e
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
-
-========================================	
-Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/commands_spec.lua	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextFolder deve chamar create_popup com a tag de diretório atual	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextRepo deve injetar a tag de todo o repositório	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextGit deve injetar a tag de diff do git	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextTree deve injetar a árvore de arquivos	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextBuffers deve injetar o conteudo de todos os buffers	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextChatFull deve abrir um chat totalmente limpo	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextChatHandler com selecao visual envia o trecho	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Desfazer Seguro (ContextUndo) Se NÃO houver backup, ContextUndo emite aviso e não quebra	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: Desfazer Seguro (ContextUndo) Se houver backup, ContextUndo restaura o conteúdo no buffer	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: TogglePopup Deve esconder a janela se ela estiver aberta e válida	
-[32mSuccess[0m	||	Fase 37 - TEMA 4: TogglePopup Deve abrir janela se popup_buf existir mas win for nil	
-	
-[32mSuccess: [0m	11	
-[31mFailed : [0m	0	
-[31mErrors : [0m	0	
-========================================	
-✅ Arquivo criado/salvo: /tmp/lua_gGhpQg
-✅ Arquivo criado/salvo: /tmp/lua_gGhpQg
-✅ Edição aplicada: /tmp/lua_gGhpQg
-✅ Arquivo criado/salvo: /tmp/lua_gGhpQg
+✅ Arquivo criado/salvo: /tmp/lua_2XEvOh
+✅ Arquivo criado/salvo: /tmp/lua_2XEvOh
+✅ Edição aplicada: /tmp/lua_2XEvOh
+✅ Arquivo criado/salvo: /tmp/lua_2XEvOh
 
 ========================================	
 Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/native_tools_spec.lua	
@@ -915,6 +844,25 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/native_
 [32mSuccess[0m	||	Fase 38 - Situational Awareness Tools: get_git_env deve retornar branch atual ou falhar graciosamente fora de repo	
 	
 [32mSuccess: [0m	13	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/commands_spec.lua	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextFolder deve chamar create_popup com a tag de diretório atual	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextRepo deve injetar a tag de todo o repositório	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextGit deve injetar a tag de diff do git	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextTree deve injetar a árvore de arquivos	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextBuffers deve injetar o conteudo de todos os buffers	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextChatFull deve abrir um chat totalmente limpo	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Entrypoints e Comandos do Usuário ContextChatHandler com selecao visual envia o trecho	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Desfazer Seguro (ContextUndo) Se NÃO houver backup, ContextUndo emite aviso e não quebra	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: Desfazer Seguro (ContextUndo) Se houver backup, ContextUndo restaura o conteúdo no buffer	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: TogglePopup Deve esconder a janela se ela estiver aberta e válida	
+[32mSuccess[0m	||	Fase 37 - TEMA 4: TogglePopup Deve abrir janela se popup_buf existir mas win for nil	
+	
+[32mSuccess: [0m	11	
 [31mFailed : [0m	0	
 [31mErrors : [0m	0	
 ========================================	
@@ -952,49 +900,26 @@ Testing: 	/home/nardi/repos/multi_context_plugin/lua/multi_context/tests/control
 ======================================================================
 📊 RESUMO GLOBAL AGREGADO (MULTI-CONTEXT)
 ======================================================================
-✅ Success: 267
-❌ Failed : 3
+✅ Success: 272
+❌ Failed : 1
 💥 Errors : 0
 ======================================================================
 
 ======================================================================
 🔍 RELATÓRIO DE FALHAS (ISOLADO)
 ======================================================================
-[31mFail[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 1.1: Transport - Deve fechar o canal de stdin do curl apenas UMA vez	
-            ...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:27: chansend foi chamado mais de uma vez (Duplicação)
-            Expected objects to be the same.
+[31mFail[0m	||	Fase 35 - Etapa 1: Session AST RAM Abstraction Fase 46 - Hybrid Parser: Deve extrair conversas padroes intercaladas com XML blocks	
+            ...text_plugin/lua/multi_context/tests/session_ast_spec.lua:55: Expected objects to be the same.
             Passed in:
-            (number) 0
-            Expected:
             (number) 1
-            
-            stack traceback:
-            	...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:27: in function <...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:9>
-            	
-[32mSuccess[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 1.3: Swarm - Nao deve dar starvation no worker se a API falhar silenciosamente (Throw Error)	
-[31mFail[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 2.1: Native Tools - run_shell e apply_diff DEVEM rodar de forma Assíncrona (Evitar UI Freeze)	
-            ...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:77: A ferramenta executou vim.fn.system síncrono (Isso congela a UI!)
-            Expected objects to be the same.
-            Passed in:
-            (boolean) true
             Expected:
-            (boolean) false
+            (number) 4
             
             stack traceback:
-            	...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:77: in function <...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:54>
-            	
-[31mFail[0m	||	Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2): 2.2: Chat View - create_folds DEVE recuperar todas as linhas em batch (Gargalo FFI)	
-            ...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:110: nvim_buf_get_lines foi chamado 1 vez por linha (100x). Isso gera gargalo absurdo de FFI C->Lua!
-            Expected objects to be the same.
-            Passed in:
-            (boolean) false
-            Expected:
-            (boolean) true
-            
-            stack traceback:
-            	...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:110: in function <...ontext_plugin/lua/multi_context/tests/tdd_fixes_spec.lua:84>
+            	...text_plugin/lua/multi_context/tests/session_ast_spec.lua:55: in function <...text_plugin/lua/multi_context/tests/session_ast_spec.lua:44>
             	
 	
-[32mSuccess: [0m	1	
+[32mSuccess: [0m	4	
+[31mFailed : [0m	1	
 ======================================================================
 ❌ ALERTA: Há testes falhando no sistema. Veja os detalhes acima.

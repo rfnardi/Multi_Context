@@ -27,6 +27,7 @@ describe("Fase 20 - Passo 2 (Fallback Direcional):", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         agents.load_agents = orig_load_agents
         api_client.execute = orig_execute
     end)

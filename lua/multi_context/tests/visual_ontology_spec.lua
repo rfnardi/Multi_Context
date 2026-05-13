@@ -22,15 +22,14 @@ describe("Fase 43.5: Visual Engine & Ontology Conceal/Folds", function()
             end
         end
         
-        assert.truthy(found_ontology_tags, "As novas tags XML (abstract, content) não estão sendo ocultadas (conceal)!")
+        assert.truthy(found_ontology_tags, "As novas tags XML não estão sendo ocultadas (conceal)!")
     end)
 
     it("deve gerar fold de 1 linha amigavel para as regioes de <abstract>", function()
         local original_v = vim.v
-        -- Simulamos o Neovim lendo o texto do fold de um Abstract
-        vim.v = { foldstart = 1, foldend = 4 }
+        local original_getline = vim.fn.getline
         
-        -- Simulando um bloco abstract de 4 linhas
+        vim.v = { foldstart = 1, foldend = 4 }
         vim.fn.getline = function(i)
             if i == 1 then return "<abstract>" end
             if i == 2 then return "<key_words>python, test</key_words>" end
@@ -41,11 +40,10 @@ describe("Fase 43.5: Visual Engine & Ontology Conceal/Folds", function()
         
         local text = chat_view.fold_text()
         
-        -- O foldtext deve detectar inteligentemente se é um abstract ou arquivo morto
-        assert.truthy(text:match("🧠") or text:match("📦"), "O texto do fold não conteve o ícone esperado.")
-        -- O fold_text extrai o resumo automaticamente tirando as tags, devendo sobrar "Test summary"
-        assert.truthy(text:match("Test summary"), "O texto do fold não expôs o summary!")
-        
         vim.v = original_v
+        vim.fn.getline = original_getline
+        
+        assert.truthy(text:match("🧠") or text:match("📦"), "O texto do fold não conteve o ícone esperado.")
+        assert.truthy(text:match("Test summary"), "O texto do fold não expôs o summary!")
     end)
 end)

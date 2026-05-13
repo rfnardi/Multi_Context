@@ -16,6 +16,7 @@ describe("Tools Module (get_diagnostics):", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         -- Limpa ambiente
         pcall(vim.diagnostic.reset, ns, test_buf)
         pcall(api.nvim_buf_delete, test_buf, { force = true })

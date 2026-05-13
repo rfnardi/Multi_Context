@@ -54,6 +54,7 @@ describe("Fase 37 - TEMA 1: Fallback e Roteamento (API Client):", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         package.loaded['multi_context.llm.api_handlers'] = orig_handlers
         config.load_api_config = orig_load_api_config
     end)

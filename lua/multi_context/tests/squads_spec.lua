@@ -9,6 +9,7 @@ describe("Fase 23 - Passo 1: Loader de Squads", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.delete(test_dir, "rf")
     end)
 

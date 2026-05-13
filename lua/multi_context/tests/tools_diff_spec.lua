@@ -4,6 +4,7 @@ describe("Tools Module (Unified Diff):", function()
     local tmp_file = os.tmpname()
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         os.remove(tmp_file)
         -- Limpa possíveis resíduos gerados pelo binário 'patch' (.rej ou .orig)
         os.remove(tmp_file .. ".orig")

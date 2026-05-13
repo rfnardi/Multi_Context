@@ -4,36 +4,41 @@ describe("Config Module - Fallbacks e Erros", function()
     it("get_spawn_apis deve retornar vazio se não houver apis configuradas", function()
         local orig = config.load_api_config
         config.load_api_config = function() return nil end
-        assert.are.same({}, config.get_spawn_apis())
+        local res = config.get_spawn_apis()
         config.load_api_config = orig
+        assert.are.same({}, res)
     end)
     
     it("get_api_names deve retornar vazio se não houver config", function()
         local orig = config.load_api_config
         config.load_api_config = function() return nil end
-        assert.are.same({}, config.get_api_names())
+        local res = config.get_api_names()
         config.load_api_config = orig
+        assert.are.same({}, res)
     end)
     
     it("get_current_api deve retornar string vazia se falhar", function()
         local orig = config.load_api_config
         config.load_api_config = function() return nil end
-        assert.are.same("", config.get_current_api())
+        local res = config.get_current_api()
         config.load_api_config = orig
+        assert.are.same("", res)
     end)
 
     it("set_selected_api deve retornar false se não houver config", function()
         local orig = config.load_api_config
         config.load_api_config = function() return nil end
-        assert.is_false(config.set_selected_api("mock"))
+        local res = config.set_selected_api("mock")
         config.load_api_config = orig
+        assert.is_false(res)
     end)
     
     it("load_api_keys retorna tabela vazia se arquivo nao existir", function()
         local orig_path = config.options.api_keys_path
         config.options.api_keys_path = "/tmp/nao_existe_asdf.json"
-        assert.are.same({}, config.load_api_keys())
+        local res = config.load_api_keys()
         config.options.api_keys_path = orig_path
+        assert.are.same({}, res)
     end)
 end)
 
@@ -59,9 +64,9 @@ describe("Utils Module - Boundary Tests", function()
         vim.api.nvim_buf_set_lines(b, 0, -1, false, {"Line 1", "Line 2"})
         
         utils.copy_code_block()
-        assert.is_true(called)
         
         vim.notify = orig_notify
+        assert.is_true(called)
     end)
 end)
 
@@ -72,14 +77,12 @@ describe("Squads Module - Edge Cases", function()
         local f = io.open(squads.squads_file, "w")
         f:write("isso_nao_e_json")
         f:close()
-        
         assert.are.same({}, squads.load_squads())
     end)
 end)
 
 describe("i18n Module - Edge Cases", function()
     local i18n = require('multi_context.i18n')
-    
     it("t deve formatar strings com argumentos adicionais", function()
         local str = i18n.t("err_file_not_found", "teste.lua")
         assert.truthy(str:match("teste.lua"))
@@ -189,9 +192,9 @@ describe("Tool Runner - Edge Cases", function()
         
         local tool = { name = "run_shell", inner = "ls", raw_tag = "<tool_call>" }
         local out = runner.execute(tool, false, {value=false}, nil)
-        assert.truthy(out:match("ERRO") or out:match("ERROR"))
         
         vim.fn.confirm = orig_confirm
+        assert.truthy(out:match("ERRO") or out:match("ERROR"))
     end)
     
     it("Deve retornar string crua se usuario clicar em Cancelar", function()
@@ -201,8 +204,8 @@ describe("Tool Runner - Edge Cases", function()
         local tool = { name = "run_shell", inner = "ls", raw_tag = "<tool_call>" }
         local out, abort = runner.execute(tool, false, {value=false}, nil)
         
-        assert.is_true(abort)
         vim.fn.confirm = orig_confirm
+        assert.is_true(abort)
     end)
 end)
 
@@ -233,9 +236,8 @@ describe("Native Tools - Edge Cases", function()
         end
         
         local res = tools.search_code("qqcoisa")
-        assert.truthy(res:match("TRUNCAD") or res:match("TRUNCAT"))
-        
         vim.fn.system = orig_system
+        assert.truthy(res:match("TRUNCAD") or res:match("TRUNCAT"))
     end)
 end)
 
@@ -245,7 +247,6 @@ describe("Chat View - Edge Cases", function()
     it("cycle_swarm_buffer ignora se houver menos de 2 buffers", function()
         popup.swarm_buffers = { { buf = 1, name = "A" } }
         popup.current_swarm_index = 1
-        
         popup.cycle_swarm_buffer(1)
         assert.are.same(1, popup.current_swarm_index)
     end)
@@ -279,9 +280,9 @@ describe("Skills Manager e Injectors - Edge Cases", function()
         f:close()
         
         local custom = injectors.get_custom_injectors()
-        assert.are.same(0, #custom)
-        
         vim.fn.stdpath = orig
+        
+        assert.are.same(0, #custom)
     end)
 end)
 
@@ -295,10 +296,9 @@ describe("API Client - Edge Cases", function()
         
         local error_msg = nil
         client.execute({}, nil, nil, nil, function(err) error_msg = err end)
+        config.load_api_config = orig
         
         assert.truthy(error_msg:match("Configuração"))
-        
-        config.load_api_config = orig
     end)
     
     it("execute falha graciosamente se a fila esvaziar por completo sem sucesso", function()
@@ -310,10 +310,9 @@ describe("API Client - Edge Cases", function()
         
         local error_msg = nil
         client.execute({}, nil, nil, nil, function(err) error_msg = err end)
+        config.load_api_config = orig
         
         assert.truthy(error_msg:match("todas as APIs"))
-        
-        config.load_api_config = orig
     end)
 end)
 
@@ -324,9 +323,7 @@ describe("React Orchestrator - Edge Cases", function()
     it("ProcessTurn não faz nada se o buffer for inválido", function()
         local called = false
         EventBus.once("UI_APPEND_LINES", function() called = true end)
-        
         react.ProcessTurn(-1)
-        
         assert.is_false(called)
     end)
     

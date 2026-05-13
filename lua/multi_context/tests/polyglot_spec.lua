@@ -9,6 +9,7 @@ describe("Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python)", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         vim.fn.delete(test_dir, "rf")
     end)
 

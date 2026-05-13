@@ -22,6 +22,7 @@ describe("Fase 29 - Passo 1 e 2: Injectors Fuzzy e Smart Placement", function()
     end)
 
     after_each(function()
+    if _G.AwaitForBackground then _G.AwaitForBackground() end
         injectors.get_native_injectors = orig_get_native
         vim.api.nvim_feedkeys = orig_feedkeys
         if popup.popup_win and vim.api.nvim_win_is_valid(popup.popup_win) then
