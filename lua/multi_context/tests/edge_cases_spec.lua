@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 describe("Config Module - Fallbacks e Erros", function()
     local config = require('multi_context.config')
     

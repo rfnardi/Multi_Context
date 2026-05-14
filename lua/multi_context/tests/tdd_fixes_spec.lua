@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local transport = require('multi_context.llm.transport')
 local swarm = require('multi_context.core.swarm_manager')
 local tools = require('multi_context.ecosystem.native_tools')

@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local lsp_manager = require('multi_context.ecosystem.lsp_manager')
 local state = require('multi_context.core.state_manager')
 

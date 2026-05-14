@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local assert = require("luassert")
 
 describe("Fase 24 - Otimização de System Prompt (Token Saving):", function()

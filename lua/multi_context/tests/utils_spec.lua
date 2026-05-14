@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local utils = require('multi_context.utils.utils')
 
 describe("Utils Module:", function()

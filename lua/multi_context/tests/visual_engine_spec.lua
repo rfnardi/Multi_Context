@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local chat_view = require('multi_context.ui.chat_view')
 
 describe("Fase 42.5: Motor Visual Neovim (Folds e Conceal)", function()

@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local tools = require('multi_context.ecosystem.native_tools')
 local api = vim.api
 

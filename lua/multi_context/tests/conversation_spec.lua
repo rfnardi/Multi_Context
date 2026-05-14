@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local conv = require('multi_context.core.conversation')
 local config = require('multi_context.config')
 local session = require('multi_context.core.session')

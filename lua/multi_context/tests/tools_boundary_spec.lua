@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local tools = require('multi_context.ecosystem.native_tools')
 local tool_runner = require('multi_context.ecosystem.tool_runner')
 local context_builders = require('multi_context.utils.context_builders')

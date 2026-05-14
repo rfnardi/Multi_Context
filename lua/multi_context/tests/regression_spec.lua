@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local assert = require("luassert")
 local stub = require("luassert.stub")
 local runner = require('multi_context.ecosystem.tool_runner')

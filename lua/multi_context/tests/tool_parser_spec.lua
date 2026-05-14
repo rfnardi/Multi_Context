@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 -- lua/multi_context/tests/tool_parser_spec.lua
 local tool_parser = require('multi_context.ecosystem.tool_parser')
 

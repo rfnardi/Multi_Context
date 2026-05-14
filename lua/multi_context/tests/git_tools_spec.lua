@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local tools = require('multi_context.ecosystem.native_tools')
 
 describe("Fase 31 - Passo 1: Automação Git (Agente DevOps)", function()

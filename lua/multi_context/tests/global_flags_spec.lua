@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local init = require('multi_context')
 local StateManager = require('multi_context.core.state_manager')
 local react_orchestrator = require('multi_context.core.react_orchestrator')

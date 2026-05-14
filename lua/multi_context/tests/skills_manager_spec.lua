@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local skills = require('multi_context.ecosystem.tools_manager')
 local prompt_parser = require('multi_context.llm.prompt_parser')
 local tool_runner = require('multi_context.ecosystem.tool_runner')

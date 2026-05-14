@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local assert = require("luassert")
 local ontology = require('multi_context.ecosystem.ontology')
 local squads = require('multi_context.ecosystem.squads')

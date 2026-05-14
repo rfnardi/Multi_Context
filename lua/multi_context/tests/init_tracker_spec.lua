@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local init = require('multi_context.init')
 local memory_tracker = require('multi_context.utils.memory_tracker')
 local api_client = require('multi_context.llm.api_client')

@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local skills = require('multi_context.ecosystem.tools_manager')
 
 describe("Fase 27 - Ecossistema da Comunidade (V1.0):", function()

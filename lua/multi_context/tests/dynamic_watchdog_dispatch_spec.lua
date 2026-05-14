@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local watchdog = require('multi_context.core.dynamic_watchdog')
 local api_client = require('multi_context.llm.api_client')
 local config = require('multi_context.config')

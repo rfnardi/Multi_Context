@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local init = require('multi_context') -- Usando require na raiz para capturar o mesmo cache!
 local popup = require('multi_context.ui.chat_view')
 local StateManager = require('multi_context.core.state_manager')

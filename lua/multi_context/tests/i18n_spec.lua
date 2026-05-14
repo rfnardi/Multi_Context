@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local i18n = require('multi_context.i18n')
 local config = require('multi_context.config')
 

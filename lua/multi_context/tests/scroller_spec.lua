@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 -- lua/multi_context/tests/scroller_spec.lua
 local scroller = require('multi_context.ui.scroller')
 

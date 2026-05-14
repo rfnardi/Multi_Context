@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local session = require('multi_context.core.session')
 local tools = require('multi_context.ecosystem.native_tools')
 

@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 describe("Fase 32 - Distribuição e Documentação", function()
     local root = vim.fn.getcwd()
 

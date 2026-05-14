@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local Session = require('multi_context.core.session')
 local StateManager = require('multi_context.core.state_manager')
 

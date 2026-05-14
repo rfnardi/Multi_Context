@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local squads = require('multi_context.ecosystem.squads')
 
 describe("Fase 23 - Passo 1: Loader de Squads", function()

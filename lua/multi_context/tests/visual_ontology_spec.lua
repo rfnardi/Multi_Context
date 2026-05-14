@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local hl = require('multi_context.ui.highlights')
 local chat_view = require('multi_context.ui.chat_view')
 

@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local config = require('multi_context.config')
 local popup = require('multi_context.ui.chat_view')
 local init = require('multi_context.init')

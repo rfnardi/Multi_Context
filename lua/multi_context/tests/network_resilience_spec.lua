@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local transport = require('multi_context.llm.transport')
 local api_client = require('multi_context.llm.api_client')
 local config = require('multi_context.config')

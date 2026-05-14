@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local assert = require("luassert")
 local session = require("multi_context.core.session")
 

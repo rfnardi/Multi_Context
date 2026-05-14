@@ -22,6 +22,13 @@ M.init_swarm = function(json_payload)
         local json_match = clean_payload:match("%b{}")
         if json_match then ok, decoded = pcall(vim.fn.json_decode, json_match) end
     end
+    -- NOVO: Fallback para desembrulhar a alucinação "json_payload" do LLM
+    if ok and type(decoded) == "table" and decoded.json_payload and type(decoded.json_payload) == "string" then
+        local inner_ok, inner_decoded = pcall(vim.fn.json_decode, decoded.json_payload)
+        if inner_ok and type(inner_decoded) == "table" then
+            decoded = inner_decoded
+        end
+    end
     if not ok or type(decoded) ~= "table" or type(decoded.tasks) ~= "table" then 
         return false, "ERRO JSON: Formato inválido. Use apenas chaves { } e o array 'tasks'." 
     end

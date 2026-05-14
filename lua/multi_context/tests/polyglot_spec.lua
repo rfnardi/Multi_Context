@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local skills = require('multi_context.ecosystem.tools_manager')
 
 describe("Fase 29 - Passo 3: Polyglot Skills (Shell, Fish, Python)", function()

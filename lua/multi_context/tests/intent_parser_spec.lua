@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local IntentParser = require('multi_context.core.intent_parser')
 
 describe("Core Arquitetura 2.0: Intent Parser", function()

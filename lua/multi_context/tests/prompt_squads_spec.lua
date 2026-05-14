@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local prompt_parser = require('multi_context.llm.prompt_parser')
 local squads = require('multi_context.ecosystem.squads')
 

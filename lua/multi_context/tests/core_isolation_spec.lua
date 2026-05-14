@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local EventBus = require('multi_context.core.event_bus')
 local react_orchestrator = require('multi_context.core.react_orchestrator')
 

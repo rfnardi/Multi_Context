@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local tool_runner = require('multi_context.ecosystem.tool_runner')
 local lsp_utils = require('multi_context.ecosystem.lsp_bridge')
 local agents = require('multi_context.agents')

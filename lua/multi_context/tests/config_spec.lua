@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 describe("Config Module:", function()
   local config
 

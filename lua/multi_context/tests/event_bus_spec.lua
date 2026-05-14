@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local EventBus = require('multi_context.core.event_bus')
 
 describe("Core Arquitetura 2.0: EventBus", function()

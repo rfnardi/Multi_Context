@@ -1,10 +1,3 @@
-#!/bin/bash
-
-echo "======================================================================"
-echo "🛡️  Forjando a Barreira de Adamantium (Supressão de Ghost Exceptions)"
-echo "======================================================================"
-
-cat << 'EOF' > lua/multi_context/tests/libuv_barrier.lua
 if _G._libuv_barrier_loaded then return end
 _G._libuv_barrier_loaded = true
 
@@ -124,7 +117,3 @@ if original_it then
         end)
     end
 end
-EOF
-
-echo "✅ Barreira Suprema gerada! Agora, Autocmds, Stdout, Stderr e Wraps são silenciosos."
-echo "🚀 Rode o seu loop novamente. O sistema cravou o pilar assíncrono."

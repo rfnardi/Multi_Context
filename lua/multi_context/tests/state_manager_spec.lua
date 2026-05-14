@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local State = require('multi_context.core.state_manager')
 
 describe("Core Arquitetura 2.0: State Manager", function()

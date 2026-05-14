@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local utils = require('multi_context.utils.utils')
 local swarm = require('multi_context.core.swarm_manager')
 local popup = require('multi_context.ui.chat_view')

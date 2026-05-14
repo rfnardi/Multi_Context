@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local agents = require('multi_context.agents')
 local injectors = require('multi_context.ecosystem.injectors')
 local popup = require('multi_context.ui.chat_view')

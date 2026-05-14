@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local watchdog = require('multi_context.core.dynamic_watchdog')
 local session = require('multi_context.core.session')
 local api = vim.api

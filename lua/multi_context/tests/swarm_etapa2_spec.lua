@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local popup = require('multi_context.ui.chat_view')
 local api = vim.api
 

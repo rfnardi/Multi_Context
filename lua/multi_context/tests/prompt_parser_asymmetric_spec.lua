@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local prompt_parser = require('multi_context.llm.prompt_parser')
 
 describe("Fase 43.2: Visão Assimétrica (prompt_parser e memory_tier)", function()

@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local tool_parser = require('multi_context.ecosystem.tool_parser')
 local config = require('multi_context.config')
 local agents = require('multi_context.agents')

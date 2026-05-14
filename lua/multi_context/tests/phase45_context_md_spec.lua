@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local assert = require("luassert")
 local config = require("multi_context.config")
 local utils = require("multi_context.utils.utils")

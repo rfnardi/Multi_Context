@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 -- lua/multi_context/tests/swarm_etapa3_spec.lua
 local popup = require('multi_context.ui.chat_view')
 local api_client = require('multi_context.llm.api_client')

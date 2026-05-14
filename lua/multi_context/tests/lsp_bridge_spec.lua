@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local lsp_utils = require('multi_context.ecosystem.lsp_bridge')
 
 describe("Fase 30 - Passo 2: A Ponte Silenciosa do LSP", function()

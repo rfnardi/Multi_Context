@@ -1,3 +1,4 @@
+require("multi_context.tests.libuv_barrier")
 local ctx = require('multi_context.utils.context_builders')
 
 describe("Context Builders Module:", function()
