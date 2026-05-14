@@ -15,6 +15,11 @@ local function resolve_path(path)
     path = vim.trim(path)
     if path:sub(1, 1) == "/" then return path end
     local root = get_repo_root() or vim.fn.getcwd()
+
+    local root_name = vim.fn.fnamemodify(root, ":t")
+    if path:sub(1, #root_name + 1) == root_name .. "/" then
+        path = path:sub(#root_name + 2)
+    end
     return root .. "/" .. path
 end
 

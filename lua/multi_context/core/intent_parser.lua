@@ -60,6 +60,7 @@ M.parse_lines = function(lines, agents_table)
     
     local cleaned_lines = {}
     for _, line in ipairs(lines) do
+	  		if line:match("^##%s*IA") then break end -- IMPEDE A CRIAÇÃO DE FILAS FANTASMAS
         table.insert(cleaned_lines, (line:gsub("%s*%-%-queue", ""):gsub("%s*%-%-moa", "")))
     end
 

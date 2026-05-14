@@ -84,7 +84,7 @@ function M.create_popup(initial_content_or_bufnr)
     M.popup_win = win
     
     -- Ocultação NATIVA do Neovim para XML
-    vim.wo[win].conceallevel = 2
+    vim.wo[win].conceallevel = 3
     vim.wo[win].concealcursor = "nc"
 
     api.nvim_create_autocmd({"TextChanged", "TextChangedI", "TextChangedP"}, {

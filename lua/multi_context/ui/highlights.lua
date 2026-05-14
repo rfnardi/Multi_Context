@@ -45,6 +45,8 @@ M.apply_chat = function(buf)
 
         -- FASE 43.5: Ocultação de tags da Ontologia (abstract, content, etc)
         vim.cmd("syntax match ContextOntologyTag \"<\\/\\?\\(abstract\\|content\\|key_words\\|summary\\)[^>]*>\" conceal")
+				vim.cmd("syntax sync fromstart")
+
     end)
 end
 

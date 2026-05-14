@@ -150,7 +150,7 @@ M.ProcessTurn = function(buf)
     local text_to_send = prompt_parsed.text_to_send
     local active_agent_name = react_state.active_agent
 
-    -- Consagra e envelopa a intenção final na UI (Escondendo flags como --moa)
+    -- Consagra e envelopa a intenção final na UI
     if not is_already_block then
         local b_id = "usr_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(100, 999))
         local new_user_lines = { prefix .. string.format('<block id="%s" type="raw" role="user" status="active">', b_id) }
@@ -175,14 +175,12 @@ M.ProcessTurn = function(buf)
         active_agent_name = "archivist"
         text_to_send = require("multi_context.i18n").t("archivist_sys_prompt")
         
-        -- Remove o prompt atual recém adicionado para que o arquivista não o contamine
         local msgs = Session.get_messages()
         if #msgs > 0 then
             table.remove(msgs, #msgs)
             StateManager.set('session_messages', msgs)
         end
 
-        -- Injeta o prompt do arquivista estritamente na memória AST
         Session.add_message("user", text_to_send, { id = "arch_"..os.date("%H%M%S"), type = "raw", status = "active" })
         
         local msg = require("multi_context.i18n").t("guard_limit", predicted_total, horizon)
@@ -323,6 +321,9 @@ M.ExecuteTools = function(ia_idx, buf)
             break
         end
 
+        -- FIX LUAJIT GOTO SCOPE: Variável declarada antes de qualquer goto
+        local attr_str = (parsed_tag.path or "") .. "|" .. (parsed_tag.query or "") .. "|" .. (parsed_tag.start_line or "")
+
         new_content = new_content .. parsed_tag.text_before
 
         if parsed_tag.is_invalid or not parsed_tag.name or parsed_tag.name == "" then
@@ -337,7 +338,9 @@ M.ExecuteTools = function(ia_idx, buf)
             goto continue
         end
 
-        react_state._temp_sig = (parsed_tag.name or "") .. ":" .. vim.trim(parsed_tag.inner or "")
+        -- Assinatura combinada com os atributos para detectar falhas iguais
+        react_state._temp_sig = (parsed_tag.name or "") .. ":" .. vim.trim(parsed_tag.inner or "") .. ":" .. attr_str
+
         if react_state.last_tool_sig == react_state._temp_sig then
             react_state.tool_loop_count = (react_state.tool_loop_count or 0) + 1
         else
@@ -376,7 +379,8 @@ M.ExecuteTools = function(ia_idx, buf)
             if should_abort then
                 abort_all = true
             else
-                if tag_out:match(">%[Sistema%]:.*ERRO") then
+                -- Regex robusta para capturar erros e suspender autonomia
+                if tag_out:match("ERROR") or tag_out:match("ERRO:") or tag_out:match("ERRO %-") then
                     react_state.is_autonomous = false
                     should_continue_loop = false
                 end
@@ -387,12 +391,13 @@ M.ExecuteTools = function(ia_idx, buf)
         cursor = parsed_tag.close_end + 1
     end
 
-    if not has_changes or abort_all then 
+    if not has_changes then 
         dispatch_jit_archiving(buf)
         M.TerminateTurn()
         return 
     end
 
+    -- Fase 1: Renderiza o texto na tela
     if pending_rewrite_content then
         local rewrite_lines = vim.split(pending_rewrite_content, "\n", {plain=true})
         EventBus.emit("UI_SET_LINES", { buf = buf, lines = rewrite_lines })
@@ -413,12 +418,14 @@ M.ExecuteTools = function(ia_idx, buf)
         EventBus.emit("UI_SET_LINES", { buf = buf, lines = final_lines })
     end
 
-    if pending_rewrite_content or (not should_continue_loop and not react_state.is_autonomous) then
+    -- Fase 2: Decide se aborta o loop (incluindo se o abort_all disparou)
+    if pending_rewrite_content or abort_all or (not should_continue_loop and not react_state.is_autonomous) then
         dispatch_jit_archiving(buf)
         M.TerminateTurn()
         return
     end
 
+    -- Fase 3: Circuit Breaker Global
     if M.check_circuit_breaker() then
         dispatch_jit_archiving(buf)
         M.TerminateTurn()
