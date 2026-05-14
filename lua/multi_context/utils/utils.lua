@@ -26,8 +26,8 @@ M.build_workspace_content = function(buf, existing_filename)
     local content = table.concat(lines, "\n")
     
     local session_id = existing_filename and string.match(existing_filename, "chat_(%d+_%d+).mctx")
-    local created_at = os.date("Y-m-dTH:M:S")
-    local updated_at = os.date("Y-m-dTH:M:S")
+    local created_at = os.date("%Y-%m-%dT%H:%M:%S")
+    local updated_at = os.date("%Y-%m-%dT%H:%M:%S")
 
     -- Se já for uma sessão antiga, extraímos o ID/Creation e removemos a tag suja
     local existing_session = content:match("<mctx_session(.-)/>")
@@ -39,7 +39,7 @@ M.build_workspace_content = function(buf, existing_filename)
         content = content:gsub("<mctx_session.-/>%s*", "")
     end
     
-    if not session_id then session_id = os.date("Ymd_HMS") end
+    if not session_id then session_id = os.date("%Y%m%d_%H%M%S") end
     
     -- Limpa estado do swarm antigo e substitui
     content = content:gsub("<swarm_state>.-</swarm_state>%s*", "")

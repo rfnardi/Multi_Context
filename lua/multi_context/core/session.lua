@@ -46,7 +46,7 @@ M.sync_from_lines = function(lines)
     
     local xml_content = table.concat(lines, "\n")
     
-    for tag_attrs, raw_inner_content in xml_content:gmatch('<block(.-)>(.-)</block>') do
+    for tag_attrs, raw_inner_content in xml_content:gmatch('<block([^>]*)>(.-)</block>') do
         local id = tag_attrs:match('id="([^"]+)"')
         local type = tag_attrs:match('type="([^"]+)"')
         local role = tag_attrs:match('role="([^"]+)"')

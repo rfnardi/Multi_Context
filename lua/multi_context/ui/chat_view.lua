@@ -161,7 +161,7 @@ function M.create_folds(buf)
                     for lnum = 1, total_lines do
 											local line = all_lines[lnum]
                         if line then
-                            if line:match('<block.-status="archived"') then
+                            if line:match('<block[^>]*status="archived"') then
                                 table.insert(fold_stack, { type = "block", start = lnum })
                             elseif line:match('<abstract>') then
                                 table.insert(fold_stack, { type = "abstract", start = lnum })

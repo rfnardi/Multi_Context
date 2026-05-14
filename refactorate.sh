@@ -1,130 +1,96 @@
 #!/bin/bash
 
 echo "======================================================================"
-echo "🛡️  Forjando a Barreira de Adamantium (Supressão de Ghost Exceptions)"
+echo "🛡️  Adicionando Novos Testes de Regressão (Proteção Anti-Bugs)"
 echo "======================================================================"
 
-cat << 'EOF' > lua/multi_context/tests/libuv_barrier.lua
-if _G._libuv_barrier_loaded then return end
-_G._libuv_barrier_loaded = true
+cat << 'EOF' > add_tests.lua
+local path = "lua/multi_context/tests/regression_spec.lua"
+local f = io.open(path, "rb")
+if not f then print("Erro: Arquivo não encontrado."); os.exit(1) end
+local content = f:read("*a")
+f:close()
 
-_G._active_test_jobs = 0
-_G._active_timers = 0
-_G._active_schedules = 0
+local new_tests = [[
 
--- 1. Intercepta Jobs do SO (C-level) e blinda TODOS os callbacks (stdout, stderr, exit)
-local original_jobstart = vim.fn.jobstart
-vim.fn.jobstart = function(cmd, opts)
-    _G._active_test_jobs = _G._active_test_jobs + 1
-    local custom_opts = vim.deepcopy(opts or {})
-    
-    local function wrap_cb(key, is_exit)
-        local orig = custom_opts[key]
-        if orig then
-            custom_opts[key] = function(...)
-                -- O pcall engole qualquer erro fantasma impedindo que a suíte exploda
-                pcall(orig, ...)
-                if is_exit then _G._active_test_jobs = _G._active_test_jobs - 1 end
-            end
-        elseif is_exit then
-            custom_opts[key] = function()
-                _G._active_test_jobs = _G._active_test_jobs - 1
-            end
-        end
-    end
-    
-    wrap_cb("on_stdout", false)
-    wrap_cb("on_stderr", false)
-    wrap_cb("on_exit", true)
-    
-    local jid = original_jobstart(cmd, custom_opts)
-    if jid <= 0 then _G._active_test_jobs = _G._active_test_jobs - 1 end
-    return jid
-end
-
--- 2. Intercepta Timers Assíncronos
-local original_defer = vim.defer_fn
-vim.defer_fn = function(cb, ms)
-    _G._active_timers = _G._active_timers + 1
-    original_defer(function()
-        pcall(cb)
-        _G._active_timers = _G._active_timers - 1
-    end, ms)
-end
-
--- 3. Intercepta as filas do Event Loop (schedule e schedule_wrap)
-local original_schedule = vim.schedule
-vim.schedule = function(cb)
-    _G._active_schedules = _G._active_schedules + 1
-    original_schedule(function()
-        pcall(cb)
-        _G._active_schedules = _G._active_schedules - 1
+    it('Bug 9: Swarm Manager deve desembrulhar JSON aninhado em json_payload (Alucinacao LLM)', function()
+        local swarm = require('multi_context.core.swarm_manager')
+        -- Simulando exatamente o erro cometido pelo LLM
+        local fake_json = '{"json_payload": "{\\"tasks\\": [{\\"agent\\": \\"coder\\", \\"instruction\\": \\"teste\\"}]}"}'
+        
+        local ok, err = swarm.init_swarm(fake_json)
+        
+        assert.is_true(ok)
+        assert.are.equal(1, #swarm.state.queue)
+        assert.are.equal("coder", swarm.state.queue[1].agent)
     end)
-end
 
-local original_wrap = vim.schedule_wrap
-vim.schedule_wrap = function(cb)
-    return original_wrap(function(...)
-        pcall(cb, ...)
+    it('Bug 10: Tool Parser deve ignorar fechamentos de tag in-line (Injecao XML)', function()
+        local parser = require('multi_context.ecosystem.tool_parser')
+        -- Simulando a IA citando uma tag </tool_call> in-line no meio da instrução
+        local payload = "<tool_call name=\"spawn_swarm\">\n{\"instruction\": \"Tem um </tool_call> in-line aqui.\"}\n</tool_call>"
+        
+        local res = parser.parse_next_tool(payload, 1)
+        
+        assert.is_not_nil(res)
+        assert.is_false(res.is_invalid)
+        assert.are.equal("spawn_swarm", res.name)
+        assert.truthy(res.inner:match("in%-line aqui"))
     end)
-end
 
--- 4. Intercepta Autocmds (Gatilhos de Janela/Texto fantasma)
-local original_autocmd = vim.api.nvim_create_autocmd
-vim.api.nvim_create_autocmd = function(events, opts)
-    if opts and type(opts.callback) == "function" then
-        local orig_cb = opts.callback
-        opts.callback = function(...)
-            pcall(orig_cb, ...) -- Silencia crash de janelas já fechadas
+    it('Bug 11: Utils deve gerar datas validas no cabecalho mctx_session (Nao literal Y-m-d)', function()
+        local utils = require('multi_context.utils.utils')
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"## User >> hello"})
+        
+        local name, buf_content = utils.build_workspace_content(buf, nil)
+        local created = buf_content:match('created="([^"]+)"')
+        
+        assert.is_not_nil(created)
+        -- Garante que o desenvolvedor do futuro não reverta para 'Y-m-d'
+        assert.is_nil(created:match("Y%%-m%%-d"))
+        -- Garante que a data está no padrão real numérico ISO
+        assert.truthy(created:match("%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d"))
+        
+        vim.api.nvim_buf_delete(buf, {force=true})
+    end)
+
+    it('Bug 12: Transport deve usar offload de arquivo no curl ao inves de chansend (Anti-Freeze)', function()
+        local transport = require('multi_context.llm.transport')
+        -- Simulando a criacao de comando com payload persistido no disco
+        local cmd = transport.build_curl_cmd({url="http", api_type="openai"}, "key", "/tmp/fake.json", true)
+        
+        local has_at_file = false
+        for _, v in ipairs(cmd) do
+            if v == "@/tmp/fake.json" then has_at_file = true end
         end
-    end
-    return original_autocmd(events, opts)
-end
+        
+        -- Garante que o Curl será lido do HD (@arquivo) para evitar congelamento de UI
+        assert.is_true(has_at_file)
+    end)
+]]
 
--- 5. Injeta a Barreira no fim de cada bloco 'it' do Plenary
-local original_it = _G.it
-if original_it then
-    _G.it = function(desc, func)
-        original_it(desc, function()
-            local bufs_before = vim.api.nvim_list_bufs()
-
-            local ok, err = pcall(func)
-            
-            -- Segura a execução até estabilizar (Timeout de 4s)
-            vim.wait(4000, function() 
-                return _G._active_test_jobs <= 0 
-                   and _G._active_timers <= 0 
-                   and _G._active_schedules <= 0
-            end, 5)
-            
-            vim.wait(50, function() return false end, 5)
-
-            -- Teardown de Estados Globais (Preservando o EventBus)
-            pcall(function() require('multi_context.core.state_manager').reset() end)
-            pcall(function() require('multi_context.ecosystem.tools_manager').reset() end)
-            pcall(function() require('multi_context.core.swarm_manager').reset() end)
-            
-            -- Teardown das Janelas Visuais
-            local chat_view = package.loaded['multi_context.ui.chat_view']
-            if chat_view then
-                chat_view.popup_buf = nil
-                chat_view.popup_win = nil
-                chat_view.swarm_buffers = {}
-            end
-
-            -- Mata qualquer buffer intruso que tenha sobrado
-            local bufs_after = vim.api.nvim_list_bufs()
-            for _, b in ipairs(bufs_after) do
-                if not vim.tbl_contains(bufs_before, b) and vim.api.nvim_buf_is_valid(b) then
-                    pcall(vim.api.nvim_buf_delete, b, { force = true })
-                end
-            end
-
-            if not ok then error(err) end
-        end)
-    end
+-- Procura a última ocorrência de 'end)' no arquivo de testes para injetar o código de forma limpa
+local insert_pos = content:match(".*()%s*end%)%s*$")
+if insert_pos then
+    local before = content:sub(1, insert_pos - 1)
+    local after = content:sub(insert_pos)
+    
+    local new_content = before .. new_tests .. after
+    
+    local out = io.open(path, "wb")
+    out:write(new_content)
+    out:close()
+    print("✅ Os 4 testes de regressão foram injetados perfeitamente no regression_spec.lua!")
+else
+    print("❌ Não foi possível encontrar o ponto de injeção no final do arquivo.")
 end
 EOF
 
-echo "✅ Barreira Suprema gerada! Agora, Autocmds, Stdout, Stderr e Wraps são silenciosos."
-echo "🚀 Rode o seu loop novamente. O sistema cravou o pilar assíncrono."
+# Executa
+nvim -l add_tests.lua
+rm add_tests.lua
+
+echo ""
+echo "🚀 PRONTO! Você agora possui novos Guardiões Automatizados de Código."
+echo "Rode o 'make test_agregate_results' e observe a contagem total de testes subir de 273 para 277!"

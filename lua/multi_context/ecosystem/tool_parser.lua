@@ -77,12 +77,19 @@ M.parse_next_tool = function(content_to_process, cursor)
     local is_self_closing = tag_str:match("/%s*>$")
     local close_start, close_end, inner
 
-    if is_self_closing then
+        if is_self_closing then
         inner = ""
         close_start = tag_end + 1
         close_end = tag_end
     else
-        close_start, close_end = content_to_process:find("</tool_call%s*>", tag_end + 1)
+        local s, e = content_to_process:find("\n%s*</tool_call%s*>", tag_end + 1)
+        if s then
+            close_start = content_to_process:find("</tool_call", s)
+            close_end = e
+        else
+            close_start, close_end = content_to_process:find("</tool_call%s*>", tag_end + 1)
+        end
+        
         local next_open = content_to_process:find("<tool_call", tag_end + 1)
         
         if next_open and (not close_start or next_open < close_start) then

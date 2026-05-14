@@ -7,7 +7,7 @@ local api_client = require('multi_context.llm.api_client')
 
 describe("Fixes TDD - Bugs Críticos e Performance (1.1, 1.3, 2.1, 2.2):", function()
 
-    it("1.1: Transport - Deve fechar o canal de stdin do curl apenas UMA vez", function()
+    pending("1.1: Transport - STDIN substituído por Offload", function()
         local chansend_count = 0
         local chanclose_count = 0
         local orig_chansend = vim.fn.chansend
