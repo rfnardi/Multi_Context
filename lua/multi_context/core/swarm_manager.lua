@@ -174,7 +174,7 @@ M.dispatch_next = function()
                                 if parsed.is_invalid or not parsed.name or parsed.name == "" then
                                     cursor = parsed.close_end + 1
                                 else
-                                    local tag_out = tool_runner.execute(parsed, true, approve_ref, buf_id)
+                                    local tag_out = tool_runner.execute(parsed, true, approve_ref, buf_id, task.agent)
                                     new_content = new_content .. "\n" .. tag_out
                                     cursor = parsed.close_end + 1
                                 end
@@ -182,10 +182,21 @@ M.dispatch_next = function()
                             
                             if new_content ~= "" then
                                 local switch_target = new_content:match("SWITCH_AGENT_REQUEST:([%w_]+)")
-                                task.switch_count = (task.switch_count or 0) + 1
-                                if task.switch_count > 3 then switch_target = nil; new_content = "FATAL ERROR: Loop infinito de troca de agente detectado." end
-                                task.switch_count = (task.switch_count or 0) + 1
-                                if task.switch_count > 3 then switch_target = nil; new_content = "FATAL ERROR: Loop infinito de troca de agente detectado (limite de 3) excedido." end
+                                
+                                task.turn_count = (task.turn_count or 0) + 1
+                                if task.turn_count > 15 then
+                                    new_content = "FATAL ERROR: Limite máximo de 15 turnos autônomos excedido no Swarm."
+                                    switch_target = nil
+                                end
+                                
+                                if switch_target then
+                                    task.switch_count = (task.switch_count or 0) + 1
+                                    if task.switch_count > 3 then 
+                                        switch_target = nil
+                                        new_content = "FATAL ERROR: Loop infinito de troca de agente detectado (limite de 3) excedido." 
+                                    end
+                                end
+                                
                                 if switch_target then
                                     local is_allowed = false
                                     if type(task.allow_switch) == "table" then

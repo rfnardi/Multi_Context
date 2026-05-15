@@ -19,7 +19,7 @@ local function is_dangerous(cmd)
     return true
 end
 
-M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
+M.execute = function(tool_data, is_autonomous, approve_all_ref, buf, active_agent_override)
     local name = tool_data.name
     local clean_inner = tool_data.inner
 
@@ -43,7 +43,7 @@ M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)
     end
 
     local agents = require('multi_context.agents').load_agents()
-    local active_agent = StateManager.get('react').active_agent
+    local active_agent = active_agent_override or StateManager.get('react').active_agent
     local is_authorized = false
 
     if active_agent and agents[active_agent] and agents[active_agent].skills then

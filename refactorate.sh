@@ -1,96 +1,127 @@
 #!/bin/bash
+set -e
 
-echo "======================================================================"
-echo "🛡️  Adicionando Novos Testes de Regressão (Proteção Anti-Bugs)"
-echo "======================================================================"
+echo "🛠️ 1. Criando Spec de Teste Isolado para o Gatekeeper do Swarm..."
 
-cat << 'EOF' > add_tests.lua
-local path = "lua/multi_context/tests/regression_spec.lua"
-local f = io.open(path, "rb")
-if not f then print("Erro: Arquivo não encontrado."); os.exit(1) end
-local content = f:read("*a")
-f:close()
+cat << 'EOF' > lua/multi_context/tests/swarm_gatekeeper_spec.lua
+local assert = require("luassert")
+local tool_runner = require("multi_context.ecosystem.tool_runner")
+local StateManager = require("multi_context.core.state_manager")
 
-local new_tests = [[
-
-    it('Bug 9: Swarm Manager deve desembrulhar JSON aninhado em json_payload (Alucinacao LLM)', function()
-        local swarm = require('multi_context.core.swarm_manager')
-        -- Simulando exatamente o erro cometido pelo LLM
-        local fake_json = '{"json_payload": "{\\"tasks\\": [{\\"agent\\": \\"coder\\", \\"instruction\\": \\"teste\\"}]}"}'
-        
-        local ok, err = swarm.init_swarm(fake_json)
-        
-        assert.is_true(ok)
-        assert.are.equal(1, #swarm.state.queue)
-        assert.are.equal("coder", swarm.state.queue[1].agent)
+describe("Swarm Gatekeeper Fix", function()
+    before_each(function()
+        StateManager.reset()
     end)
 
-    it('Bug 10: Tool Parser deve ignorar fechamentos de tag in-line (Injecao XML)', function()
-        local parser = require('multi_context.ecosystem.tool_parser')
-        -- Simulando a IA citando uma tag </tool_call> in-line no meio da instrução
-        local payload = "<tool_call name=\"spawn_swarm\">\n{\"instruction\": \"Tem um </tool_call> in-line aqui.\"}\n</tool_call>"
+    it("tool_runner.execute DEVE aceitar active_agent_override para Sub-Agentes do Swarm", function()
+        -- Mocks locais: tech_lead não tem ferramentas. devops tem git.
+        local agents = {
+            tech_lead = { skills = {} },
+            devops = { skills = {"git_automation"} }
+        }
         
-        local res = parser.parse_next_tool(payload, 1)
+        local mock_ontology = {
+            resolve_agent_skills = function(skills)
+                if skills and skills[1] == "git_automation" then
+                    return { tools_set = { get_git_env = true } }
+                end
+                return { tools_set = {} }
+            end
+        }
         
-        assert.is_not_nil(res)
-        assert.is_false(res.is_invalid)
-        assert.are.equal("spawn_swarm", res.name)
-        assert.truthy(res.inner:match("in%-line aqui"))
+        -- Injeção no package.loaded
+        package.loaded["multi_context.agents"] = { load_agents = function() return agents end }
+        package.loaded["multi_context.ecosystem.ontology"] = mock_ontology
+        
+        -- Simulando que o estado global React ainda é o Tech Lead
+        StateManager.patch("react", { active_agent = "tech_lead" })
+        
+        local tool_data = { name = "get_git_env", inner = "" }
+        local ref = { value = true }
+        
+        -- Teste A (Bug Antigo): Sem override, DEVE negar (Tech Lead não pode rodar Git)
+        local out_denied = tool_runner.execute(tool_data, true, ref, 1)
+        assert.truthy(out_denied:match("Operação negada"))
+        
+        -- Teste B (Nova Funcionalidade): Com override do Swarm, DEVE autorizar o Devops
+        local out_allowed = tool_runner.execute(tool_data, true, ref, 1, "devops")
+        assert.falsy(out_allowed:match("Operação negada"))
+        
+        -- Cleanup
+        package.loaded["multi_context.agents"] = nil
+        package.loaded["multi_context.ecosystem.ontology"] = nil
     end)
-
-    it('Bug 11: Utils deve gerar datas validas no cabecalho mctx_session (Nao literal Y-m-d)', function()
-        local utils = require('multi_context.utils.utils')
-        local buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"## User >> hello"})
-        
-        local name, buf_content = utils.build_workspace_content(buf, nil)
-        local created = buf_content:match('created="([^"]+)"')
-        
-        assert.is_not_nil(created)
-        -- Garante que o desenvolvedor do futuro não reverta para 'Y-m-d'
-        assert.is_nil(created:match("Y%%-m%%-d"))
-        -- Garante que a data está no padrão real numérico ISO
-        assert.truthy(created:match("%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d"))
-        
-        vim.api.nvim_buf_delete(buf, {force=true})
-    end)
-
-    it('Bug 12: Transport deve usar offload de arquivo no curl ao inves de chansend (Anti-Freeze)', function()
-        local transport = require('multi_context.llm.transport')
-        -- Simulando a criacao de comando com payload persistido no disco
-        local cmd = transport.build_curl_cmd({url="http", api_type="openai"}, "key", "/tmp/fake.json", true)
-        
-        local has_at_file = false
-        for _, v in ipairs(cmd) do
-            if v == "@/tmp/fake.json" then has_at_file = true end
-        end
-        
-        -- Garante que o Curl será lido do HD (@arquivo) para evitar congelamento de UI
-        assert.is_true(has_at_file)
-    end)
-]]
-
--- Procura a última ocorrência de 'end)' no arquivo de testes para injetar o código de forma limpa
-local insert_pos = content:match(".*()%s*end%)%s*$")
-if insert_pos then
-    local before = content:sub(1, insert_pos - 1)
-    local after = content:sub(insert_pos)
-    
-    local new_content = before .. new_tests .. after
-    
-    local out = io.open(path, "wb")
-    out:write(new_content)
-    out:close()
-    print("✅ Os 4 testes de regressão foram injetados perfeitamente no regression_spec.lua!")
-else
-    print("❌ Não foi possível encontrar o ponto de injeção no final do arquivo.")
-end
+end)
 EOF
 
-# Executa
-nvim -l add_tests.lua
-rm add_tests.lua
+echo "✨ 2. Aplicando Patches Cirúrgicos nos Módulos..."
 
-echo ""
-echo "🚀 PRONTO! Você agora possui novos Guardiões Automatizados de Código."
-echo "Rode o 'make test_agregate_results' e observe a contagem total de testes subir de 273 para 277!"
+cat << 'EOF' > fix_swarm_bugs.py
+import os
+
+# --- Correção 1: tool_runner.lua ---
+tr_path = "lua/multi_context/ecosystem/tool_runner.lua"
+with open(tr_path, "r") as f:
+    tr_content = f.read()
+
+tr_content = tr_content.replace(
+    "M.execute = function(tool_data, is_autonomous, approve_all_ref, buf)",
+    "M.execute = function(tool_data, is_autonomous, approve_all_ref, buf, active_agent_override)"
+)
+tr_content = tr_content.replace(
+    "local active_agent = StateManager.get('react').active_agent",
+    "local active_agent = active_agent_override or StateManager.get('react').active_agent"
+)
+
+with open(tr_path, "w") as f:
+    f.write(tr_content)
+
+# --- Correção 2: swarm_manager.lua ---
+sm_path = "lua/multi_context/core/swarm_manager.lua"
+with open(sm_path, "r") as f:
+    sm_content = f.read()
+
+sm_content = sm_content.replace(
+    "local tag_out = tool_runner.execute(parsed, true, approve_ref, buf_id)",
+    "local tag_out = tool_runner.execute(parsed, true, approve_ref, buf_id, task.agent)"
+)
+
+# Refatorando o bug de Loop Duplo do Switch Count
+buggy_loop_logic = """                                local switch_target = new_content:match("SWITCH_AGENT_REQUEST:([%w_]+)")
+                                task.switch_count = (task.switch_count or 0) + 1
+                                if task.switch_count > 3 then switch_target = nil; new_content = "FATAL ERROR: Loop infinito de troca de agente detectado." end
+                                task.switch_count = (task.switch_count or 0) + 1
+                                if task.switch_count > 3 then switch_target = nil; new_content = "FATAL ERROR: Loop infinito de troca de agente detectado (limite de 3) excedido." end
+                                if switch_target then"""
+
+fixed_loop_logic = """                                local switch_target = new_content:match("SWITCH_AGENT_REQUEST:([%w_]+)")
+                                
+                                task.turn_count = (task.turn_count or 0) + 1
+                                if task.turn_count > 15 then
+                                    new_content = "FATAL ERROR: Limite máximo de 15 turnos autônomos excedido no Swarm."
+                                    switch_target = nil
+                                end
+                                
+                                if switch_target then
+                                    task.switch_count = (task.switch_count or 0) + 1
+                                    if task.switch_count > 3 then 
+                                        switch_target = nil
+                                        new_content = "FATAL ERROR: Loop infinito de troca de agente detectado (limite de 3) excedido." 
+                                    end
+                                end
+                                
+                                if switch_target then"""
+
+sm_content = sm_content.replace(buggy_loop_logic, fixed_loop_logic)
+
+with open(sm_path, "w") as f:
+    f.write(sm_content)
+
+print("✅ Arquivos tool_runner.lua e swarm_manager.lua corrigidos com sucesso.")
+EOF
+
+python3 fix_swarm_bugs.py
+rm fix_swarm_bugs.py
+
+echo "🧪 3. Executando a Suíte de Testes Agregada..."
+make test_agregate_results
