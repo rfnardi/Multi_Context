@@ -5,7 +5,9 @@
     <parameter name="json_payload" type="string" required="true">JSON estrito contendo o array "tasks".</parameter>
   </parameters>
   <content_description>
-    CRÍTICO / TERMINANTEMENTE PROIBIDO: 
+    CRÍTICO / TERMINANTEMENTE PROIBIDO (TERMINALLY FORBIDDEN):
+    - NÃO delegue operações de mudança de branch do Git (como "git checkout" ou "git branch") para agentes executando em paralelo. Alterações de branch locais destruirão a Working Tree concorrente e causarão falhas catastróficas. Integrações Git devem ocorrer de forma SEQUENCIAL (chain) no final das operações.
+ 
     - NÃO envolva o JSON em uma chave inventada como {"json_payload": ...}. 
     - NÃO use blocos de código Markdown (```json).
     - Escreva o objeto JSON puro e diretamente no corpo da tag.

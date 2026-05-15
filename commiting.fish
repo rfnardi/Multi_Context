@@ -1,21 +1,23 @@
 #!/bin/fish
 
 gitgo '
-test(regression): adiciona testes anti-regressão e estabiliza suíte assíncrona com barreira de adamantium
+feat(swarm): integrate state to AST, minimalist UX and git guardrails
 
-Este commit garante que as últimas melhorias manuais feitas no sistema se tornem leis imutáveis na arquitetura através de testes automatizados, além de erradicar permanentemente qualquer flutuação de callbacks ("Ghost Exceptions") no Plenary.
+- AST Polymorphic Swarm: Eradicated the legacy `<swarm_state>` tag. Swarm
+  JSON states are now natively encapsulated as `<block type="swarm">` nodes
+  in the Immutable Ledger. This allows the Asynchronous Librarian (Archiver)
+  to hyper-compress completed MoA sessions, saving massive context tokens.
+- Minimalist Carousel UX: Refactored `chat_view` floating window title to
+  eliminate visual pollution. It dynamically hides inactive worker tabs,
+  strictly rendering the `Main` chat and the focused Swarm agent.
+- Anti-Branching Guardrails: Hardened `spawn_swarm` MCP documentation with
+  `TERMINALLY FORBIDDEN` directives against parallel Git branch operations,
+  neutralizing local Working Tree corruption during concurrent workflows.
+- Test Architecture: Fixed legacy assertions from Phase 5 and Phase 18.5.
+  Added strict validation for the new AST serialization and UI behavior
+  (Maintained 100% Success Rate across 281 tests).
+- Docs: Updated CONTEXT.md with Phase 48 specifications.
 
-🛡️ Novos Testes de Regressão (regression_spec):
-- Bug 9: Adicionado teste para o Swarm Manager que valida o desembrulho de "json_payload" (Alucinação do LLM).
-- Bug 10: Adicionado teste para o Tool Parser que assegura a extração correta ignorando tags </tool_call> in-line (Injeção XML).
-- Bug 11: Adicionado teste que certifica a formatação da data ISO em utils.lua (Prevenção de datas literais Y-m-d).
-- Bug 12: Adicionado teste que valida a injeção do arquivo em disco (@/tmp/...) no Curl, atestando o offload do Kernel (Anti-Freeze).
-
-🧪 Estabilização da Suíte de Testes:
-- Evolução do módulo libuv_barrier para interceptar globalmente `vim.schedule_wrap` e `nvim_create_autocmd`. Callbacks órfãos agora são suprimidos via pcall nativo, cravando a contagem estática em 277/277 testes absolutos.
-- Arquivados (pending) os testes obsoletos de STDIN do tdd_fixes e regression_spec.
-
-🐛 Correções de Código:
-- Corrigido erro de sintaxe no `tool_parser.lua` gerado por substituição incorreta de regex, restaurando a rotina de validação XML perfeitamente.
+Ref: Phase 48
 '
 

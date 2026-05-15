@@ -3,7 +3,7 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V2.4.3** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention, and a **100% Deterministic Asynchronous Testing Architecture** guaranteeing absolute stability across the entire codebase.
+In its **V2.4.3** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention, **AST-Integrated Swarm States**, **Minimalist Swarm UI**, and a **100% Deterministic Asynchronous Testing Architecture** guaranteeing absolute stability across the entire codebase.
 
 ## Technical Architecture
 
@@ -175,6 +175,11 @@ lua/multi_context/
 - **Global State Anti-Bleeding**: Implementation of a strict *Restore-Before-Assert* pattern ensuring global Neovim I/O and Kernel mocks (e.g., `vim.fn.system`, `vim.fn.executable`) are unfailingly restored to their original state even when `assert` exceptions interrupt the runtime flow.
 - **Deterministic Suite Execution**: Ensured 100% stability in test counts (abolishing hash-based directory loading inconsistencies in Linux environments) by structurally confining every `it` evaluation within meticulously scoped `describe` lifecycle bounds.
 
+### 22. Swarm AST Integration & Minimalist UX (Phase 48)
+- **AST Polymorphic Swarm**: Eradicated the legacy `<swarm_state>` tag. Swarm JSON states are now natively integrated into the Immutable Ledger as `<block type="swarm">` nodes. This architectural leap enables the Asynchronous Librarian to intercept and hyper-compress completed swarm sessions, recovering massive amounts of context tokens.
+- **Minimalist Carousel UX**: The Neovim floating window title was refactored to eliminate visual pollution. It dynamically hides inactive worker tabs, rendering strictly the `Main` chat and the currently focused Swarm agent.
+- **Anti-Branching Guardrails**: Hardened the `@tech_lead` prompt and MCP documentation with `TERMINALLY FORBIDDEN` directives against parallel Git branch operations. This guarantees absolute safety against local Working Tree corruption during concurrent MoA executions.
+
 ---
 
 ## Current Development State
@@ -200,3 +205,4 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Active Semantic Indexing with Zero-Freeze UX, Popcorn Patching, and Cognitive Load Balancer.
 - Asynchronous Tool Execution (`jobstart`) and Robust Out-of-Memory (OOM) Protection.
 - Strict Sandbox Security against remote execution bypasses.
+- **Swarm AST Integration (Polymorphic Ledger compression for JSON states), Minimalist Carousel UX, and Anti-Branching Git Guardrails.**

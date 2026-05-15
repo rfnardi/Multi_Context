@@ -18,7 +18,7 @@ describe("Fase 18.5 - Session & State Management:", function()
         local filename, exported_text = utils.build_workspace_content(buf, nil)
         
         assert.truthy(exported_text:match("<mctx_session id="), "Deve conter tag de sessao no topo")
-        assert.truthy(exported_text:match("<swarm_state>"), "Deve conter tag de estado do enxame no final")
+        assert.truthy(exported_text:match('<block[^>]+type="swarm"'), "Deve conter tag de estado do enxame no final")
         assert.truthy(exported_text:match("qa"), "Deve conter os dados da fila exportados em JSON")
         assert.truthy(filename:match("%.mctx$"), "Deve gerar o nome do arquivo corretamente")
     end)

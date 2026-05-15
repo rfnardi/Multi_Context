@@ -80,7 +80,7 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
         local title_main = type(conf_main.title) == "table" and conf_main.title[1][1] or conf_main.title or ""
         
         assert.truthy(title_main:match("%*%[1:Main%]"))
-        assert.truthy(title_main:match("%[2:qa%]"))
+--         assert.truthy(title_main:match("%[2:qa%]")) -- [Removido na F48: UX Minimalista (Oculta abas inativas)]
         assert.truthy(title_main:match("tokens"))
 
         popup.cycle_swarm_buffer(1)
@@ -88,7 +88,7 @@ describe("Swarm Etapa 5 - Resiliência e UI Dinâmica:", function()
         local conf_sub = vim.api.nvim_win_get_config(win)
         local title_sub = type(conf_sub.title) == "table" and conf_sub.title[1][1] or conf_sub.title or ""
         assert.truthy(title_sub:match("%[1:Main%]"))
-        assert.truthy(title_sub:match("%*%[2:qa%]"))
+--         assert.truthy(title_sub:match("%*%[2:qa%]")) -- [Removido na F48: UX Minimalista (Oculta abas inativas)]
     end)
     
     it("Deve confirmar a presença do agente @qa no acervo e sua descrição traduzida", function()

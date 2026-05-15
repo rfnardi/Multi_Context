@@ -45,3 +45,17 @@ describe("Fase 36 - Prompt Hardening e Anti-Alucinação:", function()
         assert.truthy(manual:match("AUTO%-LSP ACTIVE"), "Deve avisar a IA sobre o diagnóstico automático.")
     end)
 end)
+
+describe("Fase 48 - Swarm Guardrails e Anti-Branching:", function()
+    it("O manual do spawn_swarm deve proibir estritamente paralelismo com branches do Git", function()
+        local registry = require('multi_context.tools.registry')
+        
+        -- Força a leitura simulada passando a string de fallback ou lendo real
+        local manual = registry.build_manual_for_skills({"spawn_swarm"})
+        
+        assert.truthy(manual:match("TERMINALLY FORBIDDEN"), "O manual de spawn_swarm deve conter a string TERMINALLY FORBIDDEN para maior peso.")
+        
+        local has_branch_guard = manual:match("git checkout") or manual:match("branch") or manual:match("branches")
+        assert.truthy(has_branch_guard, "O manual deve proibir explicitamente operações paralelas envolvendo manipulação de branches.")
+    end)
+end)

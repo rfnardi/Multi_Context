@@ -42,7 +42,8 @@ M.build_workspace_content = function(buf, existing_filename)
     if not session_id then session_id = os.date("%Y%m%d_%H%M%S") end
     
     -- Limpa estado do swarm antigo e substitui
-    content = content:gsub("<swarm_state>.-</swarm_state>%s*", "")
+        content = content:gsub("<swarm_state>.-</swarm_state>%s*", "")
+    content = content:gsub('<block[^>]+type="swarm"[^>]*>.-</block>%%s*', "")
     
     local swarm = require('multi_context.core.swarm_manager')
     local popup = require('multi_context.ui.chat_view')
@@ -61,7 +62,16 @@ M.build_workspace_content = function(buf, existing_filename)
     local ok, json_state = pcall(vim.fn.json_encode, state_data)
     local swarm_xml = ""
     if ok and json_state and json_state ~= "{}" then
-        swarm_xml = "\n<swarm_state>\n" .. json_state .. "\n</swarm_state>"
+                local is_running = false
+        if state_data.queue and #state_data.queue > 0 then is_running = true end
+        if state_data.buffers then
+            for _, b in ipairs(state_data.buffers) do
+                if b.status == "Rodando" then is_running = true end
+            end
+        end
+        local status = is_running and "running" or "completed"
+        local swarm_block_id = "swarm_" .. os.date("%Y%m%d%H%M%S")
+        swarm_xml = string.format('\n<block id="%s" type="swarm" status="%s">\n<content>\n%s\n</content>\n</block>', swarm_block_id, status, json_state)
     end
     
     local header = string.format('<mctx_session id="%s" created="%s" updated="%s" />\n', session_id, created_at, updated_at)
@@ -82,7 +92,10 @@ M.load_workspace_state = function(buf)
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
     local content = table.concat(lines, "\n")
     
-    local swarm_state_str = content:match("<swarm_state>%s*(.-)%s*</swarm_state>")
+        local swarm_state_str = content:match('<block[^>]+type="swarm"[^>]*>%s*<content>%s*(.-)%s*</content>%s*</block>')
+    if not swarm_state_str then
+        swarm_state_str = content:match("<swarm_state>%s*(.-)%s*</swarm_state>") -- Backward compatibility
+    end
     if swarm_state_str then
         local ok, parsed = pcall(vim.fn.json_decode, swarm_state_str)
         if ok and type(parsed) == "table" then

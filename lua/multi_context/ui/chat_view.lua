@@ -228,10 +228,20 @@ function M.update_title()
         local new_title = ""
         if M.swarm_buffers and #M.swarm_buffers > 1 then
             local parts = {}
-            for i, sb in ipairs(M.swarm_buffers) do
-                local prefix = (i == M.current_swarm_index) and "*" or ""
-                table.insert(parts, string.format("%s[%d:%s]", prefix, i, sb.name))
+            
+            -- Fixa sempre a aba Main
+            local main_name = M.swarm_buffers[1] and M.swarm_buffers[1].name or "Main"
+            local main_prefix = (1 == M.current_swarm_index) and "*" or ""
+            table.insert(parts, string.format("%s[1:%s]", main_prefix, main_name))
+            
+            -- Renderiza apenas a aba ativa (se não for a Main)
+            if M.current_swarm_index > 1 then
+                local active_sb = M.swarm_buffers[M.current_swarm_index]
+                if active_sb then
+                    table.insert(parts, string.format("*[%d:%s]", M.current_swarm_index, active_sb.name))
+                end
             end
+            
             new_title = " " .. table.concat(parts, " | ") .. string.format(" | ~%d tokens ", tokens) .. " "
         else
             new_title = require("multi_context.i18n").t("chat_title", tokens)
