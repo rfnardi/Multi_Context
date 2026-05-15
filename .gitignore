@@ -1,4 +1,3 @@
-# Ignora arquivos temporários e chaves vazadas
 *.json
 !agents/agents.json
 .DS_Store
@@ -7,7 +6,9 @@ mctx_backup_*.mctx
 .mctx_chats/
 !./run_tests.sh
 ./*.mctx
-collect_info.sh 
+./collect_info.sh 
 get_context_human_written.fish 
-create_tests.sh 
-refactorate.sh
+./create_tests.sh 
+./refactorate.sh
+./full_context.md
+./log_tests.txt
