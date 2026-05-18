@@ -1,22 +1,18 @@
 #!/bin/fish
 
 gitgo '
-feat(swarm): integrate state to AST, minimalist UX and git guardrails
+fix(ui): encapsulate swarm json payloads in native folds and add regression shields
 
-- AST Polymorphic Swarm: Eradicated the legacy `<swarm_state>` tag. Swarm
-  JSON states are now natively encapsulated as `<block type="swarm">` nodes
-  in the Immutable Ledger. This allows the Asynchronous Librarian (Archiver)
-  to hyper-compress completed MoA sessions, saving massive context tokens.
-- Minimalist Carousel UX: Refactored `chat_view` floating window title to
-  eliminate visual pollution. It dynamically hides inactive worker tabs,
-  strictly rendering the `Main` chat and the focused Swarm agent.
-- Anti-Branching Guardrails: Hardened `spawn_swarm` MCP documentation with
-  `TERMINALLY FORBIDDEN` directives against parallel Git branch operations,
-  neutralizing local Working Tree corruption during concurrent workflows.
-- Test Architecture: Fixed legacy assertions from Phase 5 and Phase 18.5.
-  Added strict validation for the new AST serialization and UI behavior
-  (Maintained 100% Success Rate across 281 tests).
-- Docs: Updated CONTEXT.md with Phase 48 specifications.
+- Swarm UI Folds: Fixed visual pollution where massive JSON payloads leaked
+  into the chat buffer. Added native Neovim folds for `<block type="swarm">`
+  with clean semantic labels (e.g., 🐝 [Enxame de IA: Rodando]).
+- Regression Shields: Implemented strict headless tests for OS-level I/O
+  failures (E482 Kernel Simulator) and UI folding events, permanently 
+  protecting the Sandbox and the Visual Engine from future regressions.
+- Test Calibration: Fixed false negatives in headless CI environments by
+  binding phantom buffers to active windows and simulating tool signatures.
+- Docs: Updated CONTEXT.md and README.md with Phase 48 final specs, Swarm AST,
+  Minimalist UX, and the new absolute test count (284 passing).
 
 Ref: Phase 48
 '

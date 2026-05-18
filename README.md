@@ -1,6 +1,6 @@
 ![Neovim](https://img.shields.io/badge/Neovim-0.8+-green.svg?style=for-the-badge&logo=neovim)
 ![Lua](https://img.shields.io/badge/Lua-100%25-blue.svg?style=for-the-badge&logo=lua)
-![Release](https://img.shields.io/badge/Version-v2.4--Final-blue.svg?style=for-the-badge)
+![Release](https://img.shields.io/badge/Version-v2.4.3--Final-blue.svg?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 ## 📖 Overview
@@ -11,7 +11,7 @@ Unlike conventional autocomplete plugins, MultiContext acts as a cutting-edge so
 
 All of this is supported by an asynchronous multithreaded **Swarm Architecture** and governed by a virtual **Master Command Center** inside your Neovim. 
 
-In its **v2.4+** release, it achieves true **Model Context Protocol (MCP)** alignment, introducing a Semantic Ontology that cleanly separates Agent Behaviors from Raw System Tools, dynamic **Meta-Agent Squads**, **Just-in-Time LSP Setup** for a zero-friction development experience, and **Active Semantic Indexing with a Cognitive Load Balancer** to parse massive contexts without UI freezes.
+In its **v2.4.3** release, it achieves true **Model Context Protocol (MCP)** alignment, introducing a Semantic Ontology that cleanly separates Agent Behaviors from Raw System Tools, dynamic **Meta-Agent Squads**, **Just-in-Time LSP Setup** for a zero-friction development experience, **Active Semantic Indexing with a Cognitive Load Balancer** to parse massive contexts without UI freezes, and a **Polymorphic Immutable Ledger (AST)** that deeply integrates Swarm background states with a Predictive Watchdog for massive memory token compression.
 
 ---
 
@@ -23,14 +23,15 @@ In its **v2.4+** release, it achieves true **Model Context Protocol (MCP)** alig
 | 🧬 | **Semantic Ontology (MCP)** | Clean architecture separating **Semantic Skills** (Agent behaviors, guardrails, and military rules of engagement) from **System Tools** (Raw binary executables like `bash` or `read_file`). |
 | 🌍 | **Native Cognition & i18n** | Heavy orchestration rules run in **English** in the Backend (yielding zero LLM logic hallucinations) while the UI and Chat output adapt to your preferred language (e.g., pt-BR or en). |
 | 🧩 | **Context Injectors (`\`)** | Compose prompts in a live fuzzy menu. Inject the File Tree, global LSP Errors, or Git Logs directly below your cursor without ruining your text. |
-| 🐝 | **Swarm Architecture** | The `@tech_lead` invokes specialized teams (@coder, @qa, @devops) operating in a parallel asynchronous carousel. Includes **On-the-fly Choreography** (`--queue` and `--moa` flags). |
+| 🐝 | **Polymorphic Swarm (AST)** | The `@tech_lead` invokes specialized teams (@coder, @qa, @devops) operating in parallel. In-flight JSON states are deeply integrated into the Immutable Ledger (`<block type="swarm">`) allowing the background Archivist to transparently compress completed operations and save massive token counts. |
 | 👥 | **Meta-Agent Squads** | Trigger predefined groups of agents (e.g., `@squad_dev`) that follow strict execution pipelines (e.g., Tech Lead ➔ Coder ➔ QA). |
 | 🛡️ | **Context Watchdog 2.0** | A predictive tracker (EMA) monitors tokens. If the limit is breached, the `@archivist` performs an aggressive Quadripartite Compression via XML. |
 | ⚖️ | **Cognitive Load Balancer** | Distributes semantic background tasks (RAG) across multiple APIs in a Round-Robin pool, enabling massive parallel indexing without hitting rate limits. |
 | 🍿 | **Zero-Freeze UX (Popcorn Patching)** | Massive file dumps are injected instantly as provisional `<abstract>` tags. The background APIs process the files and asynchronously patch the UI in real-time. |
+| 👁️ | **Minimalist Carousel UX** | Swarm states, no matter how huge, are natively encapsulated by Neovim visual engine Folds (e.g., `🐝 [Enxame de IA: Rodando]`), completely protecting your chat window from visual JSON pollution. |
 | 🔍 | **LSP & Ripgrep Navigation** | We abandoned noisy RAG. The AI tracks down code with ultra-fast `rg` and jumps into functions via **Go To Definition** using Neovim's own LSP for maximum token efficiency. |
 | 🛠️ | **Just-in-Time LSP Setup** | The AI proactively checks if the target file has an active LSP. If missing, it uses `Mason.nvim` to auto-install and attach it silently before parsing code diagnostics. |
-| 👨‍💻 | **Git Automation (@devops)** | At the end of a task, the AI creates branches and surgically commits specific files through a strict Security Gatekeeper (blocking remote pushes). |
+| 👨‍💻 | **Git Automation (@devops)** | At the end of a task, the AI creates branches and surgically commits specific files through a strict Security Gatekeeper. Includes **Anti-Branching Guardrails** to prevent local Git locks during concurrent MoA operations. |
 | 🧠 | **Cognitive Hardening** | Implements Recency Bias Guardrails and Zero-Skill Awareness to prevent tool hallucinations and strictly enforce XML outputs without markdown wrappers. |
 | ⚡ | **V2.0 Event-Driven Core** | Pure Lua PubSub Architecture (EventBus) with Centralized State Management and Session AST, making the UI 100% reactive and decoupled. |
 | 🔌 | **Polyglot Extensibility** | Teach custom skills (e.g., Pytest, Jira, Databases) by writing scripts in Bash, Python, or Go, and native `env` bridging will couple them to the AI. |
@@ -138,7 +139,7 @@ MultiContext features an **Auto-Setup**. Upon running it for the first time, it 
 
 ## 🧪 Automated Testing and Reliability (TDD)
 
-The engine of this plugin was strictly developed under TDD and is maintained with military-grade resilience (**257 isolated tests passing at 100%**).
+The engine of this plugin was strictly developed under TDD and is maintained with military-grade resilience, featuring **Anti-Regression Shields** that validate OS-level I/O limits (Sandbox Sandbox crash-catchers) and Headless GUI events (**284 isolated tests passing at 100%**).
 ```bash
 make test_agregate_results
 ```
@@ -151,8 +152,7 @@ make test_agregate_results
 ======================================================================
 📊 AGGREGATED GLOBAL SUMMARY (MULTI-CONTEXT)
 ======================================================================
-✅ Success: 257
+✅ Success: 284
 ❌ Failed : 0
 💥 Errors : 0
 ======================================================================
-```

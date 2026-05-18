@@ -9,7 +9,7 @@ In its **V2.4.3** release, it features an advanced **Swarm Architecture** (Mixtu
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **281 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network), a custom **Async Barrier** (Queue Draining) for Neovim's Event Loop, and a strict **Restore-Before-Assert** pattern preventing Global State Bleeding.
+- **Testing Framework**: `plenary.nvim` (busted) - **283 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network), a custom **Async Barrier** (Queue Draining) for Neovim's Event Loop, strict **Restore-Before-Assert** patterns preventing Global State Bleeding, and **Headless-Calibrated Regression Shields**.
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`). All ReAct loops and user interactions are strictly and idempotently wrapped to preserve AST integrity.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -51,6 +51,8 @@ lua/multi_context/
 │   ├── git_tools_spec.lua        # Git Automation and Gatekeeper Tests
 │   ├── archiver_spec.lua         # Relational Compression and RAG Tests
 │   ├── visual_engine_spec.lua    # Native Folds and Conceal Tests
+│   ├── regression_io_sandbox_spec.lua    # I/O Crash Prevention Shield
+│   ├── regression_ui_swarm_fold_spec.lua # Visual JSON Leak Shield
 │   └── ... (plus 40+ files)
 └── examples/
     ├── skills/           # Community Skill Templates (Jira, Pytest, SQL)
@@ -174,9 +176,11 @@ lua/multi_context/
 - **Async Barrier (Queue Draining)**: Intercepts Neovim's native event loop APIs (`vim.schedule` and `vim.defer_fn`) globally across the test suite. This guarantees that all background asynchronous promises resolve before a test buffer is torn down, eliminating silent `Plenary.busted` crashes and phantom leakage.
 - **Global State Anti-Bleeding**: Implementation of a strict *Restore-Before-Assert* pattern ensuring global Neovim I/O and Kernel mocks (e.g., `vim.fn.system`, `vim.fn.executable`) are unfailingly restored to their original state even when `assert` exceptions interrupt the runtime flow.
 - **Deterministic Suite Execution**: Ensured 100% stability in test counts (abolishing hash-based directory loading inconsistencies in Linux environments) by structurally confining every `it` evaluation within meticulously scoped `describe` lifecycle bounds.
+- **Anti-Regression Shielding**: Advanced headless-calibrated regression tests specifically target visual engine commands (intercepting `vim.cmd` folds) and OS-level I/O failures (Kernel E482 simulators), guaranteeing that UI cleanliness and Sandbox resilience remain permanently intact across future refactors.
 
 ### 22. Swarm AST Integration & Minimalist UX (Phase 48)
 - **AST Polymorphic Swarm**: Eradicated the legacy `<swarm_state>` tag. Swarm JSON states are now natively integrated into the Immutable Ledger as `<block type="swarm">` nodes. This architectural leap enables the Asynchronous Librarian to intercept and hyper-compress completed swarm sessions, recovering massive amounts of context tokens.
+- **Zero-Leak Visual Engine (Swarm Folds)**: The UI engine natively parses and collapses `<block type="swarm">` into elegant Neovim folds (e.g., `🐝 [Enxame de IA: Rodando]`), preventing massive JSON payloads from polluting the user's chat window.
 - **Minimalist Carousel UX**: The Neovim floating window title was refactored to eliminate visual pollution. It dynamically hides inactive worker tabs, rendering strictly the `Main` chat and the currently focused Swarm agent.
 - **Anti-Branching Guardrails**: Hardened the `@tech_lead` prompt and MCP documentation with `TERMINALLY FORBIDDEN` directives against parallel Git branch operations. This guarantees absolute safety against local Working Tree corruption during concurrent MoA executions.
 
@@ -186,7 +190,7 @@ lua/multi_context/
 
 ### ✅ Implemented, Stable, and Tested (V2.4.3 Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
-- **Plenary Test Coverage:** 281 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 283 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
 - 100% Deterministic Asynchronous Test Suite with custom Async Barriers and State Leakage Prevention.
 - Idempotent XML AST enforcing strict `<block>` encapsulation for all UI and LLM I/O.
 - 100% Internationalized System (i18n) and Cognitive Backend.
@@ -206,3 +210,4 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Asynchronous Tool Execution (`jobstart`) and Robust Out-of-Memory (OOM) Protection.
 - Strict Sandbox Security against remote execution bypasses.
 - **Swarm AST Integration (Polymorphic Ledger compression for JSON states), Minimalist Carousel UX, and Anti-Branching Git Guardrails.**
+- **Headless-Calibrated Regression Testing (UI Folds & I/O Sandbox Crash Prevention).**

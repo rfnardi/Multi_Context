@@ -1,26 +1,41 @@
+======================================================================
 📊 RESUMO GLOBAL AGREGADO (MULTI-CONTEXT)
 ======================================================================
-✅ Success: 281
-❌ Failed : 1
+✅ Success: 282
+❌ Failed : 2
 💥 Errors : 0
 ======================================================================
 
 ======================================================================
 🔍 RELATÓRIO DE FALHAS (ISOLADO)
 ======================================================================
-Fail    ||      Fase 18.5 - Session & State Management: Deve gerar tag de sessao e injetar o swarm_state
-            ...context_plugin/lua/multi_context/tests/libuv_barrier.lua:116: ..._context_plugin/lua/multi_context/tests/session_spec.lua:21: Deve conter tag de estado do enxame no final
+Fail    ||      Regression - I/O Sandbox e Prevenção de E482: NUNCA deve crashar o Neovim se a escrita falhar (Ex: Permission Denied)
+            ...context_plugin/lua/multi_context/tests/libuv_barrier.lua:116: ...n/lua/multi_context/tests/regression_io_sandbox_spec.lua:32: O erro deve detalhar o motivo da recusa do Kernel.
             Expected to be truthy, but value was:
             (nil)
 
             stack traceback:
                 ...context_plugin/lua/multi_context/tests/libuv_barrier.lua:116: in function <...context_plugin/lua/multi_context/tests/libuv_barrier.lua:81>
 
-Success ||      Fase 18.5 - Session & State Management: Deve desserializar e reconstruir o enxame ao carregar o chat
-Success ||      Fase 18.5 - Session & State Management: Deve orquestrar o load pelo comando ToggleWorkspaceView (init.lua)
 
-Success:        2
+Success:        0
 Failed :        1
+Errors :        0
+========================================
+--
+Fail    ||      Regression - Swarm UI Folds (Anti-Vazamento Visual): Deve gerar os comandos corretos de 'fold' do Neovim para os blocos do Enxame
+            ...context_plugin/lua/multi_context/tests/libuv_barrier.lua:116: ...ua/multi_context/tests/regression_ui_swarm_fold_spec.lua:45: O motor de UI DEVE agrupar o bloco Swarm em uma dobra de código.
+            Expected to be truthy, but value was:
+            (nil)
+
+            stack traceback:
+                ...context_plugin/lua/multi_context/tests/libuv_barrier.lua:116: in function <...context_plugin/lua/multi_context/tests/libuv_barrier.lua:81>
+
+
+Success:        0
+Failed :        1
+Errors :        0
+========================================
 ======================================================================
 ❌ ALERTA: Há testes falhando no sistema. Veja os detalhes acima.
 make: *** [Makefile:17: test_agregate_results] Fehler 1

@@ -1,3 +1,14 @@
+local function _writefile(list, fname, flags)
+    local dir = vim.fn.fnamemodify(fname, ":h")
+    if dir and dir ~= "" and vim.fn.isdirectory(dir) == 0 then
+        pcall(vim.fn.mkdir, dir, "p")
+    end
+    -- Executa a escrita nativa, mas lança um erro Lua caso o Kernel recuse (E482)
+    local ok, res = pcall(vim.fn.writefile, list, fname, flags or "")
+    if not ok then error("O Kernel recusou a escrita (Permission Denied).") end
+    return res
+end
+
 local M = {}
 local i18n = require('multi_context.i18n')
 
@@ -64,7 +75,7 @@ M.edit_file = function(path, content)
         vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
         vim.api.nvim_buf_call(bufnr, function() vim.cmd("silent! write") end)
     else
-        if vim.fn.writefile(lines, full_path) == -1 then
+        if _writefile(lines, full_path) == -1 then
             return i18n.t("err_perm_save", full_path)
         end
     end
@@ -142,7 +153,7 @@ M.replace_lines = function(path, start_line, end_line, content)
         vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
         vim.api.nvim_buf_call(bufnr, function() vim.cmd("silent! write") end)
     else
-        vim.fn.writefile(final_lines, full_path)
+        _writefile(final_lines, full_path)
     end
     vim.notify(i18n.t("edit_applied", full_path), vim.log.levels.INFO)
     return i18n.t("succ_edit_lines", start_line, end_line)
@@ -225,7 +236,7 @@ M.apply_diff = function(path, diff_content)
     
     if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
         lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-        vim.fn.writefile(lines, full_path)
+        _writefile(lines, full_path)
     else
         if vim.fn.filereadable(full_path) == 0 then return i18n.t("err_file_not_found_simple") end
     end
@@ -234,7 +245,7 @@ M.apply_diff = function(path, diff_content)
     diff_content = diff_content:gsub("^%s*```[%w_]*\n", ""):gsub("\n%s*```%s*$", "")
     
     local tmp_patch = os.tmpname()
-    vim.fn.writefile(vim.split(diff_content, "\n", {plain=true}), tmp_patch)
+    _writefile(vim.split(diff_content, "\n", {plain=true}), tmp_patch)
     
         local cmd = {"patch", "--force", "-u", full_path, "-i", tmp_patch}
     local out_t = {}
@@ -454,10 +465,26 @@ M.update_context_md = function(content)
     for _, l in ipairs(vim.split(content, "\n", {plain=true})) do
         table.insert(lines, l)
     end
-    vim.fn.writefile(lines, path)
+    _writefile(lines, path)
     return "SUCESSO: CONTEXT.md atualizado em " .. path
 end
 
 
+
+
+-- [Auto-Sandbox] Blindagem contra Exceções de Kernel e I/O
+for k, v in pairs(M) do
+    if type(v) == "function" then
+        local orig = v
+        M[k] = function(...)
+            local ok, res = pcall(orig, ...)
+            if not ok then
+                -- Intercepta o crash do Neovim e devolve o erro como string para o LLM
+                return "FATAL TOOL ERROR (Sandbox Crash Prevented): " .. tostring(res) .. "\nVerifique os caminhos e permissões antes de tentar novamente."
+            end
+            return res
+        end
+    end
+end
 
 return M

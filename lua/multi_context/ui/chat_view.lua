@@ -116,7 +116,11 @@ function M.fold_text()
     local first_line = vim.fn.getline(vim.v.foldstart)
     
     -- FASE 43.5: Distinguindo "Abstracts" Cognitivos de "Arquivos Mortos"
-    if first_line:match("<abstract>") then
+    if first_line:match('type="swarm"') then
+        local status = first_line:match('status="([^"]+)"') or "running"
+        local label = (status == "completed") and "Finalizado" or "Processando Background"
+        return " 🐝 [Enxame de IA: " .. label .. "] " .. lines_count .. " linhas de memória serializada"
+    elseif first_line:match("<abstract>") then
         local summary_text = ""
         for i = vim.v.foldstart, vim.v.foldend do
             local l = vim.fn.getline(i)
@@ -161,7 +165,7 @@ function M.create_folds(buf)
                     for lnum = 1, total_lines do
 											local line = all_lines[lnum]
                         if line then
-                            if line:match('<block[^>]*status="archived"') then
+                            if line:match('<block[^>]*status="archived"') or line:match('<block[^>]*type="swarm"') then
                                 table.insert(fold_stack, { type = "block", start = lnum })
                             elseif line:match('<abstract>') then
                                 table.insert(fold_stack, { type = "abstract", start = lnum })
