@@ -1,4 +1,6 @@
 !_TAG_FILE_ENCODING	utf-8	//
+`--moa`	multicontext.txt	/*`--moa`*
+`--queue`	multicontext.txt	/*`--queue`*
 `:ContextControls`	multicontext.txt	/*`:ContextControls`*
 `:ContextToggle`	multicontext.txt	/*`:ContextToggle`*
 `:ContextUndo`	multicontext.txt	/*`:ContextUndo`*
@@ -10,5 +12,8 @@ multicontext-contents	multicontext.txt	/*multicontext-contents*
 multicontext-controls	multicontext.txt	/*multicontext-controls*
 multicontext-devops	multicontext.txt	/*multicontext-devops*
 multicontext-intro	multicontext.txt	/*multicontext-intro*
+multicontext-jit-lsp	multicontext.txt	/*multicontext-jit-lsp*
+multicontext-mcp	multicontext.txt	/*multicontext-mcp*
 multicontext-navigation	multicontext.txt	/*multicontext-navigation*
+multicontext-squads	multicontext.txt	/*multicontext-squads*
 multicontext.txt	multicontext.txt	/*multicontext.txt*
