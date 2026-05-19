@@ -1,8 +1,3 @@
-#!/usr/bin/env bash
-
-echo "Adicionando novos testes para o Shadow Buffer e o Lifecycle (Etapa 2)..."
-
-cat << 'EOF' > lua/multi_context/tests/cli_spec.lua
 local EventBus = require('multi_context.core.event_bus')
 local react_orchestrator = require('multi_context.core.react_orchestrator')
 local utils = require('multi_context.utils.utils')
@@ -115,7 +110,3 @@ describe("Fase 50: CLI Headless Adapter (DevOps Mode)", function()
         assert.are.equal(0, exit_code_captured, "Não executou cquit 0 após salvar a sessão")
     end)
 end)
-EOF
-
-echo "✅ Testes da Etapa 2 adicionados!"
-echo "Rode 'make test' novamente. Devemos ver 2 falhas (RED) indicando que cli.run() não existe."
