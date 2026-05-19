@@ -1,19 +1,22 @@
 #!/bin/fish
 
 gitgo '
-fix(ui): encapsulate swarm json payloads in native folds and add regression shields
+fix(swarm): erradica context overflow na serialização de estado
 
-- Swarm UI Folds: Fixed visual pollution where massive JSON payloads leaked
-  into the chat buffer. Added native Neovim folds for `<block type="swarm">`
-  with clean semantic labels (e.g., 🐝 [Enxame de IA: Rodando]).
-- Regression Shields: Implemented strict headless tests for OS-level I/O
-  failures (E482 Kernel Simulator) and UI folding events, permanently 
-  protecting the Sandbox and the Visual Engine from future regressions.
-- Test Calibration: Fixed false negatives in headless CI environments by
-  binding phantom buffers to active windows and simulating tool signatures.
-- Docs: Updated CONTEXT.md and README.md with Phase 48 final specs, Swarm AST,
-  Minimalist UX, and the new absolute test count (284 passing).
+Causa raiz:
+A função `build_workspace_content` capturava todo o log visual da UI 
+(`lines`) dos workers do Swarm e o injetava no payload JSON da AST. 
+Isso causava um Context Overflow massivo, cegando o Mecanismo de Atenção 
+do LLM e gerando "Alucinação de Ferramentas" e loops de respostas vazias.
 
-Ref: Phase 48
+Mudanças:
+- Refatorado `utils.build_workspace_content` para salvar estritamente 
+  metadados lógicos (nome do worker, status), omitindo a chave `lines`.
+- Implementada Degradação Graciosa na UI em `utils.load_workspace_state` 
+  para injetar um Placeholder Semântico ("Histórico visual arquivado...") 
+  durante a hidratação, mantendo a interface limpa sem gastar tokens.
+- Adicionados 2 novos testes TDD em `utils_spec.lua` para garantir a 
+  serialização Anti-Leak e o placeholder (total de 284 testes 100% green).
+- Atualizado CONTEXT.md para refletir a V2.4.4 e a Fase 49.
 '
 

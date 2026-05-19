@@ -3,13 +3,13 @@
 ## Overview
 MultiContext AI is a native, asynchronous, high-performance plugin for Neovim that integrates autonomous AI assistants directly into the editor (inspired by the Devin/Claude Code paradigm). The plugin enables interaction with multiple specialized agents through a chat interface, providing direct access to the file system, terminal execution, autonomous reasoning loops (ReAct), and active context window management. 
 
-In its **V2.4.3** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention, **AST-Integrated Swarm States**, **Minimalist Swarm UI**, and a **100% Deterministic Asynchronous Testing Architecture** guaranteeing absolute stability across the entire codebase.
+In its **V2.4.4** release, it features an advanced **Swarm Architecture** (Mixture of Agents - MoA), asynchronous state persistence (Stateful Workspaces), **Meta-Agent Squads**, **Quadripartite Memory (Predictive Watchdog)**, a **Pluggable and Editable Skills Ecosystem** provided with community templates, **Context Injectors (\)** for dynamic prompt composition, ultra-fast global search using **Ripgrep**, surgical code navigation via **Neovim LSP** (Go to Definition/References), a **DevOps Agent** for local Git automation, an extensive **Virtual Master Command Center**, **Situational Awareness Tools**, **Just-in-Time LSP Auto-Setup**, an **Cognitive Optimization & Internationalization (i18n) Engine**, **Active Semantic Indexing with a Cognitive Load Balancer**, a **Polymorphic Immutable Ledger** that transparently compresses context via background APIs without destroying historical data, **Enterprise-Grade Security** with Zero-UI Freeze asynchronous execution and strict Sandbox Escape prevention, **AST-Integrated Swarm States**, **Minimalist Swarm UI**, **Context Overflow Prevention (Anti-Hallucination Serialization)**, and a **100% Deterministic Asynchronous Testing Architecture** guaranteeing absolute stability across the entire codebase.
 
 ## Technical Architecture
 
 ### Core Technologies
 - **Language**: Lua (native integration with Neovim).
-- **Testing Framework**: `plenary.nvim` (busted) - **283 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network), a custom **Async Barrier** (Queue Draining) for Neovim's Event Loop, strict **Restore-Before-Assert** patterns preventing Global State Bleeding, and **Headless-Calibrated Regression Shields**.
+- **Testing Framework**: `plenary.nvim` (busted) - **284 Unit and Integration Tests (100% Absolute Success Rate)**, featuring severe mock isolation (I/O, Kernel, Network), a custom **Async Barrier** (Queue Draining) for Neovim's Event Loop, strict **Restore-Before-Assert** patterns preventing Global State Bleeding, and **Headless-Calibrated Regression Shields**.
 - **Asynchronous Operations & Networking**: `vim.fn.jobstart` / `vim.fn.jobstop` abstracted via a custom transport module (non-blocking `curl` promises with robust TCP chunking buffers).
 - **XML Processing & Ledger**: Fault-tolerant functional parser, featuring implicit tag auto-closing. Chat state is natively structured as an Immutable Ledger using `<block>` tags with relational attributes (`id`, `status`, `covers`). All ReAct loops and user interactions are strictly and idempotently wrapped to preserve AST integrity.
 - **Concurrency**: Native *Worker Pool* implementation managing asynchronous HTTP streams without blocking Neovim's main UI thread.
@@ -184,13 +184,19 @@ lua/multi_context/
 - **Minimalist Carousel UX**: The Neovim floating window title was refactored to eliminate visual pollution. It dynamically hides inactive worker tabs, rendering strictly the `Main` chat and the currently focused Swarm agent.
 - **Anti-Branching Guardrails**: Hardened the `@tech_lead` prompt and MCP documentation with `TERMINALLY FORBIDDEN` directives against parallel Git branch operations. This guarantees absolute safety against local Working Tree corruption during concurrent MoA executions.
 
+### 23. Swarm Serialization Hotfix & Context Overflow Shield (Phase 49)
+- **Toxic Serialization Eradication:** Refactored the Swarm state serialization (`build_workspace_content`) to strictly save logical metadata (Worker Name, Status) while actively stripping massive visual execution logs (`lines`). This completely eliminates silent **Context Overflow**, saving tens of thousands of tokens during auto-saves.
+- **Attention Mechanism Restoration:** By removing giant JSON string payloads from the window, the LLM's *Attention Mechanism* is no longer blinded by visual noise. This surgically cured severe "Tool Hallucinations" (e.g., agents inventing `<bash>` tags or forgetting MCP restrictions) because the *System Prompt* is no longer diluted.
+- **Empty Response Loop Fix:** Prevents the system from hitting the absolute API context window limits, resolving bugs where the API would return blank responses and trap the orchestrator in infinite retry loops.
+- **Semantic UI Hydration (Graceful Degradation):** On workspace reload, the UI dynamically injects a Semantic Placeholder (`## [ Histórico visual arquivado para economia de memória ]`) for archived Swarm workers. This maintains a clean, understandable human interface while costing zero tokens to the LLM.
+
 ---
 
 ## Current Development State
 
-### ✅ Implemented, Stable, and Tested (V2.4.3 Architecture)
+### ✅ Implemented, Stable, and Tested (V2.4.4 Architecture)
 The core of the product is a cutting-edge industrial orchestration engine.
-- **Plenary Test Coverage:** 283 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
+- **Plenary Test Coverage:** 284 isolated Unit and Integration tests (0 Failures / 0 Errors - 100% Absolute Success).
 - 100% Deterministic Asynchronous Test Suite with custom Async Barriers and State Leakage Prevention.
 - Idempotent XML AST enforcing strict `<block>` encapsulation for all UI and LLM I/O.
 - 100% Internationalized System (i18n) and Cognitive Backend.
@@ -209,5 +215,6 @@ The core of the product is a cutting-edge industrial orchestration engine.
 - Active Semantic Indexing with Zero-Freeze UX, Popcorn Patching, and Cognitive Load Balancer.
 - Asynchronous Tool Execution (`jobstart`) and Robust Out-of-Memory (OOM) Protection.
 - Strict Sandbox Security against remote execution bypasses.
-- **Swarm AST Integration (Polymorphic Ledger compression for JSON states), Minimalist Carousel UX, and Anti-Branching Git Guardrails.**
-- **Headless-Calibrated Regression Testing (UI Folds & I/O Sandbox Crash Prevention).**
+- Swarm AST Integration (Polymorphic Ledger compression for JSON states), Minimalist Carousel UX, and Anti-Branching Git Guardrails.
+- Headless-Calibrated Regression Testing (UI Folds & I/O Sandbox Crash Prevention).
+- Swarm Serialization Hotfix (Anti-Leak), Context Overflow Prevention, Semantic UI Hydration, and Attention Mechanism Restoration (Cure for Tool Hallucination).

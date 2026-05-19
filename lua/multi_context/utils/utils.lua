@@ -53,8 +53,7 @@ M.build_workspace_content = function(buf, existing_filename)
     if popup.swarm_buffers then
         for i, sb in ipairs(popup.swarm_buffers) do
             if i > 1 and sb.buf and api.nvim_buf_is_valid(sb.buf) then
-                local b_lines = api.nvim_buf_get_lines(sb.buf, 0, -1, false)
-                table.insert(state_data.buffers, { name = sb.name, status = sb.status, lines = b_lines })
+                table.insert(state_data.buffers, { name = sb.name, status = sb.status }) -- [HOTFIX Fase 49] Anti-Leak: Evita Context Overflow
             end
         end
     end
@@ -119,7 +118,17 @@ M.load_workspace_state = function(buf)
                         vim.bo[new_buf].bufhidden = 'hide'
                         vim.bo[new_buf].swapfile  = false
                         vim.bo[new_buf].filetype  = 'multicontext_chat'
-                        api.nvim_buf_set_lines(new_buf, 0, -1, false, bdata.lines or {})
+                        local lines_to_restore = bdata.lines
+                        if not lines_to_restore or #lines_to_restore == 0 then
+                            lines_to_restore = {
+                                "## [ SWARM WORKER ]",
+                                "## Agente: " .. (bdata.name or "Desconhecido"),
+                                "",
+                                "## [ Histórico visual arquivado para economia de memória ]",
+                                ""
+                            }
+                        end
+                        api.nvim_buf_set_lines(new_buf, 0, -1, false, lines_to_restore)
                         
                         if not popup.swarm_buffers then popup.swarm_buffers = {} end
                         table.insert(popup.swarm_buffers, { buf = new_buf, name = bdata.name, status = bdata.status or "Restaurado" })
