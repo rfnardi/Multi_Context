@@ -8,7 +8,7 @@ M.load_squads = function()
                 description = "Tactical Engineering Unit (End-to-End Delivery)",
                 collective_purpose = "MISSION OBJECTIVE: You are an autonomous assembly line. Your collective goal is to implement, rigorously test, and safely version-control the requested feature.\nCHAIN OF COMMAND: 1. The Coder MUST execute the logic. 2. The QA MUST ruthlessly verify edge cases and LSP diagnostics. 3. The DevOps MUST finalize the process with atomic semantic commits.\nRESTRICTION: Do not bypass the QA verification stage under any circumstances. Code that has not been diagnosed and tested is considered toxic.",
                 tasks = {
-                    { agent = "tech_lead", instruction = "INITIATE PIPELINE: Analyze the human request. Decompose the requirements, enforce the strict Coder -> QA -> DevOps chain, and ensure the pipeline does not stop until the code is committed.", chain = {"coder", "qa", "devops"} }
+                    { agent = "tech_lead", instruction = "INITIATE PIPELINE: Analyze the human request. Decompose the requirements, enforce the strict Coder -> QA -> DevOps chain, and ensure the pipeline does not stop until the code is committed.", queue = {"coder", "qa", "devops"} }
                 }
             }
         }
@@ -35,8 +35,8 @@ M.load_squads = function()
                     local lvl = (agents[t.agent] and agents[t.agent].abstraction_level) and val[agents[t.agent].abstraction_level] or 3
                     if lvl > max_lvl then max_lvl = lvl end
                 end
-                if type(t.chain) == "table" then
-                    for _, ag in ipairs(t.chain) do
+                if type(t.queue) == "table" then
+                    for _, ag in ipairs(t.queue) do
                         local lvl = (agents[ag] and agents[ag].abstraction_level) and val[agents[ag].abstraction_level] or 3
                         if lvl > max_lvl then max_lvl = lvl end
                     end

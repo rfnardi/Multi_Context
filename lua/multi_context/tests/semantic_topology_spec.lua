@@ -32,7 +32,7 @@ describe("Fase 40: Ontologia Hierarquica e Roteamento Semantico", function()
         end
         
         local mock_file = os.tmpname()
-        vim.fn.writefile({[[ { "test_squad": { "tasks":[ { "agent": "agent_low", "chain": ["agent_high"] } ] } } ]]}, mock_file)
+        vim.fn.writefile({[[ { "test_squad": { "tasks":[ { "agent": "agent_low", "queue": ["agent_high"] } ] } } ]]}, mock_file)
         
         squads.squads_file = mock_file
         local loaded = squads.load_squads()

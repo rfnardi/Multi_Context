@@ -36,18 +36,18 @@ M.init_swarm = function(json_payload)
     local squads = ok_sq and squads_manager.load_squads() or {}
     local new_tasks = {}
     for _, task in ipairs(decoded.tasks) do
-        local target = task.agent or (task.chain and task.chain[1])
+        local target = task.agent or (task.queue and task.queue[1])
         if target and squads[target] then
             local squad = squads[target]
             local main_task = vim.deepcopy(squad.tasks[1] or {})
             local col_purp = squad.collective_purpose or squad.description or ""
             local purpose_block = col_purp ~= "" and ("\n=== SQUAD MISSION: " .. col_purp .. " ===\n") or ""
             main_task.instruction = purpose_block .. (main_task.instruction or "") .. "\n\nDelegated Task: " .. (task.instruction or "")
-            if not main_task.agent and main_task.chain and #main_task.chain > 0 then main_task.agent = main_task.chain[1] end
+            if not main_task.agent and main_task.queue and #main_task.queue > 0 then main_task.agent = main_task.queue[1] end
             table.insert(new_tasks, main_task)
             if squad.tasks then for i = 2, #squad.tasks do table.insert(new_tasks, squad.tasks[i]) end end
         else
-            if not task.agent and type(task.chain) == "table" and #task.chain > 0 then task.agent = task.chain[1] end
+            if not task.agent and type(task.queue) == "table" and #task.queue > 0 then task.agent = task.queue[1] end
             table.insert(new_tasks, task)
         end
     end
@@ -269,11 +269,11 @@ M.dispatch_next = function()
                         else
                             if clean_res == "" then final_report_text = i18n.t("swarm_fail_repeated") end
                             local has_next = false
-                            if type(task.chain) == 'table' then
+                            if type(task.queue) == 'table' then
                                 local c_idx = 0
-                                for idx, a in ipairs(task.chain) do if a == task.agent then c_idx = idx; break end end
-                                if c_idx > 0 and c_idx < #task.chain then
-                                    task.agent = task.chain[c_idx + 1]
+                                for idx, a in ipairs(task.queue) do if a == task.agent then c_idx = idx; break end end
+                                if c_idx > 0 and c_idx < #task.queue then
+                                    task.agent = task.queue[c_idx + 1]
                                     task.instruction = (task.instruction or '') .. '\n\n' .. i18n.t("swarm_prev_report") .. '\n' .. final_report_text
                                     task.retries = 0
                                     table.insert(M.state.queue, task)

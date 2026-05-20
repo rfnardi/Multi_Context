@@ -350,7 +350,7 @@ M.ExecuteTools = function(ia_idx, buf)
 
         if react_state.tool_loop_count >= 3 then
             abort_all = true
-            new_content = new_content .. parsed_tag.raw_tag .. (parsed_tag.inner or "") .. "</tool_call>\n\n>[Sistema]: 🛑 ERRO FATAL - LOOP INFINITO DETECTADO (Você repetiu a mesma ação 3 vezes). Autonomia suspensa."
+            new_content = new_content .. parsed_tag.raw_tag .. (parsed_tag.inner or "") .. "</tool_call>\n\n>[Sistema]: ERRO FATAL - LOOP INFINITO DETECTADO (Você repetiu a mesma ação 3 vezes). Autonomia suspensa."
             react_state.is_autonomous = false
             should_continue_loop = false
             goto continue
@@ -441,7 +441,7 @@ M.ExecuteTools = function(ia_idx, buf)
     end
 
     local sys_id = "sys_" .. os.date("%H%M%S") .. "_" .. tostring(math.random(100, 999))
-    local sys_block = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>[Sistema]: %s\n</content>\n</block>', sys_id, sys_msg)
+    local sys_block = string.format('<block id="%s" type="tool_result" role="user" status="active">\n<content>\n>%s\n</content>\n</block>', sys_id, sys_msg)
 
     EventBus.emit("UI_APPEND_LINES", { buf = buf, lines = { "", user_prefix .. " " .. sys_block } })
     vim.defer_fn(function() M.ProcessTurn(buf) end, 100)

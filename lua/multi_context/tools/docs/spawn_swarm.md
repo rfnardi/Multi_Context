@@ -6,7 +6,7 @@
   </parameters>
   <content_description>
     CRÍTICO / TERMINANTEMENTE PROIBIDO (TERMINALLY FORBIDDEN):
-    - NÃO delegue operações de mudança de branch do Git (como "git checkout" ou "git branch") para agentes executando em paralelo. Alterações de branch locais destruirão a Working Tree concorrente e causarão falhas catastróficas. Integrações Git devem ocorrer de forma SEQUENCIAL (chain) no final das operações.
+    - NÃO delegue operações de mudança de branch do Git (como "git checkout" ou "git branch") para agentes executando em paralelo. Alterações de branch locais destruirão a Working Tree concorrente e causarão falhas catastróficas. Integrações Git devem ocorrer de forma SEQUENCIAL (queue) no final das operações.
  
     - NÃO envolva o JSON em uma chave inventada como {"json_payload": ...}. 
     - NÃO use blocos de código Markdown (```json).
@@ -18,7 +18,7 @@
       "tasks": [
         {
           "agent": "coder",
-          "chain": ["qa"],
+          "queue": ["qa"],
           "context": ["src/main.lua"],
           "instruction": "Refatorar função X. O QA revisará em seguida."
         }

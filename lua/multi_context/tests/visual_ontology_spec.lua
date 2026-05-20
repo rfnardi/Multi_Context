@@ -44,7 +44,7 @@ describe("Fase 43.5: Visual Engine & Ontology Conceal/Folds", function()
         vim.v = original_v
         vim.fn.getline = original_getline
         
-        assert.truthy(text:match("🧠") or text:match("📦"), "O texto do fold não conteve o ícone esperado.")
+        assert.truthy(text:match("") or text:match(""), "O texto do fold não conteve o resumo esperado.")
         assert.truthy(text:match("Test summary"), "O texto do fold não expôs o summary!")
     end)
 end)

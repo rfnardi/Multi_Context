@@ -30,11 +30,11 @@ describe("Fase 21 - Pipelines e Coreografia:", function()
         agents.load_agents = orig_load_agents
     end)
 
-    it("Passo 1: Deve processar 'chain' e 'allow_switch' no init_swarm", function()
-        local ok = swarm.init_swarm('{"tasks":[{"chain":["coder", "qa"], "instruction": "F", "allow_switch": ["dba"]}]}')
+    it("Passo 1: Deve processar 'queue' e 'allow_switch' no init_swarm", function()
+        local ok = swarm.init_swarm('{"tasks":[{"queue":["coder", "qa"], "instruction": "F", "allow_switch": ["dba"]}]}')
         assert.is_true(ok)
         assert.are.same("coder", swarm.state.queue[1].agent)
-        assert.are.same("qa", swarm.state.queue[1].chain[2])
+        assert.are.same("qa", swarm.state.queue[1].queue[2])
     end)
 
     it("Passo 2: Deve reencarnar a tarefa na fila caso haja agentes restantes na chain", function()
@@ -42,7 +42,7 @@ describe("Fase 21 - Pipelines e Coreografia:", function()
             chunk("<final_report>Terminei o código</final_report>")
             done(cfg, nil)
         end
-        swarm.init_swarm('{"tasks":[{"chain":["coder", "qa"], "instruction": "F"}]}')
+        swarm.init_swarm('{"tasks":[{"queue":["coder", "qa"], "instruction": "F"}]}')
         swarm.state.workers = { { api = { name = "mock_api", abstraction_level = "high" }, busy = false } }
         
         swarm.dispatch_next()

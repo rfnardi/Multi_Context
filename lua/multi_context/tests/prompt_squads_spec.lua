@@ -11,7 +11,7 @@ describe("Fase 23 - Passo 2: O Compilador de Meta-Agentes", function()
             return {
                 squad_ux = {
                     tasks = {
-                        { agent = "tech_lead", instruction = "UX Design", chain = {"frontend"} }
+                        { agent = "tech_lead", instruction = "UX Design", queue = {"frontend"} }
                     }
                 }
             }

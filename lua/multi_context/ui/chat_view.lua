@@ -119,7 +119,7 @@ function M.fold_text()
     if first_line:match('type="swarm"') then
         local status = first_line:match('status="([^"]+)"') or "running"
         local label = (status == "completed") and "Finalizado" or "Processando Background"
-        return " 🐝 [Enxame de IA: " .. label .. "] " .. lines_count .. " linhas de memória serializada"
+        return " [Enxame de IA: " .. label .. "] " .. lines_count .. " linhas de memória serializada"
     elseif first_line:match("<abstract>") then
         local summary_text = ""
         for i = vim.v.foldstart, vim.v.foldend do
@@ -129,7 +129,7 @@ function M.fold_text()
                 break
             end
         end
-        return " 🧠 [Cognitive Abstract] " .. summary_text
+        return " [Cognitive Abstract] " .. summary_text
     else
         local preview = ""
         for i = vim.v.foldstart, vim.v.foldend do
@@ -140,7 +140,7 @@ function M.fold_text()
                 break
             end
         end
-        return " 📦[" .. lines_count .. " linhas arquivadas] " .. preview
+        return " [" .. lines_count .. " linhas arquivadas] " .. preview
     end
 end
 

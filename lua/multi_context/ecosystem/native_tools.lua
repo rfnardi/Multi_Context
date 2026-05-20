@@ -387,8 +387,8 @@ M.get_git_env = function()
     local is_merge = vim.fn.filereadable(root .. "/.git/MERGE_HEAD") == 1
     local is_rebase = vim.fn.isdirectory(root .. "/.git/rebase-merge") == 1 or vim.fn.isdirectory(root .. "/.git/rebase-apply") == 1
     
-    if is_merge then table.insert(out, "⚠️ ESTADO CRÍTICO: MERGE EM PROGRESSO (Resolva os conflitos antes de prosseguir)") end
-    if is_rebase then table.insert(out, "⚠️ ESTADO CRÍTICO: REBASE EM PROGRESSO") end
+    if is_merge then table.insert(out, "ESTADO CRÍTICO: MERGE EM PROGRESSO (Resolva os conflitos antes de prosseguir)") end
+    if is_rebase then table.insert(out, "ESTADO CRÍTICO: REBASE EM PROGRESSO") end
 
     return table.concat(out, "\n")
 end

@@ -19,7 +19,7 @@ M.defaults = {
         border = "rounded",
         width  = 0.7,
         height = 0.7,
-        title  = " 🤖 MultiContext AI ",
+        title  = " MultiContext AI ",
     },
 }
 

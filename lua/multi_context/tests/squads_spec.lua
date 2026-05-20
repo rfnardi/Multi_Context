@@ -21,7 +21,7 @@ describe("Fase 23 - Passo 1: Loader de Squads", function()
         
         assert.is_not_nil(loaded["squad_dev"], "O squad padrao deve ser criado")
         assert.are.same("tech_lead", loaded["squad_dev"].tasks[1].agent)
-        assert.are.same("coder", loaded["squad_dev"].tasks[1].chain[1])
+        assert.are.same("coder", loaded["squad_dev"].tasks[1].queue[1])
     end)
 
     it("Deve extrair a lista de nomes dos squads", function()

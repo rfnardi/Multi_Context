@@ -302,7 +302,7 @@ M.render = function()
                     if sq.tasks then
                         for _, t in ipairs(sq.tasks) do
                             local chain_str = t.agent or "tech_lead"
-                            if type(t.chain) == "table" and #t.chain > 0 then chain_str = chain_str .. " ➔ " .. table.concat(t.chain, " ➔ ") end
+                            if type(t.queue) == "table" and #t.queue > 0 then chain_str = chain_str .. " ➔ " .. table.concat(t.queue, " ➔ ") end
                             add_line(lines, "      └─ " .. chain_str, nil)
                         end
                     end
@@ -490,7 +490,7 @@ M.handle_cr = function()
         vim.ui.input({ prompt = i18n.t("cc_create_squad_pmpt") }, function(input)
             if not input or input == "" then return end
             if not M.state.squads[input] then
-                M.state.squads[input] = { description = "Novo esquadrão / New squad", tasks = { { agent = "tech_lead", instruction = "Instrução inicial", chain = {"coder"} } } }
+                M.state.squads[input] = { description = "Novo esquadrão / New squad", tasks = { { agent = "tech_lead", instruction = "Instrução inicial", queue = {"coder"} } } }
                 local squads_file = vim.fn.stdpath("config") .. "/mctx_squads.json"
                 vim.fn.writefile({vim.fn.json_encode(M.state.squads)}, squads_file)
                 vim.notify(i18n.t("cc_squad_created", input), vim.log.levels.INFO)
@@ -686,7 +686,7 @@ M.open_panel = function()
     local w, h = 76, 28
     local win_opts = { relative = 'editor', width = w, height = h, row = math.floor((vim.o.lines - h) / 2), col = math.floor((vim.o.columns - w) / 2), border = 'rounded', style = 'minimal' }
     
-    if vim.fn.has("nvim-0.9") == 1 then win_opts.title = " MultiContext AI 🤖[v1.4] "; win_opts.title_pos = "center" end
+    if vim.fn.has("nvim-0.9") == 1 then win_opts.title = " MultiContext AI [v1.4] "; win_opts.title_pos = "center" end
     
     M.win = api.nvim_open_win(M.buf, true, win_opts)
     vim.wo[M.win].cursorline = true; vim.wo[M.win].wrap = false; vim.wo[M.win].number = true; vim.wo[M.win].relativenumber = true
